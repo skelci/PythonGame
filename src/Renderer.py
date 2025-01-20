@@ -52,29 +52,60 @@ class Renderer:
 
         triengles = self.triangles.copy()
         for t in triengles:
-            Triangle(
-                (Vector(t.vertices[0] - self.camera.position),
-                Vector(t.vertices[1] - self.camera.position),
-                Vector(t.vertices[2] - self.camera.position)),
+            self.triangles.append(Triangle(
+                (t.vertices[0] - self.camera.position,
+                t.vertices[1] - self.camera.position,
+                t.vertices[2] - self.camera.position),
                 t.texture
-            )
+            ))
 
-        self.triangles.sort(key = lambda t: t.vertices[0].lenght())
+        self.triangles.sort(key = lambda t: t.vertices[0].lenght(), reverse = True)
         
         for triangle in self.triangles:
             screen_cords = []
-            out_of_view = 0
             for v in triangle.vertices:
-                angle = Rotator(math.atan2(v.z, v.lenghtXY()), math.atan2(v.y, v.x), 0)
-                angle -= self.camera.rotation
-                if -self.camera.fov/2 < angle.pitch < self.camera.fov/2 or -self.camera.fov/2 < angle.yaw < self.camera.fov/2: out_of_view += 1
-                cord = Vector2(math.sin(angle.yaw) * self.width + self.width/2, math.sin(angle.pitch) * self.height + self.height/2)
+                cord = Vector2()
+
+                k_pitch_camera = math.tan(self.camera.rotation.pitch)
+                if k_pitch_camera == 0: k_pitch_per = float('inf')
+                else: k_pitch_per = -1 / k_pitch_camera
+                x_pitch = v.lenghtXY()
+                n_pitch_per = v.z - k_pitch_per * x_pitch
+                y_pitch_sec = k_pitch_per * x_pitch
+                x_pitch_sec_div = k_pitch_camera - k_pitch_per
+                if x_pitch_sec_div == 0: x_pitch_sec = float('inf')
+                elif abs(x_pitch_sec_div) == float('inf') and abs(n_pitch_per) == float('inf'):
+                    if x_pitch_sec_div * n_pitch_per > 0: x_pitch_sec = 1
+                    else: x_pitch_sec = -1
+                else: x_pitch_sec = n_pitch_per / x_pitch_sec_div
+                cord.y = math.sqrt((v.z - y_pitch_sec)**2 + (x_pitch - x_pitch_sec)**2) * Vector2(y_pitch_sec, x_pitch_sec).lenght()
+                k_pitch_sec = y_pitch_sec / x_pitch_sec
+                if k_pitch_sec < k_pitch_camera: cord.y = -cord.y
+                cord.y += self.height / 2
+                
+                k_yaw_camera = math.tan(self.camera.rotation.yaw)
+                if k_yaw_camera == 0: k_yaw_per = float('inf')
+                else: k_yaw_per = -1 / k_yaw_camera
+                n_yaw_per = v.y - k_yaw_per * v.x
+                y_yaw_sec = k_yaw_camera * v.x
+                x_yaw_sec_div = k_yaw_camera - k_yaw_per
+                if x_yaw_sec_div == 0: x_yaw_sec = float('inf')
+                elif abs(x_yaw_sec_div) == float('inf') and abs(n_yaw_per) == float('inf'):
+                    if x_yaw_sec_div * n_yaw_per > 0: 1
+                    else: x_yaw_sec = -1
+                else: x_yaw_sec = n_yaw_per / x_yaw_sec_div
+                cord.x = math.sqrt((v.y - y_yaw_sec)**2 + (v.x - x_yaw_sec)**2) * Vector2(y_yaw_sec, x_yaw_sec).lenght()
+                k_yaw_sec = y_yaw_sec / x_yaw_sec
+                if k_yaw_sec < k_yaw_camera: cord.x = -cord.x
+                cord.x += self.width / 2
+
                 screen_cords.append(cord)
-            if out_of_view == 3: continue
+
+            print(screen_cords)
 
             texture = self.create_triangle_texture(((0, 0), (1, 0), (1, 1)), screen_cords, triangle.texture)
 
-            combined_surface.blit(texture[0], texture[1])
+            combined_surface.blit(*texture)
 
         self.screen.blit(combined_surface, (0, 0))
 
