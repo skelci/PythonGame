@@ -51,6 +51,7 @@ class Renderer:
         combined_surface = pygame.Surface((self.width, self.height))
 
         triengles = self.triangles.copy()
+        self.triangles.clear()
         for t in triengles:
             self.triangles.append(Triangle(
                 (t.vertices[0] - self.camera.position,
@@ -67,23 +68,25 @@ class Renderer:
                 cord = Vector2()
 
                 k_pitch_camera = math.tan(self.camera.rotation.pitch)
+                k_yaw_camera = math.tan(self.camera.rotation.yaw)
+
                 if k_pitch_camera == 0: k_pitch_per = float('inf')
                 else: k_pitch_per = -1 / k_pitch_camera
                 x_pitch = v.lenghtXY()
                 n_pitch_per = v.z - k_pitch_per * x_pitch
-                y_pitch_sec = k_pitch_per * x_pitch
+                y_pitch_sec = k_pitch_per * x_pitch + n_pitch_per
                 x_pitch_sec_div = k_pitch_camera - k_pitch_per
                 if x_pitch_sec_div == 0: x_pitch_sec = float('inf')
                 elif abs(x_pitch_sec_div) == float('inf') and abs(n_pitch_per) == float('inf'):
                     if x_pitch_sec_div * n_pitch_per > 0: x_pitch_sec = 1
                     else: x_pitch_sec = -1
                 else: x_pitch_sec = n_pitch_per / x_pitch_sec_div
-                cord.y = math.sqrt((v.z - y_pitch_sec)**2 + (x_pitch - x_pitch_sec)**2) * Vector2(y_pitch_sec, x_pitch_sec).lenght()
+                print(f"point1: ({x_pitch}, {v.z}), point2: ({x_pitch_sec}, {y_pitch_sec})")
+                cord.y = math.sqrt((x_pitch - x_pitch_sec)**2 + (v.z - y_pitch_sec)**2) * Vector2(y_pitch_sec, x_pitch_sec).lenght()
                 k_pitch_sec = y_pitch_sec / x_pitch_sec
                 if k_pitch_sec < k_pitch_camera: cord.y = -cord.y
                 cord.y += self.height / 2
                 
-                k_yaw_camera = math.tan(self.camera.rotation.yaw)
                 if k_yaw_camera == 0: k_yaw_per = float('inf')
                 else: k_yaw_per = -1 / k_yaw_camera
                 n_yaw_per = v.y - k_yaw_per * v.x
@@ -102,6 +105,7 @@ class Renderer:
                 screen_cords.append(cord)
 
             print(screen_cords)
+            print()
 
             texture = self.create_triangle_texture(((0, 0), (1, 0), (1, 1)), screen_cords, triangle.texture)
 
@@ -110,7 +114,6 @@ class Renderer:
         self.screen.blit(combined_surface, (0, 0))
 
         pygame.display.flip()
-
 
 
     def create_triangle_texture(self, tex_cords, screen_cords, texture):

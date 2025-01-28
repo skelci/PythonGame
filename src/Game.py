@@ -19,6 +19,7 @@ class Game:
 
     def render(self):
         self.renderer.render()
+        self.renderer.clear()
 
         if not self.running:
             pygame.quit()
