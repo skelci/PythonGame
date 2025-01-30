@@ -1,25 +1,22 @@
-from Renderer import Renderer
+from GameBase import GameBase
 
-import pygame
-
-
-
-class Game:
-    def __init__(self):
-        self.running = True
-
-        pygame.init()
-        self.renderer = Renderer(1200, 800, "3D Engine")
+from Cube import Cube
+from Datatypes import *
 
 
-    def tick(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
+class Game(GameBase):
+    def begin_play(self):
+        self.window_title = "Game"
+        self.window_width = 800
+        self.window_height = 600
 
-    def render(self):
-        self.renderer.render()
-        self.renderer.clear()
+        cube = Cube("Cube", 1, 1, 1, "res/textures/texture.jpeg")
 
-        if not self.running:
-            pygame.quit()
+        super().begin_play()
+
+        # Register the actors after the engine has been initialized
+        self.engine.register_actor(cube)
+
+        self.engine.renderer.camera.position = Vector(0, 2, 2)
+        self.engine.renderer.camera.rotation = Rotator().set_degrees(-45, 0, 0)
+    

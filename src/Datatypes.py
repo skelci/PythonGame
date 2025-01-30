@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Iterator
+import pygame
 import math
 
 
@@ -13,6 +14,14 @@ class Rotator:
     pitch: float = 0
     yaw: float = 0
     roll: float = 0
+
+
+    def set_degrees(self, pitch, yaw, roll):
+        self.pitch = math.radians(pitch)
+        self.yaw = math.radians(yaw)
+        self.roll = math.radians(roll)
+
+        return self
 
 
     def __iter__(self) -> Iterator[float]:
@@ -167,12 +176,32 @@ class Vector:
         return NotImplemented
     
 
+    @property
     def lenght(self):
         return (self.x ** 2 + self.y ** 2 + self.z ** 2) ** 0.5
     
 
-    def lenghtXY(self):
+    @property
+    def lenght_xy(self):
         return (self.x ** 2 + self.y ** 2) ** 0.5
+    
+
+    # Rotate a 3D point around the origin (don't try to understand this)
+    def rotate(self, rot):
+        # Assume rot.pitch, rot.yaw, rot.roll are in radians
+        px, py, pz = self.x, self.y, self.z
+        cosx, sinx = math.cos(rot.pitch), math.sin(rot.pitch)
+        cosy, siny = math.cos(rot.yaw), math.sin(rot.yaw)
+        cosz, sinz = math.cos(rot.roll), math.sin(rot.roll)
+
+        # Rotate around X-axis
+        py, pz = py * cosx - pz * sinx, py * sinx + pz * cosx
+        # Rotate around Y-axis
+        px, pz = px * cosy + pz * siny, -px * siny + pz * cosy
+        # Rotate around Z-axis
+        px, py = px * cosz - py * sinz, px * sinz + py * cosz
+
+        self.x, self.y, self.z = px, py, pz
 
 
 
@@ -253,6 +282,24 @@ class Vector2:
         
         return NotImplemented
     
-
+    @property
     def lenght(self):
         return (self.x ** 2 + self.y ** 2) ** 0.5
+
+
+"""
+vertices and uv_map are indexes of the vertices and uv_map in the actor's vertices and uv_map
+"""
+@dataclass
+class CompactTriangle:
+    vertices: tuple[int, int, int]
+    texture: pygame.Surface
+    uv_map: tuple[int, int, int]
+
+
+
+@dataclass
+class Triangle:
+    vertices: tuple[Vector, Vector, Vector]
+    texture: pygame.Surface
+    uv_map: tuple[Vector2, Vector2, Vector2]

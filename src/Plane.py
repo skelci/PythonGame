@@ -4,22 +4,35 @@ from Datatypes import *
 import pygame
 
 class Plane(Actor):
-    def __init__(self, name, side_length, texture):
+    def __init__(self, name, x_half_length, y_half_lenght, texture):
         super().__init__(name, texture)
-        self.side_length = side_length
-        self.texture = pygame.image.load(texture)
+        self.x_half_length = x_half_length
+        self.y_half_length = y_half_lenght
 
         self.create_triangles()
 
 
     def create_triangles(self):
-        sl = self.side_length
-        vertices = (
-            Vector(-sl,  sl, 0),
-            Vector(-sl, -sl, 0),
-            Vector( sl, -sl, 0),
-            Vector( sl,  sl, 0)
+        xhl = self.x_half_length
+        yhl = self.y_half_length
+        self.vertices = (
+            Vector( xhl,  yhl, 0),
+            Vector(-xhl,  yhl, 0),
+            Vector(-xhl, -yhl, 0),
+            Vector( xhl, -yhl, 0)
         )
 
-        self.triangles = self.get_triangles_from_vertices(vertices)
+        self.uv_map = (
+            Vector2(1, 1),
+            Vector2(0, 1),
+            Vector2(0, 0),
+            Vector2(1, 0)
+        )
+
+        self.triangles = (
+            CompactTriangle((0, 1, 2), self.texture, (0, 1, 2)),
+            CompactTriangle((0, 2, 3), self.texture, (0, 2, 3))
+        )
+
+        return self.vertices, self.uv_map, self.triangles
         

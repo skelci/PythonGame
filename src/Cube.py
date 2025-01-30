@@ -1,37 +1,45 @@
-from Actor import Actor
+from Plane import Plane
 from Datatypes import *
 
 import pygame
 
-class Cube(Actor):
-    def __init__(self, name, side_length, texture):
-        super().__init__(name)
-        self.side_length = side_length
-        self.texture = pygame.image.load(texture)
-
-        self.create_triangles()
 
 
+class Cube(Plane):
+    def __init__(self, name, x_half_lenght, y_half_lenght, z_half_lenght, texture):
+        self.str_texture = texture
+        self.z_half_lenght = z_half_lenght
+        super().__init__(name, x_half_lenght, y_half_lenght, texture)
+
+    
     def create_triangles(self):
-        sl = self.side_length
-        vertices = (
-            Vector(-sl,  sl, -sl),
-            Vector(-sl, -sl, -sl),
-            Vector( sl, -sl, -sl),
-            Vector( sl,  sl, -sl),
-            Vector(-sl,  sl,  sl),
-            Vector(-sl, -sl,  sl),
-            Vector( sl, -sl,  sl),
-            Vector( sl,  sl,  sl)
+        plane = Plane(self.name, self.x_half_length, self.y_half_length, self.str_texture)
+        top_plane = plane.move(Vector(0, 0, self.z_half_lenght))
+        bottom_plane = plane.move(Vector(0, 0, -self.z_half_lenght) * 2)
+        
+        self.vertices = (
+            *top_plane.vertices,
+            *bottom_plane.vertices,
         )
 
-        # Will mybe need to change the order of the vertices ...
+        self.uv_map = plane.uv_map
+
         self.triangles = (
-            *self.get_triangles_from_vertices(vertices[0:4]),
-            *self.get_triangles_from_vertices(vertices[4:8]),
-            *self.get_triangles_from_vertices((vertices[0], vertices[3], vertices[4], vertices[7])),
-            *self.get_triangles_from_vertices((vertices[2], vertices[3], vertices[6], vertices[7])),
-            *self.get_triangles_from_vertices((vertices[1], vertices[2], vertices[5], vertices[6])),
-            *self.get_triangles_from_vertices((vertices[0], vertices[1], vertices[4], vertices[5]))
+            *top_plane.triangles, # top
+
+            CompactTriangle((4, 5, 0), self.texture, (2, 3, 0)), # back
+            CompactTriangle((0, 5, 2), self.texture, (1, 3, 0)),
+
+            CompactTriangle((5, 6, 1), self.texture, (2, 3, 1)), #left
+            CompactTriangle((1, 6, 2), self.texture, (1, 3, 0)),
+
+            CompactTriangle((2, 6, 7), self.texture, (1, 2, 3)), # front
+            CompactTriangle((2, 7, 3), self.texture, (1, 3, 0)),
+
+            CompactTriangle((3, 7, 4), self.texture, (1, 2, 3)), # right
+            CompactTriangle((3, 4, 0), self.texture, (1, 3, 0)),
+
+            CompactTriangle((4, 5, 6), self.texture, (0, 1, 2)), # bottom
+            CompactTriangle((4, 6, 7), self.texture, (0, 2, 3))
         )
-        
+
