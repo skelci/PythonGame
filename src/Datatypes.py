@@ -300,6 +300,6 @@ class CompactTriangle:
 
 @dataclass
 class Triangle:
-    vertices: tuple[Vector, Vector, Vector]
+    vertices: list[Vector, Vector, Vector]
     texture: pygame.Surface
     uv_map: tuple[Vector2, Vector2, Vector2]

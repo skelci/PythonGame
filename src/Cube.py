@@ -17,10 +17,10 @@ class Cube(Plane):
         top_plane = plane.move(Vector(0, 0, self.z_half_lenght))
         bottom_plane = plane.move(Vector(0, 0, -self.z_half_lenght) * 2)
         
-        self.vertices = (
+        self.vertices = [
             *top_plane.vertices,
             *bottom_plane.vertices,
-        )
+        ]
 
         self.uv_map = plane.uv_map
 

@@ -15,12 +15,12 @@ class Plane(Actor):
     def create_triangles(self):
         xhl = self.x_half_length
         yhl = self.y_half_length
-        self.vertices = (
+        self.vertices = [
             Vector( xhl,  yhl, 0),
             Vector(-xhl,  yhl, 0),
             Vector(-xhl, -yhl, 0),
             Vector( xhl, -yhl, 0)
-        )
+        ]
 
         self.uv_map = (
             Vector2(1, 1),

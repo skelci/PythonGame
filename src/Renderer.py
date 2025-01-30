@@ -56,10 +56,10 @@ class Renderer:
         #     ))
 
         for a in self.actors_to_draw:
-            for v in a.vertices:
-                v += self.camera.position
-                v.rotate(self.camera.rotation)
-
+            for i in range(3): # there are 3 vertices in a triangle
+                a.vertices[i] += self.camera.position
+                a.vertices[i].rotate(self.camera.rotation)
+            print(len(a.triangles))
             for t in a.triangles:
                 # decompress triangle
                 self.triangles.append(Triangle(
@@ -87,13 +87,16 @@ class Renderer:
                 cord.x = v.x / v.y * px
                 screen_cords.append(cord)
                 pygame.draw.circle(combined_surface, (255, 255, 255), (int(cord.x + self.width / 2), int(cord.y + self.height / 2)), 5)
-                print(cord.x + self.width / 2, cord.y + self.height / 2)
+                # print(cord.x + self.width / 2, cord.y + self.height / 2)
+                # print(cord)
+                # print(v)
+                # print()
 
-            texture = self.create_triangle_texture(((0, 0), (1, 0), (1, 1)), screen_cords, triangle.texture)
+            # texture = self.create_triangle_texture(((0, 0), (1, 0), (1, 1)), screen_cords, triangle.texture)
 
             # combined_surface.blit(*texture)
 
-        self.screen.blit(combined_surface, (0, 0))
+        # self.screen.blit(combined_surface, (0, 0))
 
         pygame.display.flip()
 
