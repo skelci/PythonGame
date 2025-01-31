@@ -72,6 +72,7 @@ class Engine(Renderer):
             return
 
         for actor in self.actors.values():
+            actor.tick(delta_time)
             if actor.visible:
                 self.add_actor_to_draw(actor)
 

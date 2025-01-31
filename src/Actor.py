@@ -76,5 +76,9 @@ class Actor:
             self.__texture = value
         else:
             raise Exception("Texture must be a string:", value)
+        
+
+    def tick(self, delta_time):
+        pass
 
 
