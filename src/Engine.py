@@ -8,7 +8,7 @@ class Engine:
     def __init__(self, game):
         pygame.init()
         self.actors_to_draw = {}
-        self.renderer = Renderer(game.window_width, game.window_height, game.window_title)
+        self.renderer = Renderer(game.window_width, game.window_height, game.camera_width, game.window_title)
 
         self.running = True
 

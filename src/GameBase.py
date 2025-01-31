@@ -7,6 +7,7 @@ class GameBase:
         self.window_title = "Game"
         self.window_width = 800
         self.window_height = 600
+        self.camera_width = 10
         self.running = False
 
 

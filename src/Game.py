@@ -1,8 +1,7 @@
 from GameBase import GameBase
 
-from Cube import Cube
+from Actor import Actor
 from Datatypes import *
-
 
 class Game(GameBase):
     def begin_play(self):
@@ -10,19 +9,12 @@ class Game(GameBase):
         self.window_width = 800
         self.window_height = 600
 
-        cube = Cube("Cube", 1, 1, 1, "res/textures/texture.jpeg")
+        self.cube = Actor(name = "Cube", x_half_size = 1, y_half_size = 1, position = Vector(0,0), visible = True, texture = "res/textures/texture.jpeg")
 
         super().begin_play()
 
         # Register the actors after the engine has been initialized
-        self.engine.register_actor(cube)
+        self.engine.register_actor(self.cube)
 
-        self.engine.renderer.camera.position = Vector(0, 0, 2)
-        self.engine.renderer.camera.rotation = Rotator().set_degrees(-90, 0, 0)
+        self.engine.renderer.camera_position = Vector(0, 2)
 
-
-    def tick(self):
-        super().tick()
-
-        print("Tick")
-    

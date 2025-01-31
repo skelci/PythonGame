@@ -1,134 +1,139 @@
 from Datatypes import *
 from Actor import Actor
 
-from dataclasses import dataclass
 import pygame
 import math
 
 
 
-@dataclass
-class Camera:
-    position: Vector
-    rotation: Rotator
-    fov: float
-
-
-
 class Renderer:
-    def __init__(self, width, height, title = "Pygame Window"):
-        self.width = width
-        self.height = height
+    def __init__(self, width, height, camera_width, title = "Pygame Window"):
+        self.__screen = None
+
+        self.resolution = Vector(width, height)
         self.title = title
+        self.camera_width = camera_width
 
-        self.screen = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption(self.title)
+        self.camera_position = Vector(0, 0)
 
-        self.actors_to_draw = []
-        self.triangles = []
+        self.__actors_to_draw = []
 
-        self.camera = Camera(Vector(0, 0, 0), Rotator(0, 0, 0), math.radians(90))
+        self.__textures = {}
+
+
+    @property
+    def resolution(self):
+        return self.__resolution
+
+
+    @resolution.setter
+    def resolution(self, value):
+        if isinstance(value, Vector) and value.x > 0 and value.y > 0:
+            self.__resolution = value
+            self.__screen = pygame.display.set_mode((value.x, value.y))
+        
+        else:
+            raise Exception("Width must be a positive integer:", value)
+        
+
+    @property
+    def title(self):
+        return self.__title
+    
+
+    @title.setter
+    def title(self, value):
+        if isinstance(value, str):
+            self.__title = value
+            pygame.display.set_caption(self.__title)
+        
+        else:
+            raise Exception("Title must be a string:", value)
+        
+
+    @property
+    def camera_position(self):
+        return self.__camera_position
+    
+
+    @camera_position.setter
+    def camera_position(self, value):
+        if isinstance(value, Vector):
+            self.__camera_position = value
+        
+        else:
+            raise Exception("Camera position must be a Vector:", value)
+        
+
+    @property
+    def camera_width(self):
+        return self.__camera_width
+    
+
+    @camera_width.setter
+    def camera_width(self, value):
+        if isinstance(value, (int, float)) and value > 0:
+            self.__camera_width = value
+        
+        else:
+            raise Exception("Camera width must be a positive number:", value)
+        
+
+    @property
+    def screen(self):
+        return self.__screen
+    
+
+    @property
+    def actors_to_draw(self):
+        return self.__actors_to_draw
+    
+
+    @property
+    def textures(self):
+        return self.__textures
 
 
     def add_actor_to_draw(self, actor):
         if not issubclass(type(actor), Actor):
-            raise Exception("Actor must be a subclass of Actor")
+            raise Exception("Actor must be a subclass of Actor:", actor)
         
-        self.actors_to_draw.append(actor)
-        
+        self.__actors_to_draw.append(actor)
 
+        if actor.texture:
+            if self.textures.get(actor.texture) is None:
+                self.textures[actor.texture] = pygame.image.load(actor.texture)
 
     
     def clear(self):
-        self.actors_to_draw = []
-        self.triangles = []
+        self.__actors_to_draw = []
 
 
     def render(self):
-        combined_surface = pygame.Surface((self.width, self.height))
+        combined_surface = pygame.Surface((self.resolution.x, self.resolution.y))
 
-        # for t in self.triangles:
-        #     self.triangles.append(Triangle(
-        #         ((t.vertices[0] - self.camera.position).rotate(self.camera.rotation),
-        #         (t.vertices[1] - self.camera.position).rotate(self.camera.rotation),
-        #         (t.vertices[2] - self.camera.position).rotate(self.camera.rotation)),
-        #         t.texture
-        #     ))
-
-        for a in self.actors_to_draw:
-            for i in range(3): # there are 3 vertices in a triangle
-                a.vertices[i] += self.camera.position
-                a.vertices[i].rotate(self.camera.rotation)
-            print(len(a.triangles))
-            for t in a.triangles:
-                # decompress triangle
-                self.triangles.append(Triangle(
-                    (a.vertices[t.vertices[0]], a.vertices[t.vertices[1]], a.vertices[t.vertices[2]]),
-                    t.texture,
-                    (a.uv_map[t.uv_map[0]], a.uv_map[t.uv_map[1]], a.uv_map[t.uv_map[2]])
-                ))
-            
-        def avg_y(t):
-            return sum(v.y for v in t.vertices)/3
-
-
-        self.triangles.sort(key = lambda t: avg_y(t), reverse = True)
+        camera_ratio = self.resolution.y / self.camera_width
         
-        for triangle in self.triangles:
-            if avg_y(triangle) < 0: # if triangle is behind camera
-                continue
+        for a in self.actors_to_draw:
+            self.draw_rectangle_texture(combined_surface, a.texture, a.x_half_size, a.y_half_size, a.position, camera_ratio)
 
-            screen_cords = []
-            px = math.tan(self.camera.fov / 2) * self.width
-            py = self.height / self.width * px
-            for v in triangle.vertices:
-                cord = Vector2()
-                cord.y = v.z / v.y * py
-                cord.x = v.x / v.y * px
-                screen_cords.append(cord)
-                pygame.draw.circle(combined_surface, (255, 255, 255), (int(cord.x + self.width / 2), int(cord.y + self.height / 2)), 5)
-                # print(cord.x + self.width / 2, cord.y + self.height / 2)
-                # print(cord)
-                # print(v)
-                # print()
-
-            # texture = self.create_triangle_texture(((0, 0), (1, 0), (1, 1)), screen_cords, triangle.texture)
-
-            # combined_surface.blit(*texture)
-
-        # self.screen.blit(combined_surface, (0, 0))
-
+        self.screen.blit(combined_surface, (0, 0))
         pygame.display.flip()
 
 
-    def create_triangle_texture(self, tex_cords, screen_cords, texture):
-        # Denormalize texture coordinates
-        tex_width, tex_height = texture.get_size()
-        tex_cords = (
-            (tex_cords[0][0] * tex_width, tex_cords[0][1] * tex_height),
-            (tex_cords[1][0] * tex_width, tex_cords[1][1] * tex_height),
-            (tex_cords[2][0] * tex_width, tex_cords[2][1] * tex_height)
+    def draw_rectangle_texture(self, screen, texture_str, x_half_size, y_half_size, position, camera_ratio):
+        texture = self.textures[texture_str]
+
+        rect_width = x_half_size * 2 * camera_ratio
+        rect_height = y_half_size * 2 * camera_ratio
+        scaled_texture = pygame.transform.scale(texture, (rect_width, rect_height))
+        
+        # Calculate the top-left position to draw the texture
+        top_left_position = (
+            camera_ratio * (position.x - x_half_size + self.camera_position.x) + self.resolution.x / 2,
+            camera_ratio * -(position.y + y_half_size + self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
         )
-
-        # Compute angle between vectors
-        dx1 = tex_cords[1][0] - tex_cords[0][0]
-        dy1 = tex_cords[1][1] - tex_cords[0][1]
-        dx2 = screen_cords[1].x - screen_cords[0].x
-        dy2 = screen_cords[1].y - screen_cords[0].y
-
-        angle1 = math.degrees(math.atan2(dy1, dx1))
-        angle2 = math.degrees(math.atan2(dy2, dx2))
-        rotation_angle = angle2 - angle1
-
-        # Compute scale factor (based on distance between first two points)
-        dist_img = math.hypot(dx1, dy1)
-        dist_screen = math.hypot(dx2, dy2)
-        scale_factor = dist_screen / dist_img if dist_img else 1
-
-        # Apply transformation
-        transformed = pygame.transform.rotozoom(texture, -rotation_angle, scale_factor)
-
-        # Blit at correct position
-        pos_x, pos_y = screen_cords[0]
-        return transformed, (pos_x, pos_y)
+        
+        # Draw the texture
+        screen.blit(scaled_texture, top_left_position)
         
