@@ -1,4 +1,4 @@
-from Datatypes import *
+from Components.Datatypes import *
 
 import os
 

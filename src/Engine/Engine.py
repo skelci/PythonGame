@@ -1,4 +1,4 @@
-from Renderer import Renderer
+from Engine.Renderer import Renderer
 
 import pygame
 

@@ -1,7 +1,7 @@
-from GameBase import GameBase
+from Engine.GameBase import GameBase
 
-from Actor import Actor
-from Datatypes import *
+from Components.Actor import Actor
+from Components.Datatypes import *
 
 class Game(GameBase):
     def begin_play(self):

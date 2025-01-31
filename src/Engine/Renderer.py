@@ -1,8 +1,7 @@
-from Datatypes import *
-from Actor import Actor
+from Components.Datatypes import *
+from Components.Actor import Actor
 
 import pygame
-import math
 
 
 
