@@ -7,7 +7,7 @@ def main():
 
     game.begin_play()
 
-    while game.running and game.engine.running:
+    while game.engine.running:
         game.tick()
 
 

@@ -1,38 +1,80 @@
 from Datatypes import *
 
+import os
+
 
 
 class Actor:
-    def __init__(self, name, x_half_size = 1, y_half_size = 1, position = Vector(), visible = True, texture = None):
+    def __init__(self, name, half_size, position = Vector(), visible = True, texture = None):
         self.name = name
-        self.x_half_size = x_half_size
-        self.y_half_size = y_half_size
+        self.half_size = half_size
         self.position = position
         self.visible = visible
         self.texture = texture
 
-        self.create_vertices()
 
-
-    def move(self, vector):
-        self.position += vector
-        for i in range(len(self.vertices)):
-            self.vertices[i] += vector
-
-        return self
+    @property
+    def name(self):
+        return self.__name
     
 
-    def create_vertices(self):
-        self.vertices = [
-            Vector(1, 1),
-            Vector(-1, 1),
-            Vector(-1, -1),
-            Vector(1, -1)
-        ]
+    @name.setter
+    def name(self, value):
+        if isinstance(value, str):
+            self.__name = value
+        else:
+            raise Exception("Name must be a string:", value)
 
-        for i in range(len(self.vertices)):
-            self.vertices[i] = self.vertices[i] * Vector(self.x_half_size, self.y_half_size)
 
-        return self
+    @property
+    def half_size(self):
+        return self.__half_size
+    
+
+    @half_size.setter
+    def half_size(self, value):
+        if isinstance(value, Vector) and value.x > 0 and value.y > 0:
+            self.__half_size = value
+        else:
+            raise Exception("Half size must be a Vector:", value)
+        
+
+    @property
+    def position(self):
+        return self.__position
+    
+
+    @position.setter
+    def position(self, value):
+        if isinstance(value, Vector):
+            self.__position = value
+        else:
+            raise Exception("Position must be a Vector:", value)
+        
+
+    @property
+    def visible(self):
+        return self.__visible
+    
+
+    @visible.setter
+    def visible(self, value):
+        if isinstance(value, bool):
+            self.__visible = value
+        else:
+            raise Exception("Visible must be a bool:", value)
+        
+
+    @property
+    def texture(self):
+        return self.__texture
+    
+
+    @texture.setter
+    def texture(self, value):
+        if (isinstance(value, str) and os.path.isfile(value)) or value == None:
+            self.__texture = value
+        else:
+            raise Exception("Texture must be a string:", value)
 
 

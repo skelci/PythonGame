@@ -31,7 +31,6 @@ class Renderer:
         if isinstance(value, Vector) and value.x > 0 and value.y > 0:
             self.__resolution = value
             self.__screen = pygame.display.set_mode((value.x, value.y))
-        
         else:
             raise Exception("Width must be a positive integer:", value)
         
@@ -46,7 +45,6 @@ class Renderer:
         if isinstance(value, str):
             self.__title = value
             pygame.display.set_caption(self.__title)
-        
         else:
             raise Exception("Title must be a string:", value)
         
@@ -60,7 +58,6 @@ class Renderer:
     def camera_position(self, value):
         if isinstance(value, Vector):
             self.__camera_position = value
-        
         else:
             raise Exception("Camera position must be a Vector:", value)
         
@@ -74,7 +71,6 @@ class Renderer:
     def camera_width(self, value):
         if isinstance(value, (int, float)) and value > 0:
             self.__camera_width = value
-        
         else:
             raise Exception("Camera width must be a positive number:", value)
         
@@ -115,23 +111,23 @@ class Renderer:
         camera_ratio = self.resolution.y / self.camera_width
         
         for a in self.actors_to_draw:
-            self.draw_rectangle_texture(combined_surface, a.texture, a.x_half_size, a.y_half_size, a.position, camera_ratio)
+            self.__draw_rectangle_texture(combined_surface, a.texture, a.half_size, a.position, camera_ratio)
 
         self.screen.blit(combined_surface, (0, 0))
         pygame.display.flip()
 
 
-    def draw_rectangle_texture(self, screen, texture_str, x_half_size, y_half_size, position, camera_ratio):
+    def __draw_rectangle_texture(self, screen, texture_str, half_size, position, camera_ratio):
         texture = self.textures[texture_str]
 
-        rect_width = x_half_size * 2 * camera_ratio
-        rect_height = y_half_size * 2 * camera_ratio
+        rect_width = half_size.x * 2 * camera_ratio
+        rect_height = half_size.y * 2 * camera_ratio
         scaled_texture = pygame.transform.scale(texture, (rect_width, rect_height))
         
         # Calculate the top-left position to draw the texture
         top_left_position = (
-            camera_ratio * (position.x - x_half_size + self.camera_position.x) + self.resolution.x / 2,
-            camera_ratio * -(position.y + y_half_size + self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
+            camera_ratio * (position.x - half_size.x + self.camera_position.x) + self.resolution.x / 2,
+            camera_ratio * -(position.y + half_size.y + self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
         )
         
         # Draw the texture

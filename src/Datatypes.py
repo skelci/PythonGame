@@ -13,6 +13,14 @@ class Vector:
     x: float = 0
     y: float = 0
 
+
+    def __post_init__(self):
+        if not isinstance(self.x, (int, float)):
+            raise TypeError(f"x must be an int or float, got {type(self.x).__name__}")
+        if not isinstance(self.y, (int, float)):
+            raise TypeError(f"y must be an int or float, got {type(self.y).__name__}")
+        
+
     def __iter__(self) -> Iterator[float]:
         yield self.x
         yield self.y
