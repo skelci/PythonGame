@@ -8,6 +8,7 @@ class GameBase:
         self.window_width = 800
         self.window_height = 600
         self.camera_width = 10
+        self.fps_cap = 60
 
 
     @property
@@ -63,6 +64,19 @@ class GameBase:
         
 
     @property
+    def fps_cap(self):
+        return self.__fps_cap
+    
+
+    @fps_cap.setter
+    def fps_cap(self, value):
+        if isinstance(value, int) and value > 0:
+            self.__fps_cap = value
+        else:
+            raise Exception("FPS cap must be a positive integer:", value)
+        
+
+    @property
     def engine(self):
         return self.__engine
 
@@ -72,4 +86,5 @@ class GameBase:
 
 
     def tick(self):
-        self.engine.tick()
+        delta_time = self.engine.tick()
+        return delta_time
