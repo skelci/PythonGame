@@ -98,6 +98,8 @@ class Engine(Renderer):
 
         while collisions_resolved and max_iterations > 0:
             collisions_resolved = False
+            corrected_actors = {}
+
             for actor1 in self.actors.values():
                 if isinstance(actor1, Rigidbody):
                     for actor2 in self.actors.values():
@@ -106,6 +108,10 @@ class Engine(Renderer):
                             direction = actor1.collision_response_direction(actor2)    
                             # Check collision
                             if not direction == Vector(0, 0):
-                                actor1.position += direction
                                 collisions_resolved = True
+                                corrected_actors[actor1.name] = direction
+
+            # Apply corrections
+            for name, direction in corrected_actors.items():
+                self.actors[name].position += direction
             max_iterations -= 1
