@@ -76,9 +76,13 @@ class Actor:
             self.__texture = value
         else:
             raise Exception("Texture must be a string:", value)
-        
+
 
     def tick(self, delta_time):
+        pass
+
+
+    def on_collision(self, collided_direction):
         pass
 
 

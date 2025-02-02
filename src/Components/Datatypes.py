@@ -86,9 +86,33 @@ class Vector:
         
         return NotImplemented
     
+
+    def __neg__(self):
+        return Vector(
+            -self.x,
+            -self.y
+        )
+
+    
     @property
     def lenght(self):
         return (self.x ** 2 + self.y ** 2) ** 0.5
+    
+
+    @property
+    def normalized(self):
+        if self.lenght == 0:
+            return Vector(0, 0)
+        
+        return self / self.lenght
+    
+
+    @property
+    def abs(self):
+        return Vector(
+            abs(self.x),
+            abs(self.y)
+        )
     
 
     def rotate(self, rotator):

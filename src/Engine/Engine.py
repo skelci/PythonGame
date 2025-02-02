@@ -74,7 +74,10 @@ class Engine(Renderer):
             pygame.quit()
             return
         
-        self.__physics_step(delta_time)
+        left_delta_time = delta_time
+        while left_delta_time > 0:
+            self.__physics_step(min(left_delta_time, 0.05)) # Limiting the physics step to 50ms / 20tps
+            left_delta_time -= 0.05
 
         for actor in self.actors.values():
             actor.tick(delta_time)
@@ -87,31 +90,38 @@ class Engine(Renderer):
 
 
     def __physics_step(self, delta_time):
-        # 1. Move all rigidbodies based on velocity
         for actor in self.actors.values():
             if isinstance(actor, Rigidbody):
                 actor.position += actor.velocity * delta_time
 
-        # 2. Resolve collisions via simple iterative approach
         max_iterations = 10
-        collisions_resolved = True
+        collisions_not_resolved = True
+        collided_actors = {}
 
-        while collisions_resolved and max_iterations > 0:
-            collisions_resolved = False
+        while collisions_not_resolved and max_iterations > 0:
+            collisions_not_resolved = False
             corrected_actors = {}
 
             for actor1 in self.actors.values():
                 if isinstance(actor1, Rigidbody):
                     for actor2 in self.actors.values():
-                        if actor2 is not actor1: # Even if second actor isn't a Rigidbody, it can still be a trigger
-                            # Determine direction to push out of collision
+                        if actor2 is not actor1:
                             direction = actor1.collision_response_direction(actor2)    
-                            # Check collision
                             if not direction == Vector(0, 0):
-                                collisions_resolved = True
+                                collisions_not_resolved = True
                                 corrected_actors[actor1.name] = direction
 
-            # Apply corrections
+                                if not actor1.name in collided_actors:
+                                    collided_actors[actor1.name] = Vector(0, 0)
+                                if not actor2.name in collided_actors:
+                                    collided_actors[actor2.name] = Vector(0, 0)
+                                collided_actors[actor1.name] += direction
+                                collided_actors[actor2.name] += -direction
+
             for name, direction in corrected_actors.items():
                 self.actors[name].position += direction
+
             max_iterations -= 1
+
+        for name in collided_actors:
+            self.actors[name].on_collision(-collided_actors[name].normalized)
