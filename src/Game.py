@@ -1,7 +1,8 @@
-from Engine.GameBase import GameBase
+from engine.game_base import GameBase
 
-from Components.Actor import Actor
-from Components.Datatypes import *
+from components.actor import Actor
+from components.rigidbody import Rigidbody
+from components.datatypes import *
 
 class Game(GameBase):
     def begin_play(self):
@@ -10,14 +11,19 @@ class Game(GameBase):
         self.window_height = 600
         self.fps_cap = 120
 
-        self.cube = Actor(name = "Cube", half_size = Vector(1, 1), position = Vector(0,0), visible = True, texture = "res/textures/texture.jpeg")
-
         super().begin_play()
 
         # Register the actors after the engine has been initialized
-        self.engine.register_actor(self.cube)
+        reg = lambda actor: self.engine.register_actor(actor)
+        # name, half_size, position, visible, texture, initial_velocity
+        reg(Actor("Cube", Vector(5, 1), Vector(0, 0), True, "res/textures/texture.jpeg"))
+        reg(Actor("Cube2", Vector(1, 3), Vector(-5, 2), True, "res/textures/texture.jpeg"))
+        reg(Actor("Cube3", Vector(1, 3), Vector(5, 2), True, "res/textures/texture.jpeg"))
+        reg(Rigidbody("Rigidbody", Vector(1, 1), Vector(-2, 2), True, "res/textures/texture.jpeg", Vector(1, 0)))
+        reg(Rigidbody("Rigidbody2", Vector(1, 1), Vector(2, 2), True, "res/textures/texture.jpeg", Vector(-1, 0)))
 
-        self.engine.camera_position = Vector(0, 2)
+        self.engine.camera_position = Vector(4, 3)
+        self.engine.camera_width = 20
 
 
     def tick(self):

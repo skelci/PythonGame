@@ -1,4 +1,4 @@
-from Components.Datatypes import *
+from components.datatypes import *
 
 import os
 

@@ -1,4 +1,7 @@
-from Engine.Renderer import Renderer
+from engine.renderer import Renderer
+
+from components.rigidbody import Rigidbody
+from components.datatypes import *
 
 import pygame
 
@@ -54,7 +57,7 @@ class Engine(Renderer):
 
     def register_actor(self, actor, b_render = True):
         if b_render:
-            if actor.name in self.actors_to_draw:
+            if actor.name in self.actors:
                 raise Exception(f"Actor {actor.name} is already registered")
             self.__actors[actor.name] = actor
 
@@ -70,6 +73,8 @@ class Engine(Renderer):
         if not self.running:
             pygame.quit()
             return
+        
+        self.__physics_step(delta_time)
 
         for actor in self.actors.values():
             actor.tick(delta_time)
@@ -80,3 +85,27 @@ class Engine(Renderer):
 
         return delta_time
 
+
+    def __physics_step(self, delta_time):
+        # 1. Move all rigidbodies based on velocity
+        for actor in self.actors.values():
+            if isinstance(actor, Rigidbody):
+                actor.position += actor.velocity * delta_time
+
+        # 2. Resolve collisions via simple iterative approach
+        max_iterations = 10
+        collisions_resolved = True
+
+        while collisions_resolved and max_iterations > 0:
+            collisions_resolved = False
+            for actor1 in self.actors.values():
+                if isinstance(actor1, Rigidbody):
+                    for actor2 in self.actors.values():
+                        if actor2 is not actor1: # Even if second actor isn't a Rigidbody, it can still be a trigger
+                            # Determine direction to push out of collision
+                            direction = actor1.collision_response_direction(actor2)    
+                            # Check collision
+                            if not direction == Vector(0, 0):
+                                actor1.position += direction
+                                collisions_resolved = True
+            max_iterations -= 1

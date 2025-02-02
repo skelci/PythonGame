@@ -1,5 +1,5 @@
-from Components.Datatypes import *
-from Components.Actor import Actor
+from components.datatypes import *
+from components.actor import Actor
 
 import pygame
 
@@ -125,8 +125,8 @@ class Renderer:
         
         # Calculate the top-left position to draw the texture
         top_left_position = (
-            camera_ratio * (position.x - half_size.x + self.camera_position.x) + self.resolution.x / 2,
-            camera_ratio * -(position.y + half_size.y + self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
+            camera_ratio * (position.x - half_size.x - self.camera_position.x) + self.resolution.x / 2,
+            camera_ratio * -(position.y + half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
         )
         
         # Draw the texture
