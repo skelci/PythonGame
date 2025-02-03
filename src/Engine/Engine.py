@@ -76,8 +76,8 @@ class Engine(Renderer):
         
         left_delta_time = delta_time
         while left_delta_time > 0:
-            self.__physics_step(min(left_delta_time, 0.02)) # Limiting the physics step to 20ms / 50tps
-            left_delta_time -= 0.05
+            self.__physics_step(min(left_delta_time, 0.01)) # Limit physics step to 10ms / 100tps
+            left_delta_time -= 0.01
 
         for actor in self.actors.values():
             actor.tick(delta_time)

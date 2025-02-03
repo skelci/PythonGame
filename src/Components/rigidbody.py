@@ -57,8 +57,8 @@ class Rigidbody(Actor):
         v_rel = self.velocity - collision_data.velocity
         e = self.restitution * collision_data.restitution
         j = v_rel * -(1 + e) / (1 / self.mass + 1 / collision_data.mass)
-        self.velocity += j / self.mass
-
+        self.velocity += j / self.mass * collision_data.normal.abs
+        
 
     def tick(self, delta_time):
         if self.velocity.length < self.min_velocity:
@@ -88,9 +88,9 @@ class Rigidbody(Actor):
         elif min_push == push_left:
             direction.x = push_left
         elif min_push == push_down:
-            direction.y = -push_down
+            direction.y = push_down # idk why but for y axis down is positive
         else:
-            direction.y = push_up
+            direction.y = -push_up
         
         return direction
         
