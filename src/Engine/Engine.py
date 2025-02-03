@@ -76,7 +76,7 @@ class Engine(Renderer):
         
         left_delta_time = delta_time
         while left_delta_time > 0:
-            self.__physics_step(min(left_delta_time, 0.05)) # Limiting the physics step to 50ms / 20tps
+            self.__physics_step(min(left_delta_time, 0.02)) # Limiting the physics step to 20ms / 50tps
             left_delta_time -= 0.05
 
         for actor in self.actors.values():
@@ -111,12 +111,8 @@ class Engine(Renderer):
                                 collisions_not_resolved = True
                                 corrected_actors[actor1.name] = direction
 
-                                if not actor1.name in collided_actors:
-                                    collided_actors[actor1.name] = Vector(0, 0)
-                                if not actor2.name in collided_actors:
-                                    collided_actors[actor2.name] = Vector(0, 0)
-                                collided_actors[actor1.name] += direction
-                                collided_actors[actor2.name] += -direction
+                                collided_actors[actor1.name] = CollisionData( direction.normalized, actor2.velocity if hasattr(actor2, "velocity") else Vector(0, 0), actor2.restitution, actor2.mass if hasattr(actor2, "mass") else float("inf"), actor2)
+                                collided_actors[actor2.name] = CollisionData(-direction.normalized, actor1.velocity, actor1.restitution, actor1.mass, actor1)
 
             for name, direction in corrected_actors.items():
                 self.actors[name].position += direction
@@ -124,4 +120,4 @@ class Engine(Renderer):
             max_iterations -= 1
 
         for name in collided_actors:
-            self.actors[name].on_collision(-collided_actors[name].normalized)
+            self.actors[name].on_collision(collided_actors[name])

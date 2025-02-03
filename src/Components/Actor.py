@@ -5,12 +5,13 @@ import os
 
 
 class Actor:
-    def __init__(self, name, half_size, position = Vector(), visible = True, texture = None):
+    def __init__(self, name, half_size, position = Vector(), visible = False, texture = None, restitution = 1):
         self.name = name
         self.half_size = half_size
         self.position = position
         self.visible = visible
         self.texture = texture
+        self.restitution = restitution
 
 
     @property
@@ -76,13 +77,26 @@ class Actor:
             self.__texture = value
         else:
             raise Exception("Texture must be a string:", value)
+        
+
+    @property
+    def restitution(self):
+        return self.__restitution
+    
+
+    @restitution.setter
+    def restitution(self, value):
+        if isinstance(value, (int, float)) and 0 <= value <= 1:
+            self.__restitution = value
+        else:
+            raise Exception("Restitution must be a float between 0 and 1:", value)
 
 
     def tick(self, delta_time):
         pass
 
 
-    def on_collision(self, collided_direction):
+    def on_collision(self, collision_data):
         pass
 
 

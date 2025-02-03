@@ -5,12 +5,12 @@ from components.datatypes import *
 
 
 class Rigidbody(Actor):
-    def __init__(self, name, half_size, position = Vector(), visible = True, texture = None, initial_velocity = Vector(), restitution = 0.5, min_velocity = Vector(0.01, 0.01)):
-        super().__init__(name, half_size, position, visible, texture)
+    def __init__(self, name, half_size, position = Vector(), visible = False, texture = None, restitution = 0.5, initial_velocity = Vector(), min_velocity = 0, mass = 1):
+        super().__init__(name, half_size, position, visible, texture, restitution)
 
         self.velocity = initial_velocity
-        self.restitution = restitution
         self.min_velocity = min_velocity
+        self.mass = mass
         
 
     @property
@@ -27,62 +27,61 @@ class Rigidbody(Actor):
         
 
     @property
-    def restitution(self):
-        return self.__restitution
-    
-
-    @restitution.setter
-    def restitution(self, value):
-        if isinstance(value, (int, float)) and 0 <= value <= 1:
-            self.__restitution = value
-        else:
-            raise Exception("Restitution must be a float between 0 and 1:", value)
-        
-
-    @property
     def min_velocity(self):
         return self.__min_velocity
     
 
     @min_velocity.setter
     def min_velocity(self, value):
-        if isinstance(value, Vector) and value.abs == value:
+        if isinstance(value, (int, float)) and value >= 0:
             self.__min_velocity = value
-        elif isinstance(value, (int, float)):
-            self.__min_velocity = Vector(value, value)
         else:
-            raise Exception("Min velocity must be a positive Vector or a positive float:", value)
+            raise Exception("Min velocity must be a positive float:", value)
         
 
-    def on_collision(self, collided_direction):
-        self.velocity = -collided_direction.abs * self.velocity * self.restitution
+    @property
+    def mass(self):
+        return self.__mass
+    
+
+    @mass.setter
+    def mass(self, value):
+        if isinstance(value, (int, float)) and value > 0:
+            self.__mass = value
+        else:
+            raise Exception("Mass must be a positive float:", value)
+        
+
+    def on_collision(self, collision_data):
+        # Bounce based on formula: j = v_rel * -(1 + e) / (1 / m1 + 1 / m2)
+        v_rel = self.velocity - collision_data.velocity
+        e = self.restitution * collision_data.restitution
+        j = v_rel * -(1 + e) / (1 / self.mass + 1 / collision_data.mass)
+        self.velocity += j / self.mass
 
 
     def tick(self, delta_time):
-        if self.velocity.lenght < self.min_velocity.lenght:
+        if self.velocity.length < self.min_velocity:
             self.velocity = Vector(0, 0)
 
 
-    def is_colliding(self, other_actor):
-        distances = self.__get_edge_distances(other_actor)
+    def is_colliding(self, collided_actor):
+        distances = self.__get_edge_distances(collided_actor)
         return (
             all(d > 0 for d in distances),
             distances
         )
 
 
-    def collision_response_direction(self, other_actor):
-        is_colliding, distances = self.is_colliding(other_actor)
+    def collision_response_direction(self, collided_actor):
+        is_colliding, distances = self.is_colliding(collided_actor)
         if not is_colliding:
-            return Vector(0, 0)  # No collision → no push
+            return Vector(0, 0)
 
-        # Distances needed to push out
         push_right, push_left, push_up, push_down = distances
         
-        # Pick the smallest push
         min_push = min(push_right, push_left, push_down, push_up)
         
-        # Determine direction based on which push is smallest
         direction = Vector(0, 0)
         if min_push == push_right:
             direction.x = -push_right
@@ -93,17 +92,16 @@ class Rigidbody(Actor):
         else:
             direction.y = push_up
         
-        # Return the vector to move out of collision
         return direction
         
 
-    def __get_edge_distances(self, other_actor):
+    def __get_edge_distances(self, collided_actor):
         # right, left, top, bottom
         return (
-            self.position.x + self.half_size.x - (other_actor.position.x - other_actor.half_size.x),
-            other_actor.position.x + other_actor.half_size.x - (self.position.x - self.half_size.x),
-            self.position.y + self.half_size.y - (other_actor.position.y - other_actor.half_size.y),
-            other_actor.position.y + other_actor.half_size.y - (self.position.y - self.half_size.y)
+            self.position.x + self.half_size.x - (collided_actor.position.x - collided_actor.half_size.x),
+            collided_actor.position.x + collided_actor.half_size.x - (self.position.x - self.half_size.x),
+            self.position.y + self.half_size.y - (collided_actor.position.y - collided_actor.half_size.y),
+            collided_actor.position.y + collided_actor.half_size.y - (self.position.y - self.half_size.y)
         )
     
     

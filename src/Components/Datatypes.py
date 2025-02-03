@@ -95,16 +95,16 @@ class Vector:
 
     
     @property
-    def lenght(self):
+    def length(self):
         return (self.x ** 2 + self.y ** 2) ** 0.5
     
 
     @property
     def normalized(self):
-        if self.lenght == 0:
+        if self.length == 0:
             return Vector(0, 0)
         
-        return self / self.lenght
+        return self / self.length
     
 
     @property
@@ -115,11 +115,18 @@ class Vector:
         )
     
 
-    def rotate(self, rotator):
-        x = self.x * math.cos(rotator.roll) - self.y * math.sin(rotator.roll)
-        y = self.x * math.sin(rotator.roll) + self.y * math.cos(rotator.roll)
+    def dot(self, other):
+        if not isinstance(other, Vector):
+            raise TypeError(f"other must be a Vector, got {type(other).__name__}")
         
-        self.x = x
-        self.y = y
-        
-        return self
+        return self.x * other.x + self.y * other.y
+
+
+
+@dataclass
+class CollisionData:
+    normal: Vector
+    velocity: Vector
+    restitution: float
+    mass: float
+    collided_actor: str
