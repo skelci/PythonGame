@@ -16,7 +16,7 @@ class Game(GameBase):
         # Register the actors after the engine has been initialized
         eng = self.engine
         reg = lambda actor: eng.register_actor(actor)
-        #   class     name,         half_size,        position,       visible, texture,                  restitution, inital_velocity, min_velocity, mass
+        #   class     name,         half_size,        position,        visible, texture,                  restitution, inital_velocity, min_velocity, mass
         reg(Actor    ("Cube1"     , Vector(10 , 0.5), Vector( 0 ,  5), True, "res/textures/texture.jpeg", 1))
         reg(Actor    ("Cube2"     , Vector(0.5, 5  ), Vector( 10,  0), True, "res/textures/texture.jpeg", 1))
         reg(Actor    ("Cube3"     , Vector(10 , 0.5), Vector( 0 , -5), True, "res/textures/texture.jpeg", 1))
