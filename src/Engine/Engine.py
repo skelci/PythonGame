@@ -75,12 +75,13 @@ class Engine(Renderer):
             return
         
         left_delta_time = delta_time
-        while left_delta_time > 0:
-            self.__physics_step(min(left_delta_time, 0.01)) # Limit physics step to 10ms / 100tps
+        while left_delta_time > 0: # Limit physics step to 10ms
+            self.__physics_step(min(left_delta_time, 0.01))
+            for actor in self.actors.values():
+                actor.tick(min(left_delta_time, 0.01))
             left_delta_time -= 0.01
 
         for actor in self.actors.values():
-            actor.tick(delta_time)
             if actor.visible:
                 self.add_actor_to_draw(actor)
 

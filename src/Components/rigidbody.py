@@ -5,12 +5,13 @@ from components.datatypes import *
 
 
 class Rigidbody(Actor):
-    def __init__(self, name, half_size, position = Vector(), visible = False, texture = None, restitution = 0.5, initial_velocity = Vector(), min_velocity = 0, mass = 1):
+    def __init__(self, name, half_size, position = Vector(), visible = False, texture = None, restitution = 0.5, initial_velocity = Vector(), min_velocity = 0, mass = 1, gravity_scale = 1):
         super().__init__(name, half_size, position, visible, texture, restitution)
 
         self.velocity = initial_velocity
         self.min_velocity = min_velocity
         self.mass = mass
+        self.gravity_scale = gravity_scale
         
 
     @property
@@ -52,6 +53,19 @@ class Rigidbody(Actor):
             raise Exception("Mass must be a positive float:", value)
         
 
+    @property
+    def gravity_scale(self):
+        return self.__gravity_scale
+    
+
+    @gravity_scale.setter
+    def gravity_scale(self, value):
+        if isinstance(value, (int, float)):
+            self.__gravity_scale = value
+        else:
+            raise Exception("Gravity scale must be a float:", value)
+        
+
     def on_collision(self, collision_data):
         # Bounce based on formula: j = v_rel * -(1 + e) / (1 / m1 + 1 / m2)
         v_rel = self.velocity - collision_data.velocity
@@ -63,6 +77,8 @@ class Rigidbody(Actor):
     def tick(self, delta_time):
         if self.velocity.length < self.min_velocity:
             self.velocity = Vector(0, 0)
+
+        self.velocity.y += gravity * self.gravity_scale * delta_time
 
 
     def is_colliding(self, collided_actor):

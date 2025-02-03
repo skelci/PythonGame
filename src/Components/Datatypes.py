@@ -5,6 +5,7 @@ import math
 
 
 pi = math.pi
+gravity  = -9.80665
 
 
 

@@ -4,6 +4,8 @@ from components.actor import Actor
 from components.rigidbody import Rigidbody
 from components.datatypes import *
 
+
+
 class Game(GameBase):
     def begin_play(self):
         self.window_title = "Game"
@@ -13,7 +15,7 @@ class Game(GameBase):
 
         super().begin_play()
 
-        # Register the actors after the engine has been initialized
+        # Register actors after engine has been initialized
         eng = self.engine
         reg = lambda actor: eng.register_actor(actor)
         #   class     name,         half_size,        position,        visible, texture,                  restitution, inital_velocity, min_velocity, mass
@@ -21,12 +23,12 @@ class Game(GameBase):
         reg(Actor    ("Cube2"     , Vector(0.5, 5  ), Vector( 10,  0), True, "res/textures/texture.jpeg", 1))
         reg(Actor    ("Cube3"     , Vector(10 , 0.5), Vector( 0 , -5), True, "res/textures/texture.jpeg", 1))
         reg(Actor    ("Cube4"     , Vector(0.5, 5  ), Vector(-10,  0), True, "res/textures/texture.jpeg", 1))
-        reg(Rigidbody("Rigidbody1", Vector(0.5, 0.5), Vector( 2 ,  2), True, "res/textures/texture.jpeg", 1, Vector(0, 16), 0.1, 8 ))
-        reg(Rigidbody("Rigidbody2", Vector(0.5, 0.5), Vector( 2 , -2), True, "res/textures/texture.jpeg", 1, Vector(0, 16), 0.1, 4 ))
-        reg(Rigidbody("Rigidbody3", Vector(0.5, 0.5), Vector(-3 ,  2), True, "res/textures/texture.jpeg", 1, Vector(0, 32), 0.1, 1 ))
-        reg(Rigidbody("Rigidbody4", Vector(0.5, 0.5), Vector(-3 , -2), True, "res/textures/texture.jpeg", 1, Vector(16, 0), 0.1, 16))
+        reg(Rigidbody("Rigidbody1", Vector(0.5, 0.5), Vector( 2 ,  2), True, "res/textures/texture.jpeg", 1  , Vector(0, 6), 0, 8 ))
+        reg(Rigidbody("Rigidbody2", Vector(0.5, 0.5), Vector( 2 , -2), True, "res/textures/texture.jpeg", 1  , Vector(0, 6), 0, 4 ))
+        reg(Rigidbody("Rigidbody3", Vector(0.5, 0.5), Vector(-3 ,  2), True, "res/textures/texture.jpeg", 1  , Vector(0, 2), 0, 1 ))
+        reg(Rigidbody("Rigidbody4", Vector(0.5, 0.5), Vector(-3 , -2), True, "res/textures/texture.jpeg", 0.5, Vector(6, 0), 0, 16))
 
-        eng.camera_position = Vector(0, 0)
+        eng.camera_position = Vector(0, -3)
         eng.camera_width = 20
 
 
