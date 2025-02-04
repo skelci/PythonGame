@@ -9,6 +9,7 @@ class GameBase:
         self.window_height = 600
         self.camera_width = 10
         self.fps_cap = 60
+        self.min_tps = 50
 
 
     @property
@@ -74,6 +75,19 @@ class GameBase:
             self.__fps_cap = value
         else:
             raise Exception("FPS cap must be a positive integer:", value)
+        
+
+    @property
+    def min_tps(self):
+        return self.__min_tps
+    
+
+    @min_tps.setter
+    def min_tps(self, value):
+        if isinstance(value, (int, float)) and value > 0:
+            self.__min_tps = value
+        else:
+            raise Exception("Minimum TPS must be a positive number:", value)
         
 
     @property

@@ -5,13 +5,17 @@ from components.datatypes import *
 
 
 class Rigidbody(Actor):
-    def __init__(self, name, half_size, position = Vector(), visible = False, texture = None, restitution = 0.5, initial_velocity = Vector(), min_velocity = 0, mass = 1, gravity_scale = 1):
+    def __init__(self, name, half_size, position = Vector(), visible = False, texture = None, restitution = 0.5, initial_velocity = Vector(), min_velocity = 0, mass = 1, gravity_scale = 1, friction = 0.5, air_resistance = 0.1):
         super().__init__(name, half_size, position, visible, texture, restitution)
 
         self.velocity = initial_velocity
         self.min_velocity = min_velocity
         self.mass = mass
         self.gravity_scale = gravity_scale
+        self.friction = friction
+        self.air_resistance = air_resistance
+
+        self.collided_sides = Vector(0, 0) # right, left, top, bottom
         
 
     @property
@@ -66,6 +70,45 @@ class Rigidbody(Actor):
             raise Exception("Gravity scale must be a float:", value)
         
 
+    @property
+    def friction(self):
+        return self.__friction
+    
+
+    @friction.setter
+    def friction(self, value):
+        if isinstance(value, (int, float)) and value >= 0:
+            self.__friction = value
+        else:
+            raise Exception("Friction must be a positive float:", value)
+        
+
+    @property
+    def air_resistance(self):
+        return self.__air_resistance
+    
+
+    @air_resistance.setter
+    def air_resistance(self, value):
+        if isinstance(value, (int, float)) and value >= 0:
+            self.__air_resistance = value
+        else:
+            raise Exception("Air resistance must be a positive float:", value)
+        
+
+    @property
+    def collided_sides(self):
+        return self.__collided_sides
+    
+
+    @collided_sides.setter
+    def collided_sides(self, value):
+        if isinstance(value, Vector):
+            self.__collided_sides = value
+        else:
+            raise Exception("Collided sides must be a Vector:", value)
+        
+
     def on_collision(self, collision_data):
         # Bounce based on formula: j = v_rel * -(1 + e) / (1 / m1 + 1 / m2)
         v_rel = self.velocity - collision_data.velocity
@@ -75,14 +118,38 @@ class Rigidbody(Actor):
         
 
     def tick(self, delta_time):
+        # Min velocity
         if self.velocity.length < self.min_velocity:
             self.velocity = Vector(0, 0)
 
-        self.velocity.y += gravity * self.gravity_scale * delta_time
+        # Gravity
+        if self.collided_sides.y >= 0:
+            self.velocity.y += gravity * self.gravity_scale * delta_time
+
+        # Friction
+        if self.collided_sides.y != 0:
+            v_change = self.velocity.x * self.friction * delta_time
+            if self.velocity.abs.x < abs(v_change):
+                self.velocity.x = 0
+            else:
+                self.velocity -= v_change
+        if self.collided_sides.x != 0:
+            v_change = self.velocity.y * self.friction * delta_time
+            if self.velocity.abs.y < abs(v_change):
+                self.velocity.y = 0
+            else:
+                self.velocity -= v_change
+        
+        # Air resistance
+        v_change = self.velocity * self.air_resistance * delta_time
+        if self.velocity.length < v_change.length:
+            self.velocity = Vector(0, 0)
+        else:
+            self.velocity -= v_change
 
 
     def is_colliding(self, collided_actor):
-        distances = self.__get_edge_distances(collided_actor)
+        distances = self.get_edge_distances(collided_actor)
         return (
             all(d > 0 for d in distances),
             distances
@@ -111,7 +178,7 @@ class Rigidbody(Actor):
         return direction
         
 
-    def __get_edge_distances(self, collided_actor):
+    def get_edge_distances(self, collided_actor):
         # right, left, top, bottom
         return (
             self.position.x + self.half_size.x - (collided_actor.position.x - collided_actor.half_size.x),

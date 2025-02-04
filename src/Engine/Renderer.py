@@ -107,7 +107,7 @@ class Renderer:
     def render(self):
         combined_surface = pygame.Surface((self.resolution.x, self.resolution.y))
 
-        camera_ratio = self.resolution.y / self.camera_width
+        camera_ratio = self.resolution.x / self.camera_width
         
         for a in self.actors_to_draw:
             self.__draw_rectangle_texture(combined_surface, a.texture, a.half_size, a.position, camera_ratio)

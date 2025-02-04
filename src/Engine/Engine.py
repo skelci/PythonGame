@@ -10,6 +10,7 @@ import pygame
 class Engine(Renderer):
     def __init__(self, game):
         self.fps = game.fps_cap
+        self.tps = game.min_tps
 
         pygame.init()
         self.__actors = {}
@@ -43,6 +44,19 @@ class Engine(Renderer):
             self.__running = value
         else:
             raise Exception("Running must be a boolean:", value)
+        
+
+    @property
+    def tps(self):
+        return self.__tps
+    
+
+    @tps.setter
+    def tps(self, value):
+        if isinstance(value, (int, float)) and value > 0:
+            self.__tps = value
+        else:
+            raise Exception("TPS must be a positive number:", value)
 
 
     @property
@@ -76,10 +90,8 @@ class Engine(Renderer):
         
         left_delta_time = delta_time
         while left_delta_time > 0: # Limit physics step to 10ms
-            self.__physics_step(min(left_delta_time, 0.01))
-            for actor in self.actors.values():
-                actor.tick(min(left_delta_time, 0.01))
-            left_delta_time -= 0.01
+            self.__physics_step(min(left_delta_time, 1/self.tps))
+            left_delta_time -= 1/self.tps
 
         for actor in self.actors.values():
             if actor.visible:
@@ -92,10 +104,13 @@ class Engine(Renderer):
 
     def __physics_step(self, delta_time):
         for actor in self.actors.values():
+            actor.tick(delta_time)
+
+        for actor in self.actors.values():
             if isinstance(actor, Rigidbody):
                 actor.position += actor.velocity * delta_time
 
-        max_iterations = 10
+        max_iterations = 8
         collisions_not_resolved = True
         collided_actors = {}
 
@@ -110,10 +125,19 @@ class Engine(Renderer):
                             direction = actor1.collision_response_direction(actor2)    
                             if not direction == Vector(0, 0):
                                 collisions_not_resolved = True
-                                corrected_actors[actor1.name] = direction
 
-                                collided_actors[actor1.name] = CollisionData( direction.normalized, actor2.velocity if hasattr(actor2, "velocity") else Vector(0, 0), actor2.restitution, actor2.mass if hasattr(actor2, "mass") else float("inf"), actor2)
-                                collided_actors[actor2.name] = CollisionData(-direction.normalized, actor1.velocity, actor1.restitution, actor1.mass, actor1)
+                                if actor1.name not in corrected_actors:
+                                    corrected_actors[actor1.name] = Vector(0, 0)
+                                corrected_actors[actor1.name] += direction
+
+                                if actor1.name not in collided_actors:
+                                    collided_actors[actor1.name] = [None, Vector(0, 0)]
+                                collided_actors[actor1.name][0] = CollisionData( direction.normalized, actor2.velocity if hasattr(actor2, "velocity") else Vector(0, 0), actor2.restitution, actor2.mass if hasattr(actor2, "mass") else float("inf"), actor2)
+                                if actor2.name not in collided_actors:
+                                    collided_actors[actor2.name] = [None, Vector(0, 0)]
+                                collided_actors[actor2.name][0] = CollisionData(-direction.normalized, actor1.velocity, actor1.restitution, actor1.mass, actor1)
+
+                                collided_actors[actor1.name][1] += direction
 
             for name, direction in corrected_actors.items():
                 self.actors[name].position += direction
@@ -121,4 +145,21 @@ class Engine(Renderer):
             max_iterations -= 1
 
         for name in collided_actors:
-            self.actors[name].on_collision(collided_actors[name])
+            collided_actors[name][0].normal = collided_actors[name][1].normalized
+            self.actors[name].on_collision(collided_actors[name][0])
+
+        collided_actors_directions = {}
+        for actor1 in self.actors.values():
+            if isinstance(actor1, Rigidbody):
+                for actor2 in self.actors.values():
+                    if actor2 is not actor1:
+                        actor2.half_size += abs(gravity) / self.tps
+                        direction = actor1.collision_response_direction(actor2)
+                        if actor1.name not in collided_actors_directions:
+                            collided_actors_directions[actor1.name] = Vector(0, 0)
+                        collided_actors_directions[actor1.name] += direction
+                        actor2.half_size -= abs(gravity) / self.tps
+
+        for name, direction in collided_actors_directions.items():
+            self.actors[name].collided_sides = direction.normalized
+
