@@ -17,7 +17,7 @@ class Game(GameBase):
         self.fps_cap = 300
         self.min_tps = 100
 
-        grass = Material("Grass", "res/textures/texture.jpeg")
+        grass = Material("res/textures/texture.jpeg")
 
         super().begin_play()
 
@@ -33,7 +33,7 @@ class Game(GameBase):
         reg(Rigidbody("Rigidbody2", Vector(0.5, 0.5), Vector( 2 , -2), True, grass, 0.9, Vector(7, 6), 0, 4 , 1, 0.1, 0.01))
         reg(Rigidbody("Rigidbody3", Vector(0.5, 0.5), Vector(-3 ,  2), True, grass, 0.9, Vector(4, 9), 0, 1 , 1, 0.1, 0.01))
         reg(Rigidbody("Rigidbody4", Vector(0.5, 0.5), Vector(-3 , -2), True, grass, 0.9, Vector(9, 4), 0, 96, 1, 0.1, 0.01))
-        reg(Character("Character", half_size=Vector(0.5, 1), material=grass))
+        reg(Character("Character" , Vector(0.5, 1), material=grass))
 
         eng.camera_position = Vector(0, 0)
         eng.camera_width = 20

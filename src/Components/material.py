@@ -8,24 +8,10 @@ class Material:
     __mirrored_textures = {}
 
 
-    def __init__(self, name, texture_str, mirrored = False):
-        self.name = name
+    def __init__(self, texture_str, mirrored = False):
         self.texture_str = texture_str
         self.mirrored = mirrored
         self.load_texture()
-
-
-    @property
-    def name(self):
-        return self.__name
-    
-
-    @name.setter
-    def name(self, value):
-        if isinstance(value, str):
-            self.__name = value
-        else:
-            raise Exception("Name must be a string:", value)
         
 
     @property
