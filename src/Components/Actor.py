@@ -1,16 +1,15 @@
 from components.datatypes import *
-
-import os
+from components.material import Material
 
 
 
 class Actor:
-    def __init__(self, name, half_size, position = Vector(), visible = False, texture = None, restitution = 1):
+    def __init__(self, name, half_size, position = Vector(), visible = False, material = None, restitution = 1):
         self.name = name
         self.half_size = half_size
         self.position = position
         self.visible = visible
-        self.texture = texture
+        self.material = material
         self.restitution = restitution
 
 
@@ -67,16 +66,16 @@ class Actor:
         
 
     @property
-    def texture(self):
-        return self.__texture
+    def material(self):
+        return self.__material
     
 
-    @texture.setter
-    def texture(self, value):
-        if (isinstance(value, str) and os.path.isfile(value)) or value == None:
-            self.__texture = value
+    @material.setter
+    def material(self, value):
+        if issubclass(value.__class__, Material):
+            self.__material = value
         else:
-            raise Exception("Texture must be a string:", value)
+            raise Exception("Material name must be a string:", value)
         
 
     @property

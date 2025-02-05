@@ -5,8 +5,8 @@ from components.datatypes import *
 
 
 class Character(Rigidbody):
-    def __init__(self, name, half_size, position = Vector(), visible = True, texture = None, restitution = 0.01, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 100, gravity_scale = 1, friction = 8, air_resistance = 0.1, jump_velocity = 10, walk_speed = 5, acceleration = 1, air_control = 0.5):
-        super().__init__(name, half_size, position, visible, texture, restitution, initial_velocity, min_velocity, mass, gravity_scale, friction, air_resistance)
+    def __init__(self, name, half_size, position = Vector(), visible = True, material = None, restitution = 0.01, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 100, gravity_scale = 1, friction = 8, air_resistance = 0.1, jump_velocity = 10, walk_speed = 5, acceleration = 1, air_control = 0.2):
+        super().__init__(name, half_size, position, visible, material, restitution, initial_velocity, min_velocity, mass, gravity_scale, friction, air_resistance)
         
         self.jump_velocity = jump_velocity
         self.walk_speed = walk_speed
@@ -76,6 +76,11 @@ class Character(Rigidbody):
             self.velocity.x += direction * self.acceleration * delta_time
         else:
             self.velocity.x += direction * self.acceleration * self.air_control * delta_time
+        
+        if direction > 0:
+            self.material.mirror = False
+        elif direction < 0:
+            self.material.mirror = True
 
 
     def jump(self):

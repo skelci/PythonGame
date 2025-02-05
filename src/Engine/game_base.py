@@ -1,5 +1,7 @@
 from engine.engine import Engine
 
+from components.datatypes import *
+
 
 
 class GameBase:
@@ -12,6 +14,7 @@ class GameBase:
         self.min_tps = 50
         self.fullscreen = False
         self.windowed = False
+        self.camera_position = Vector()
 
 
     @property
@@ -117,6 +120,19 @@ class GameBase:
         else:
             raise Exception("Windowed must be a bool:", value)
         
+
+    @property
+    def camera_position(self):
+        return self.__camera_position
+    
+
+    @camera_position.setter
+    def camera_position(self, value):
+        if isinstance(value, Vector):
+            self.__camera_position = value
+        else:
+            raise Exception("Camera position must be a Vector:", value)
+
 
     @property
     def engine(self):

@@ -1,12 +1,13 @@
 from components.datatypes import *
 from components.actor import Actor
+from components.material import Material
 
 import pygame
 
 
 
 class Renderer:
-    def __init__(self, width, height, camera_width, title = "Pygame Window", fullscreen = False, windowed = True):
+    def __init__(self, width, height, camera_width, title = "Pygame Window", fullscreen = False, windowed = True, camera_position = Vector()):
         self.__screen = None
         self.__fullscreen = False
         self.__windowed = True
@@ -17,9 +18,8 @@ class Renderer:
         self.fullscreen = fullscreen
         self.windowed = windowed
 
-        self.camera_position = Vector(0, 0)
+        self.camera_position = camera_position
         self.__actors_to_draw = []
-        self.__textures = {}
 
 
     @property
@@ -121,11 +121,6 @@ class Renderer:
     @property
     def actors_to_draw(self):
         return self.__actors_to_draw
-    
-
-    @property
-    def textures(self):
-        return self.__textures
 
 
     def add_actor_to_draw(self, actor):
@@ -133,10 +128,6 @@ class Renderer:
             raise Exception("Actor must be a subclass of Actor:", actor)
         
         self.__actors_to_draw.append(actor)
-
-        if actor.texture:
-            if self.textures.get(actor.texture) is None:
-                self.textures[actor.texture] = pygame.image.load(actor.texture)
 
     
     def clear(self):
@@ -149,14 +140,14 @@ class Renderer:
         camera_ratio = self.resolution.x / self.camera_width
         
         for a in self.actors_to_draw:
-            self.__draw_rectangle_texture(combined_surface, a.texture, a.half_size, a.position, camera_ratio)
+            self.__draw_rectangle_texture(combined_surface, a.material, a.half_size, a.position, camera_ratio)
 
         self.screen.blit(combined_surface, (0, 0))
         pygame.display.flip()
 
 
-    def __draw_rectangle_texture(self, screen, texture_str, half_size, position, camera_ratio):
-        texture = self.textures[texture_str]
+    def __draw_rectangle_texture(self, screen, material, half_size, position, camera_ratio):
+        texture = material.texture
 
         rect_width = half_size.x * 2 * camera_ratio
         rect_height = half_size.y * 2 * camera_ratio

@@ -14,7 +14,7 @@ class Engine(Renderer):
 
         pygame.init()
         self.__actors = {}
-        super().__init__(game.window_width, game.window_height, game.camera_width, game.window_title, game.fullscreen, game.windowed)
+        super().__init__(game.window_width, game.window_height, game.camera_width, game.window_title, game.fullscreen, game.windowed, game.camera_position)
 
         self.running = True
         self.__clock = pygame.time.Clock()
@@ -69,11 +69,10 @@ class Engine(Renderer):
         return self.__clock
 
 
-    def register_actor(self, actor, b_render = True):
-        if b_render:
-            if actor.name in self.actors:
-                raise Exception(f"Actor {actor.name} is already registered")
-            self.__actors[actor.name] = actor
+    def register_actor(self, actor):
+        if actor.name in self.actors:
+            raise Exception(f"Actor {actor.name} is already registered")
+        self.__actors[actor.name] = actor
 
 
     def tick(self):
