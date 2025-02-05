@@ -10,6 +10,8 @@ class GameBase:
         self.camera_width = 10
         self.fps_cap = 60
         self.min_tps = 50
+        self.fullscreen = False
+        self.windowed = False
 
 
     @property
@@ -88,6 +90,32 @@ class GameBase:
             self.__min_tps = value
         else:
             raise Exception("Minimum TPS must be a positive number:", value)
+        
+
+    @property
+    def fullscreen(self):
+        return self.__fullscreen
+    
+
+    @fullscreen.setter
+    def fullscreen(self, value):
+        if isinstance(value, bool):
+            self.__fullscreen = value
+        else:
+            raise Exception("Fullscreen must be a bool:", value)
+        
+
+    @property
+    def windowed(self):
+        return self.__windowed
+    
+
+    @windowed.setter
+    def windowed(self, value):
+        if isinstance(value, bool):
+            self.__windowed = value
+        else:
+            raise Exception("Windowed must be a bool:", value)
         
 
     @property

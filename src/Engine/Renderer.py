@@ -6,17 +6,19 @@ import pygame
 
 
 class Renderer:
-    def __init__(self, width, height, camera_width, title = "Pygame Window"):
+    def __init__(self, width, height, camera_width, title = "Pygame Window", fullscreen = False, windowed = True):
         self.__screen = None
+        self.__fullscreen = False
+        self.__windowed = True
 
         self.resolution = Vector(width, height)
         self.title = title
         self.camera_width = camera_width
+        self.fullscreen = fullscreen
+        self.windowed = windowed
 
         self.camera_position = Vector(0, 0)
-
         self.__actors_to_draw = []
-
         self.__textures = {}
 
 
@@ -29,7 +31,10 @@ class Renderer:
     def resolution(self, value):
         if isinstance(value, Vector) and value.x > 0 and value.y > 0:
             self.__resolution = value
-            self.__screen = pygame.display.set_mode((value.x, value.y))
+            self.__screen = pygame.display.set_mode((value.x, value.y),
+                                                    pygame.FULLSCREEN if self.fullscreen else 0 |
+                                                    pygame.NOFRAME if not self.windowed else 0 |
+                                                    pygame.DOUBLEBUF | pygame.HWSURFACE)
         else:
             raise Exception("Width must be a positive integer:", value)
         
@@ -72,6 +77,40 @@ class Renderer:
             self.__camera_width = value
         else:
             raise Exception("Camera width must be a positive number:", value)
+        
+
+    @property
+    def fullscreen(self):
+        return self.__fullscreen
+    
+
+    @fullscreen.setter
+    def fullscreen(self, value):
+        if isinstance(value, bool):
+            self.__fullscreen = value
+            self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y),
+                                                    pygame.FULLSCREEN if value else 0 |
+                                                    pygame.NOFRAME if not self.windowed else 0 |
+                                                    pygame.DOUBLEBUF | pygame.HWSURFACE)
+        else:
+            raise Exception("Fullscreen must be a bool:", value)
+        
+
+    @property
+    def windowed(self):
+        return self.__windowed
+    
+
+    @windowed.setter
+    def windowed(self, value):
+        if isinstance(value, bool):
+            self.__windowed = value
+            self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y),
+                                                    pygame.FULLSCREEN if self.fullscreen else 0 |
+                                                    pygame.NOFRAME if not value else 0 |
+                                                    pygame.DOUBLEBUF | pygame.HWSURFACE)
+        else:
+            raise Exception("Windowed must be a bool:", value)
         
 
     @property

@@ -14,7 +14,7 @@ class Engine(Renderer):
 
         pygame.init()
         self.__actors = {}
-        super().__init__(game.window_width, game.window_height, game.camera_width, game.window_title)
+        super().__init__(game.window_width, game.window_height, game.camera_width, game.window_title, game.fullscreen, game.windowed)
 
         self.running = True
         self.__clock = pygame.time.Clock()

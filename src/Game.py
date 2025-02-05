@@ -11,6 +11,7 @@ class Game(GameBase):
         self.window_title = "Game"
         self.window_width = 1200
         self.window_height = 800
+        self.windowed = True
         self.fps_cap = 300
         self.min_tps = 100
 
