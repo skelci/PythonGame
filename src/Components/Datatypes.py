@@ -6,6 +6,7 @@ import math
 
 pi = math.pi
 gravity  = -9.80665
+kinda_small_number = 0.0001
 
 
 
@@ -77,7 +78,15 @@ class Vector:
 
 
     def __truediv__(self, scalar):
-        if isinstance(scalar, (int, float)):
+        if isinstance(scalar, Vector):
+            if scalar.x == 0 or scalar.y == 0:
+                raise ValueError("Cannot divide by zero.")
+            return Vector(
+                x=self.x / scalar.x,
+                y=self.y / scalar.y
+            )
+        
+        elif isinstance(scalar, (int, float)):
             if scalar == 0:
                 raise ValueError("Cannot divide by zero.")
             return Vector(
@@ -113,6 +122,14 @@ class Vector:
         return Vector(
             abs(self.x),
             abs(self.y)
+        )
+    
+
+    @property
+    def rounded(self):
+        return Vector(
+            round(self.x),
+            round(self.y)
         )
     
 

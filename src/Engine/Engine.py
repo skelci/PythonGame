@@ -153,13 +153,17 @@ class Engine(Renderer):
             if isinstance(actor1, Rigidbody):
                 for actor2 in self.actors.values():
                     if actor2 is not actor1:
-                        actor2.half_size += abs(gravity) / self.tps
+                        actor1.half_size += kinda_small_number
                         direction = actor1.collision_response_direction(actor2)
                         if actor1.name not in collided_actors_directions:
                             collided_actors_directions[actor1.name] = Vector(0, 0)
                         collided_actors_directions[actor1.name] += direction
-                        actor2.half_size -= abs(gravity) / self.tps
+                        actor1.half_size -= kinda_small_number
 
         for name, direction in collided_actors_directions.items():
-            self.actors[name].collided_sides = direction.normalized
-
+            dn = direction.normalized
+            if dn.x != 0:
+                dn.x /= abs(dn.x)
+            if dn.y != 0:
+                dn.y /= abs(dn.y)
+            self.actors[name].collided_sides = dn
