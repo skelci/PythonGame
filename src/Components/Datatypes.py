@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Iterator
 import math
 
@@ -185,4 +186,11 @@ class CollisionData:
     restitution: float
     mass: float
     collided_actor: str
+
+
+
+class Alignment(Enum):
+    LEFT = 0
+    CENTER = 1
+    RIGHT = 2
 
