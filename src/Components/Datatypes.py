@@ -138,6 +138,33 @@ class Vector:
             raise TypeError(f"other must be a Vector, got {type(other).__name__}")
         
         return self.x * other.x + self.y * other.y
+    
+
+
+@dataclass
+class Color:
+    r: int = 0
+    g: int = 0
+    b: int = 0
+    a: int = 255
+
+
+    def __post_init__(self):
+        if not isinstance(self.r, int):
+            raise TypeError(f"r must be an int, got {type(self.r).__name__}")
+        if not isinstance(self.g, int):
+            raise TypeError(f"g must be an int, got {type(self.g).__name__}")
+        if not isinstance(self.b, int):
+            raise TypeError(f"b must be an int, got {type(self.b).__name__}")
+        if not isinstance(self.a, int):
+            raise TypeError(f"a must be an int, got {type(self.a).__name__}")
+        
+
+    def __iter__(self) -> Iterator[int]:
+        yield self.r
+        yield self.g
+        yield self.b
+        yield self.a
 
 
 
@@ -148,3 +175,4 @@ class CollisionData:
     restitution: float
     mass: float
     collided_actor: str
+

@@ -1,6 +1,6 @@
 from components.datatypes import *
 from components.actor import Actor
-from components.material import Material
+from components.widget import Widget
 
 import pygame
 
@@ -17,9 +17,10 @@ class Renderer:
         self.camera_width = camera_width
         self.fullscreen = fullscreen
         self.windowed = windowed
-
         self.camera_position = camera_position
+
         self.__actors_to_draw = []
+        self.__widgets_to_draw = []
 
 
     @property
@@ -121,6 +122,11 @@ class Renderer:
     @property
     def actors_to_draw(self):
         return self.__actors_to_draw
+    
+
+    @property
+    def widgets_to_draw(self):
+        return self.__widgets_to_draw
 
 
     def add_actor_to_draw(self, actor):
@@ -129,9 +135,17 @@ class Renderer:
         
         self.__actors_to_draw.append(actor)
 
+
+    def add_widget_to_draw(self, widget):
+        if not issubclass(widget.__class__, Widget):
+            raise Exception("Widget must be a subclass of Widget:", widget)
+        
+        self.__widgets_to_draw.append(widget)
+
     
     def clear(self):
-        self.__actors_to_draw = []
+        self.__actors_to_draw.clear()
+        self.__widgets_to_draw.clear()
 
 
     def render(self):
@@ -141,6 +155,10 @@ class Renderer:
         
         for a in self.actors_to_draw:
             self.__draw_rectangle_texture(combined_surface, a.material, a.half_size, a.position, camera_ratio)
+
+        self.__widgets_to_draw.sort(key = lambda w: w.layer)
+        for w in self.widgets_to_draw:
+            self.__draw_widget(combined_surface, w)
 
         self.screen.blit(combined_surface, (0, 0))
         pygame.display.flip()
@@ -161,4 +179,21 @@ class Renderer:
         
         # Draw the texture
         screen.blit(scaled_texture, top_left_position)
+
+
+    def __draw_widget(self, screen, widget):
+        camera_ratio = Vector()
+        camera_ratio.x = self.resolution.x / 1600
+        camera_ratio.y = self.resolution.y / 900
+        if widget.color:
+            top_left_position = (
+                camera_ratio.x * (widget.position.x - widget.size.x / 2),
+                camera_ratio.y * (widget.position.y - widget.size.y / 2)
+            )
+
+            rect_width = widget.size.x * camera_ratio.x
+            rect_height = widget.size.y * camera_ratio.x
+            color_tuple = (widget.color.r, widget.color.g, widget.color.b, widget.color.a)
+
+            pygame.draw.rect(screen, (color_tuple), pygame.Rect(top_left_position, (rect_width, rect_height)))
         

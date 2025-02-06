@@ -5,6 +5,7 @@ from components.rigidbody import Rigidbody
 from components.datatypes import *
 from components.material import Material
 from components.character import Character
+from components.widget import Widget
 
 
 
@@ -19,11 +20,15 @@ class Game(GameBase):
 
         grass = Material("res/textures/texture.jpeg")
 
+        idk = Widget("idk", Vector(100, 100), Vector(100, 100), 0, color=Color(192, 31, 215))
+
         super().begin_play()
 
-        # Register actors after engine has been initialized
+        # Register actors & widgets after engine has been initialized
         eng = self.engine
         reg = lambda actor: eng.register_actor(actor)
+        regw = lambda widget: eng.register_widget(widget)
+
         #   class     name,         half_size,        position,        visible, material, restitution, inital_velocity, min_velocity, mass, gravity_scale, friction, air_resistance
         reg(Actor    ("Cube1"     , Vector(10 , 0.5), Vector( 0 ,  5), True, grass, 1))
         reg(Actor    ("Cube2"     , Vector(0.5, 5  ), Vector( 10,  0), True, grass, 1))
@@ -35,8 +40,12 @@ class Game(GameBase):
         reg(Rigidbody("Rigidbody4", Vector(0.5, 0.5), Vector(-3 , -2), True, grass, 0.9, Vector(9, 4), 0, 96, 1, 0.1, 0.01))
         reg(Character("Character" , Vector(0.5, 1), material=grass))
 
+        regw(idk)
+
         eng.camera_position = Vector(0, 0)
         eng.camera_width = 20
+
+        eng.widgets["idk"].visible = True
 
 
     def tick(self):

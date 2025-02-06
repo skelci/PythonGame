@@ -12,8 +12,10 @@ class Engine(Renderer):
         self.fps = game.fps_cap
         self.tps = game.min_tps
 
-        pygame.init()
         self.__actors = {}
+        self.__widgets = {}
+
+        pygame.init()
         super().__init__(game.window_width, game.window_height, game.camera_width, game.window_title, game.fullscreen, game.windowed, game.camera_position)
 
         self.running = True
@@ -65,6 +67,11 @@ class Engine(Renderer):
     
 
     @property
+    def widgets(self):
+        return self.__widgets
+    
+
+    @property
     def clock(self):
         return self.__clock
 
@@ -73,6 +80,12 @@ class Engine(Renderer):
         if actor.name in self.actors:
             raise Exception(f"Actor {actor.name} is already registered")
         self.__actors[actor.name] = actor
+
+
+    def register_widget(self, widget):
+        if widget.name in self.widgets:
+            raise Exception(f"Widget {widget.name} is already registered")
+        self.__widgets[widget.name] = widget
 
 
     def tick(self):
@@ -95,6 +108,10 @@ class Engine(Renderer):
         for actor in self.actors.values():
             if actor.visible:
                 self.add_actor_to_draw(actor)
+
+        for widget in self.widgets.values():
+            if widget.visible:
+                self.add_widget_to_draw(widget)
 
         self.render()
 

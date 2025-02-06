@@ -72,10 +72,15 @@ class Character(Rigidbody):
         
 
     def move(self, direction, delta_time):
-        if self.is_grounded:
-            self.velocity.x += direction * self.acceleration * delta_time
-        else:
-            self.velocity.x += direction * self.acceleration * self.air_control * delta_time
+        if self.velocity.abs.x < self.walk_speed:
+            if self.is_grounded:
+                self.velocity.x += direction * self.acceleration * delta_time
+                if self.velocity.abs.x > self.walk_speed:
+                    self.velocity.x = direction * self.walk_speed
+            else:
+                self.velocity.x += direction * self.acceleration * self.air_control * delta_time
+                if self.velocity.abs.x > self.walk_speed * self.air_control:
+                    self.velocity.x = direction * self.walk_speed * self.air_control
         
         if direction > 0:
             self.material.mirror = False
