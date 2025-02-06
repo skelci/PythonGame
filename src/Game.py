@@ -5,7 +5,7 @@ from components.rigidbody import Rigidbody
 from components.datatypes import *
 from components.material import Material
 from components.character import Character
-from components.widget import Widget
+from components.border import Border
 
 
 
@@ -19,8 +19,6 @@ class Game(GameBase):
         self.min_tps = 100
 
         grass = Material("res/textures/texture.jpeg")
-
-        idk = Widget("idk", Vector(100, 100), Vector(100, 100), 0, color=Color(192, 31, 215))
 
         super().begin_play()
 
@@ -40,7 +38,7 @@ class Game(GameBase):
         reg(Rigidbody("Rigidbody4", Vector(0.5, 0.5), Vector(-3 , -2), True, grass, 0.9, Vector(9, 4), 0, 96, 1, 0.1, 0.01))
         reg(Character("Character" , Vector(0.5, 1), material=grass))
 
-        regw(idk)
+        regw(Border("idk", Vector(100, 100), Vector(100, 100), 0, border_color=Color(192, 31, 215), bg_color=Color(0, 0, 0, 100)))
 
         eng.camera_position = Vector(0, 0)
         eng.camera_width = 20

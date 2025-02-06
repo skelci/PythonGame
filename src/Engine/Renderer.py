@@ -171,13 +171,11 @@ class Renderer:
         rect_height = half_size.y * 2 * camera_ratio
         scaled_texture = pygame.transform.scale(texture, (rect_width, rect_height))
         
-        # Calculate the top-left position to draw the texture
         top_left_position = (
             camera_ratio * (position.x - half_size.x - self.camera_position.x) + self.resolution.x / 2,
             camera_ratio * -(position.y + half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
         )
         
-        # Draw the texture
         screen.blit(scaled_texture, top_left_position)
 
 
@@ -185,15 +183,10 @@ class Renderer:
         camera_ratio = Vector()
         camera_ratio.x = self.resolution.x / 1600
         camera_ratio.y = self.resolution.y / 900
-        if widget.color:
-            top_left_position = (
-                camera_ratio.x * (widget.position.x - widget.size.x / 2),
-                camera_ratio.y * (widget.position.y - widget.size.y / 2)
-            )
+        top_left_position = (
+            camera_ratio.x * (widget.position.x - widget.size.x / 2),
+            camera_ratio.y * (widget.position.y - widget.size.y / 2)
+        )
 
-            rect_width = widget.size.x * camera_ratio.x
-            rect_height = widget.size.y * camera_ratio.x
-            color_tuple = (widget.color.r, widget.color.g, widget.color.b, widget.color.a)
-
-            pygame.draw.rect(screen, (color_tuple), pygame.Rect(top_left_position, (rect_width, rect_height)))
+        screen.blit(widget.surface, top_left_position)
         

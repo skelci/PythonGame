@@ -5,13 +5,13 @@ import pygame
 
 
 class Widget:
-    def __init__(self, name, position, size, layer, visible = False, color = None):
+    def __init__(self, name, position, size, layer, color, visible = False):
         self.name = name
         self.position = position
         self.size = size
         self.layer = layer
-        self.visible = visible
         self.color = color
+        self.visible = visible
 
 
     @property
@@ -67,6 +67,19 @@ class Widget:
         
 
     @property
+    def color(self):
+        return self.__color
+    
+
+    @color.setter
+    def color(self, value):
+        if isinstance(value, Color):
+            self.__color = value
+        else:
+            raise Exception("Color must be a Color:", value)
+        
+
+    @property
     def visible(self):
         return self.__visible
     
@@ -80,15 +93,9 @@ class Widget:
         
 
     @property
-    def color(self):
-        return self.__color
-    
-
-    @color.setter
-    def color(self, value):
-        if value is None or isinstance(value, Color):
-            self.__color = value
-        else:
-            raise Exception("Color must be a Color:", value)
+    def surface(self):
+        surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
+        surface.fill(self.color.tuple)
+        return surface
         
     

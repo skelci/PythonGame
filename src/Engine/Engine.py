@@ -101,7 +101,7 @@ class Engine(Renderer):
             return
         
         left_delta_time = delta_time
-        while left_delta_time > 0: # Limit physics step to 10ms
+        while left_delta_time > 0:
             self.__physics_step(min(left_delta_time, 1/self.tps))
             left_delta_time -= 1/self.tps
 

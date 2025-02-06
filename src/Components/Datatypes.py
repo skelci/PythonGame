@@ -133,6 +133,11 @@ class Vector:
         )
     
 
+    @property
+    def tuple(self):
+        return (self.x, self.y)
+    
+
     def dot(self, other):
         if not isinstance(other, Vector):
             raise TypeError(f"other must be a Vector, got {type(other).__name__}")
@@ -165,6 +170,11 @@ class Color:
         yield self.g
         yield self.b
         yield self.a
+
+
+    @property
+    def tuple(self):
+        return (self.r, self.g, self.b, self.a)
 
 
 
