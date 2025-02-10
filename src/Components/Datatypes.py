@@ -7,7 +7,7 @@ import math
 
 pi = math.pi
 gravity  = -9.80665
-kinda_small_number = 0.0001
+kinda_small_number = 0.001
 
 
 
@@ -193,4 +193,9 @@ class Alignment(Enum):
     LEFT = 0
     CENTER = 1
     RIGHT = 2
+
+
+
+class Key(Enum):
+    MOUSE_LEFT = 1
 

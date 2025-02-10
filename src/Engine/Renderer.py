@@ -1,6 +1,7 @@
 from components.datatypes import *
 from components.actor import Actor
 from components.widget import Widget
+from components.button import Button
 
 import pygame
 
@@ -154,7 +155,11 @@ class Renderer:
         camera_ratio = self.resolution.x / self.camera_width
         
         for a in self.actors_to_draw:
-            self.__draw_rectangle_texture(combined_surface, a.material, a.half_size, a.position, camera_ratio)
+            top_left_position = (
+                camera_ratio * (a.position.x - a.half_size.x - self.camera_position.x) + self.resolution.x / 2,
+                camera_ratio * -(a.position.y + a.half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
+            )
+            self.__draw_rectangle_texture(combined_surface, a.material.texture, a.half_size * 2 * camera_ratio, top_left_position)
 
         self.__widgets_to_draw.sort(key = lambda w: w.layer)
         for w in self.widgets_to_draw:
@@ -164,17 +169,8 @@ class Renderer:
         pygame.display.flip()
 
 
-    def __draw_rectangle_texture(self, screen, material, half_size, position, camera_ratio):
-        texture = material.texture
-
-        rect_width = half_size.x * 2 * camera_ratio
-        rect_height = half_size.y * 2 * camera_ratio
-        scaled_texture = pygame.transform.scale(texture, (rect_width, rect_height))
-        
-        top_left_position = (
-            camera_ratio * (position.x - half_size.x - self.camera_position.x) + self.resolution.x / 2,
-            camera_ratio * -(position.y + half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
-        )
+    def __draw_rectangle_texture(self, screen, surface, size, top_left_position):
+        scaled_texture = pygame.transform.scale(surface, size.rounded.tuple)
         
         screen.blit(scaled_texture, top_left_position)
 
@@ -183,10 +179,14 @@ class Renderer:
         camera_ratio = Vector()
         camera_ratio.x = self.resolution.x / 1600
         camera_ratio.y = self.resolution.y / 900
-        top_left_position = (
-            camera_ratio.x * (widget.position.x - widget.size.x / 2),
-            camera_ratio.y * (widget.position.y - widget.size.y / 2)
+        top_left_position = Vector(
+            camera_ratio.x * widget.position.x,
+            camera_ratio.y * widget.position.y
         )
 
-        screen.blit(widget.surface, top_left_position)
+        size = widget.size * camera_ratio.x
+
+        widget.screen_rect = (top_left_position, top_left_position + size)
+
+        self.__draw_rectangle_texture(screen, widget.surface, size, top_left_position.tuple)
         

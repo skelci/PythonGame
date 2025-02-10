@@ -2,6 +2,7 @@ from engine.renderer import Renderer
 
 from components.rigidbody import Rigidbody
 from components.datatypes import *
+from components.button import Button
 
 import pygame
 
@@ -20,6 +21,9 @@ class Engine(Renderer):
 
         self.running = True
         self.__clock = pygame.time.Clock()
+
+        self.__pressed_keys = set()
+        self.__world_mouse_pos = Vector()
 
 
     @property
@@ -74,6 +78,16 @@ class Engine(Renderer):
     @property
     def clock(self):
         return self.__clock
+    
+
+    @property
+    def pressed_keys(self):
+        return self.__pressed_keys
+    
+
+    @property
+    def world_mouse_pos(self):
+        return self.__world_mouse_pos
 
 
     def register_actor(self, actor):
@@ -92,9 +106,24 @@ class Engine(Renderer):
         self.clear()
         delta_time = self.clock.tick(self.fps) / 1000
 
+        left_button_released = False
+
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
+            match event.type:
+                case pygame.QUIT:
+                    self.running = False
+
+                case pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        self.__pressed_keys.add(Key.MOUSE_LEFT)
+
+                case pygame.MOUSEBUTTONUP:
+                    if event.button == 1:
+                        self.__pressed_keys.remove(Key.MOUSE_LEFT)
+                        left_button_released = True
+                        
+        screen_mouse_position = Vector(*pygame.mouse.get_pos())
+        self.__update_mouse_pos(screen_mouse_position)
 
         if not self.running:
             pygame.quit()
@@ -112,10 +141,16 @@ class Engine(Renderer):
         for widget in self.widgets.values():
             if widget.visible:
                 self.add_widget_to_draw(widget)
+                if issubclass(widget.__class__, Button):
+                    widget.tick(self.pressed_keys, left_button_released, screen_mouse_position)
 
         self.render()
 
         return delta_time
+    
+
+    def __update_mouse_pos(self, screen_pos):
+        self.__world_mouse_pos = (screen_pos - self.resolution / 2) * self.camera_width / self.resolution.x + self.camera_position
 
 
     def __physics_step(self, delta_time):
