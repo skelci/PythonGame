@@ -145,8 +145,17 @@ class GameBase:
 
     def tick(self):
         delta_time = self.engine.tick()
+        if self.engine.console.cmd_output:
+            self.execute_command(self.engine.console.cmd_output.pop(0))
         return delta_time
     
 
     def end_play(self):
         pass
+
+
+    def execute_command(self, cmd):
+        try:
+            exec(cmd)
+        except Exception as e:
+            print(e)

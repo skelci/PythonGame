@@ -115,9 +115,6 @@ class Engine(Renderer):
         self.clear()
         delta_time = self.clock.tick(self.fps) / 1000
 
-        if self.console.cmd_output:
-            self.__execute_cmd(self.console.cmd_output.pop(0))
-
         left_button_released = False
 
         for event in pygame.event.get():
@@ -164,13 +161,6 @@ class Engine(Renderer):
     def __end(self):
         self.console.running = False
         self.running = False
-    
-
-    def __execute_cmd(self, cmd):
-        try:
-            exec(cmd)
-        except Exception as e:
-            print(e)
 
 
     def __update_mouse_pos(self, screen_pos):
