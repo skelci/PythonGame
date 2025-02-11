@@ -1,10 +1,14 @@
 from engine.renderer import Renderer
 
+from engine.console import Console
+
 from components.rigidbody import Rigidbody
 from components.datatypes import *
 from components.button import Button
 
 import pygame
+
+import threading
 
 
 
@@ -25,6 +29,11 @@ class Engine(Renderer):
         self.__pressed_keys = set()
         self.__world_mouse_pos = Vector()
 
+        self.console = Console()
+        self.__cmd_thread = threading.Thread(target=self.console.run)
+        self.__cmd_thread.daemon = True
+        self.__cmd_thread.start()
+
 
     @property
     def fps(self):
@@ -41,7 +50,7 @@ class Engine(Renderer):
 
     @property
     def running(self):
-        return self.__running
+        return self.__running and self.console.running
     
 
     @running.setter
@@ -111,7 +120,7 @@ class Engine(Renderer):
         for event in pygame.event.get():
             match event.type:
                 case pygame.QUIT:
-                    self.running = False
+                    self.__end()
 
                 case pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
@@ -147,6 +156,11 @@ class Engine(Renderer):
         self.render()
 
         return delta_time
+    
+
+    def __end(self):
+        self.console.running = False
+        self.running = False
     
 
     def __update_mouse_pos(self, screen_pos):

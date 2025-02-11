@@ -10,6 +10,8 @@ def main():
     while game.engine.running:
         game.tick()
 
+    game.end_play()
+
 
 
 if __name__ == "__main__":

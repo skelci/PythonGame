@@ -146,3 +146,7 @@ class GameBase:
     def tick(self):
         delta_time = self.engine.tick()
         return delta_time
+    
+
+    def end_play(self):
+        pass
