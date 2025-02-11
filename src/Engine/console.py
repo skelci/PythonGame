@@ -78,7 +78,10 @@ class Console:
             context = {}
             for idx, arg in enumerate(cmd_args[1:], start=1):
                 context[f"arg{idx}"] = arg
-            py_cmd = eval(f"f'''{template}'''", {}, context) # idk how this shit works, just don't touch it
+            try:
+                py_cmd = eval(f"f'''{template}'''", {}, context) # idk how this shit works, just don't touch it
+            except Exception as e:
+                print("Insufised param count")
 
         else:
             print("Command not found:", command_key)
