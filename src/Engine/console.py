@@ -6,6 +6,14 @@ class Console:
         self.running = True
         self.cmd_output = []
 
+        self.__commands = {
+            "exit": "self.running = False\nself.console.running = False",
+            "help": "print('Commands:', ', '.join(self.console.commands.keys()))",
+            "print": "print({arg1})",
+            "raw": "{arg1}",
+            "tp": "self.actors['{arg1}'].position = Vector({arg2}, {arg3})",
+        }
+
 
     @property
     def running(self):
@@ -31,6 +39,18 @@ class Console:
             self.__cmd_output = value
         else:
             raise Exception("Command output must be a list:", value)
+        
+
+    @property
+    def commands(self):
+        return self.__commands
+    
+
+    def register_command(self, name, func):
+        if isinstance(name, str) and isinstance(func, str):
+            self.__commands[name] = func
+        else:
+            raise Exception("Name and function must be strings:", name, func)
 
 
     def run(self):
@@ -49,15 +69,17 @@ class Console:
         cmd_args = cmd.split(" ")
 
         py_cmd = ""
-        match cmd_args[0]:
-            case "py":
-                py_cmd = cmd[3:]
+        command_key = cmd_args[0]
 
-            case "exit":
-                self.running = False
+        if command_key in self.commands:
+            template = self.commands[command_key]
+            context = {}
+            for idx, arg in enumerate(cmd_args[1:], start=1):
+                context[f"arg{idx}"] = arg
+            py_cmd = eval(f"f'''{template}'''", {}, context) # idk how this shit works, just don't touch it
 
-            case _:
-                print("Unknown command")
+        else:
+            print("Command not found:", command_key)
 
         if py_cmd:
             self.cmd_output.append(py_cmd)

@@ -50,7 +50,7 @@ class Engine(Renderer):
 
     @property
     def running(self):
-        return self.__running and self.console.running
+        return self.__running
     
 
     @running.setter
