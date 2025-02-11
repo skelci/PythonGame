@@ -11,7 +11,7 @@ class Button(Border):
         self.__main_color = bg_color
         super().__init__(name, position, size, layer, border_color, bg_color, visible, thickness)
 
-        self.__text = Text(name + "_text", position, size, layer, Color(0, 0, 0, 0), font, visible, text, text_color, font_size, text_alignment)
+        self.__text = Text(name + "_text", position, size, layer, font, Color(0, 0, 0, 0), visible, text, text_color, font_size, text_alignment)
 
         self.hover_color = hover_color
         self.click_color = click_color

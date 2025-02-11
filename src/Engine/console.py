@@ -12,6 +12,8 @@ class Console:
             "print": "print({arg1})",
             "raw": "{arg1}",
             "tp": "self.actors['{arg1}'].position = Vector({arg2}, {arg3})",
+            
+            "sh_fps": "self.widgets['fps'].visible = not self.widgets['fps'].visible",
         }
 
 

@@ -50,5 +50,5 @@ class Game(GameBase):
         delta_time = super().tick()
         if not self.engine.running:
             return
-        # print(1 if not delta_time else 1/delta_time) # Uncomment to print FPS
+
 

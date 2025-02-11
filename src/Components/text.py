@@ -8,8 +8,8 @@ import pygame
 
 
 class Text(Widget):
-    def __init__(self, name, position, size, layer, color, font, visible = False, text = "", text_color = Color(0, 0, 0), font_size = 32, text_alignment = Alignment.CENTER):
-        super().__init__(name, position, size, layer, color, visible)
+    def __init__(self, name, position, size, layer, font, bg_color = Color(0, 0, 0, 0), visible = False, text = "", text_color = Color(255, 255, 255), font_size = 32, text_alignment = Alignment.CENTER):
+        super().__init__(name, position, size, layer, bg_color, visible)
 
         self.text = text
         self.text_color = text_color

@@ -2,9 +2,10 @@ from engine.renderer import Renderer
 
 from engine.console import Console
 
-from components.rigidbody import Rigidbody
-from components.datatypes import *
 from components.button import Button
+from components.datatypes import *
+from components.rigidbody import Rigidbody
+from components.text import Text
 
 import pygame
 
@@ -33,6 +34,9 @@ class Engine(Renderer):
         self.__cmd_thread = threading.Thread(target=self.console.run)
         self.__cmd_thread.daemon = True
         self.__cmd_thread.start()
+
+        self.__fps_buffer = [0] * 16
+        self.register_widget(Text("fps", Vector(10, 10), Vector(100, 20), 0, "res/fonts/arial.ttf", text="0.0", text_color=Color(0, 255, 0), font_size=20, text_alignment=Alignment.LEFT))
 
 
     @property
@@ -114,6 +118,10 @@ class Engine(Renderer):
     def tick(self):
         self.clear()
         delta_time = self.clock.tick(self.fps) / 1000
+
+        self.__fps_buffer.append(1/delta_time)
+        self.__fps_buffer.pop(0)
+        self.widgets["fps"].text = f"{sum(self.__fps_buffer) / len(self.__fps_buffer):.1f}"
 
         if self.console.cmd_output:
             self.__execute_cmd(self.console.cmd_output.pop(0))
