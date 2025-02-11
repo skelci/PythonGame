@@ -35,7 +35,7 @@ class Engine(Renderer):
         self.__cmd_thread.daemon = True
         self.__cmd_thread.start()
 
-        self.__fps_buffer = [0] * 16
+        self.__fps_buffer = [0] * 30
         self.register_widget(Text("fps", Vector(10, 10), Vector(100, 20), 0, "res/fonts/arial.ttf", text_color=Color(0, 255, 0), font_size=20, text_alignment=Alignment.LEFT))
 
 
