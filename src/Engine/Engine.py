@@ -260,14 +260,20 @@ class Engine(Renderer):
                         actor1.half_size += kinda_small_number
                         direction = actor1.collision_response_direction(actor2)
                         if actor1.name not in collided_actors_directions:
-                            collided_actors_directions[actor1.name] = Vector(0, 0)
-                        collided_actors_directions[actor1.name] += direction
+                            collided_actors_directions[actor1.name] = [0, 0, 0, 0]
+                        # right, left, top, bottom
+                        if direction.x < 0:
+                            collided_actors_directions[actor1.name][0] = 1
+                        if direction.x > 0:
+                            collided_actors_directions[actor1.name][1] = 1
+                        if direction.y < 0:
+                            collided_actors_directions[actor1.name][2] = 1
+                        if direction.y > 0:
+                            collided_actors_directions[actor1.name][3] = 1
                         actor1.half_size -= kinda_small_number
 
         for name, direction in collided_actors_directions.items():
-            dn = direction.normalized
-            if dn.x != 0:
-                dn.x /= abs(dn.x)
-            if dn.y != 0:
-                dn.y /= abs(dn.y)
-            self.actors[name].collided_sides = dn
+            self.actors[name].collided_sides = direction
+            if name == "Character":
+                print(direction)
+

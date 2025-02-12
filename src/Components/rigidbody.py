@@ -15,7 +15,7 @@ class Rigidbody(Actor):
         self.friction = friction
         self.air_resistance = air_resistance
 
-        self.collided_sides = Vector(0, 0) # right, left, top, bottom
+        self.collided_sides = [0, 0, 0, 0] # right, left, top, bottom
         
 
     @property
@@ -103,10 +103,10 @@ class Rigidbody(Actor):
 
     @collided_sides.setter
     def collided_sides(self, value):
-        if isinstance(value, Vector):
+        if isinstance(value, list) and len(value) == 4:
             self.__collided_sides = value
         else:
-            raise Exception("Collided sides must be a Vector:", value)
+            raise Exception("Collided sides must be a list with lenght of 4:", value)
         
 
     def on_collision(self, collision_data):
@@ -125,20 +125,14 @@ class Rigidbody(Actor):
             self.velocity.y = 0
 
         # Gravity
-        if self.collided_sides.y <= 0:
+        if self.collided_sides[3] == 0:
             self.velocity.y += gravity * self.gravity_scale * delta_time
 
         # Friction
-        if self.collided_sides.y != 0:
+        if self.collided_sides[3] != 0 or self.collided_sides[2] != 0:
             v_change = self.velocity.x * self.friction * delta_time
             if self.velocity.abs.x < abs(v_change):
                 self.velocity.x = 0
-            else:
-                self.velocity -= v_change
-        if self.collided_sides.x != 0:
-            v_change = self.velocity.y * self.friction * delta_time
-            if self.velocity.abs.y < abs(v_change):
-                self.velocity.y = 0
             else:
                 self.velocity -= v_change
         
