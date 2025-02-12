@@ -50,5 +50,12 @@ class Game(GameBase):
         delta_time = super().tick()
         if not self.engine.running:
             return
+        
+        if Key.SPACE in self.engine.pressed_keys:
+            self.engine.actors["Character"].jump()
+        if Key.A in self.engine.pressed_keys:
+            self.engine.actors["Character"].move(-1, delta_time)
+        if Key.D in self.engine.pressed_keys:
+            self.engine.actors["Character"].move( 1, delta_time)
 
 

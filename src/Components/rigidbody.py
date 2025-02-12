@@ -119,8 +119,10 @@ class Rigidbody(Actor):
 
     def tick(self, delta_time):
         # Min velocity
-        if self.velocity.length < self.min_velocity:
-            self.velocity = Vector(0, 0)
+        if self.velocity.abs.x < self.min_velocity:
+            self.velocity.x = 0
+        if self.velocity.abs.y < self.min_velocity:
+            self.velocity.y = 0
 
         # Gravity
         if self.collided_sides.y <= 0:

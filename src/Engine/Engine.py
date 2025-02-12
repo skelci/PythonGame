@@ -28,7 +28,9 @@ class Engine(Renderer):
         self.__clock = pygame.time.Clock()
 
         self.__pressed_keys = set()
+        self.__released_keys = set()
         self.__world_mouse_pos = Vector()
+        self.__screen_mouse_pos = Vector()
 
         self.console = Console()
         self.__cmd_thread = threading.Thread(target=self.console.run)
@@ -99,8 +101,18 @@ class Engine(Renderer):
     
 
     @property
+    def released_keys(self):
+        return self.__released_keys
+    
+
+    @property
     def world_mouse_pos(self):
         return self.__world_mouse_pos
+    
+
+    @property
+    def screen_mouse_pos(self):
+        return self.__screen_mouse_pos
 
 
     def register_actor(self, actor):
@@ -123,27 +135,10 @@ class Engine(Renderer):
         self.__fps_buffer.pop(0)
         self.widgets["fps"].text = f"{sum(self.__fps_buffer) / len(self.__fps_buffer):.1f}"
 
+        self.__handle_events()
+
         if self.console.cmd_output:
             self.__execute_cmd(self.console.cmd_output.pop(0))
-
-        left_button_released = False
-
-        for event in pygame.event.get():
-            match event.type:
-                case pygame.QUIT:
-                    self.__end()
-
-                case pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        self.__pressed_keys.add(Key.MOUSE_LEFT)
-
-                case pygame.MOUSEBUTTONUP:
-                    if event.button == 1:
-                        self.__pressed_keys.remove(Key.MOUSE_LEFT)
-                        left_button_released = True
-                        
-        screen_mouse_position = Vector(*pygame.mouse.get_pos())
-        self.__update_mouse_pos(screen_mouse_position)
 
         if not self.running:
             pygame.quit()
@@ -162,7 +157,7 @@ class Engine(Renderer):
             if widget.visible:
                 self.add_widget_to_draw(widget)
                 if issubclass(widget.__class__, Button):
-                    widget.tick(self.pressed_keys, left_button_released, screen_mouse_position)
+                    widget.tick(self.pressed_keys, Key.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
 
         self.render()
 
@@ -183,6 +178,32 @@ class Engine(Renderer):
 
     def __update_mouse_pos(self, screen_pos):
         self.__world_mouse_pos = (screen_pos - self.resolution / 2) * self.camera_width / self.resolution.x + self.camera_position
+        self.__screen_mouse_pos = screen_pos
+
+
+    def __handle_events(self):
+        self.__released_keys.clear()
+        for event in pygame.event.get():
+            match event.type:
+                case pygame.QUIT:
+                    self.__end()
+
+                case pygame.MOUSEBUTTONDOWN:
+                    self.__pressed_keys.add(Key(event.button))
+
+                case pygame.MOUSEBUTTONUP:
+                    self.__pressed_keys.remove(Key(event.button))
+                    self.__released_keys.add(Key(event.button))
+
+                case pygame.KEYDOWN:
+                    self.__pressed_keys.add(event.key)
+
+                case pygame.KEYUP:
+                    self.__pressed_keys.remove(event.key)
+                    self.__released_keys.add(event.key)
+                        
+        screen_mouse_position = Vector(*pygame.mouse.get_pos())
+        self.__update_mouse_pos(screen_mouse_position)
 
 
     def __physics_step(self, delta_time):
