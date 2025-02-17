@@ -5,13 +5,14 @@ from components.datatypes import *
 
 
 class Character(Rigidbody):
-    def __init__(self, name, half_size, position = Vector(), visible = True, material = None, restitution = 0.01, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 100, gravity_scale = 1, friction = 8, air_resistance = 0.1, jump_velocity = 7, walk_speed = 5, acceleration = 2, air_control = 0.2):
-        super().__init__(name, half_size, position, visible, material, restitution, initial_velocity, min_velocity, mass, gravity_scale, friction, air_resistance)
+    def __init__(self, game_refrence, name, half_size, position = Vector(), visible = True, material = None, restitution = 0, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 100, gravity_scale = 1, friction = 8, air_resistance = 0.1, jump_velocity = 7, walk_speed = 5, acceleration = 10, air_control = 0.2):
+        super().__init__(game_refrence, name, half_size, position, visible, material, restitution, initial_velocity, min_velocity, mass, gravity_scale, friction, air_resistance)
         
         self.jump_velocity = jump_velocity
         self.walk_speed = walk_speed
         self.acceleration = acceleration
         self.air_control = air_control
+        self.move_direction = 0
 
 
     @property
@@ -67,20 +68,46 @@ class Character(Rigidbody):
         
 
     @property
+    def move_direction(self):
+        return self.__move_direction
+    
+
+    @move_direction.setter
+    def move_direction(self, value):
+        if isinstance(value, int) and value in [-1, 0, 1]:
+            self.__move_direction = value
+        else:
+            raise Exception("Move direction must be -1, 0 or 1:", value)
+
+
+    @property
     def is_grounded(self):
         return self.collided_sides[3] != 0
         
 
-    def move(self, direction, delta_time):
+    def jump(self):
+        if self.is_grounded:
+            self.velocity.y = self.jump_velocity
+
+
+    def __move(self, delta_time):
+        direction = self.move_direction
+        dad = direction * self.acceleration * delta_time
         if self.velocity.abs.x < self.walk_speed:
             if self.is_grounded:
-                self.velocity.x += direction * self.acceleration * delta_time
+                self.velocity.x += dad
                 if self.velocity.abs.x > self.walk_speed:
-                    self.velocity.x -= direction * self.walk_speed * self.acceleration * delta_time * self.friction
+                    self.velocity.x -= self.walk_speed * self.friction * dad
+                    if self.velocity.abs.x < self.walk_speed:
+                        self.velocity.x = direction * self.walk_speed
             else:
-                self.velocity.x += direction * self.acceleration * self.air_control * delta_time
-                if self.velocity.abs.x > self.walk_speed * self.air_control:
-                    self.velocity.x -= direction * self.walk_speed * self.air_control * self.acceleration * delta_time * self.air_resistance
+                wa = self.walk_speed * self.air_control
+                self.velocity.x += self.air_control * dad
+                if self.velocity.abs.x > wa:
+                    self.velocity.x -= wa * self.air_resistance * dad
+                    if self.velocity.abs.x < wa:
+                        self.velocity.x = direction * wa
+
 
         if direction > 0:
             self.material.mirror = False
@@ -88,8 +115,35 @@ class Character(Rigidbody):
             self.material.mirror = True
 
 
-    def jump(self):
-        if self.is_grounded:
-            self.velocity.y = self.jump_velocity
+    def tick(self, delta_time):
+        # Min velocity
+        if self.velocity.abs.x < self.min_velocity:
+            self.velocity.x = 0
+        if self.velocity.abs.y < self.min_velocity:
+            self.velocity.y = 0
+
+        # Gravity
+        if self.collided_sides[3] == 0:
+            self.velocity.y += gravity * self.gravity_scale * delta_time
+
+        # Air resistance
+        v_change = self.velocity * self.air_resistance * delta_time
+        if self.velocity.length < v_change.length:
+            self.velocity = Vector(0, 0)
+        else:
+            self.velocity -= v_change
+        
+        # Friction
+        if self.is_grounded and self.move_direction == 0:
+            v_change = self.velocity.x * self.friction * delta_time
+            if self.velocity.abs.x < abs(v_change):
+                self.velocity.x = 0
+            else:
+                self.velocity -= v_change
+
+        self.__move(delta_time)
+
+
+        
             
 

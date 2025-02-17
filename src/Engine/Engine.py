@@ -26,6 +26,7 @@ class Engine(Renderer):
 
         self.running = True
         self.__clock = pygame.time.Clock()
+        self.__actors_to_destroy = set()
 
         self.__pressed_keys = set()
         self.__released_keys = set()
@@ -121,6 +122,11 @@ class Engine(Renderer):
         self.__actors[actor.name] = actor
 
 
+    def destroy_actor(self, actor_name):
+        if actor_name in self.actors:
+            self.__actors_to_destroy.add(actor_name)
+
+
     def register_widget(self, widget):
         if widget.name in self.widgets:
             raise Exception(f"Widget {widget.name} is already registered")
@@ -158,6 +164,10 @@ class Engine(Renderer):
                 self.add_widget_to_draw(widget)
                 if issubclass(widget.__class__, Button):
                     widget.tick(self.pressed_keys, Key.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
+
+        for actor_name in self.__actors_to_destroy:
+            del self.actors[actor_name]
+        self.__actors_to_destroy.clear()
 
         self.render()
 
@@ -226,7 +236,7 @@ class Engine(Renderer):
                 if isinstance(actor1, Rigidbody):
                     for actor2 in self.actors.values():
                         if actor2 is not actor1:
-                            direction = actor1.collision_response_direction(actor2)    
+                            direction = actor1.collision_response_direction(actor2)
                             if not direction == Vector(0, 0):
                                 collisions_not_resolved = True
 
@@ -271,9 +281,13 @@ class Engine(Renderer):
                         if direction.y > 0:
                             collided_actors_directions[actor1.name][3] = 1
                         actor1.half_size -= kinda_small_number
+                        # if actor1.name == "Character":
+                        #     if actor1.velocity.y == 0 and collided_actors_directions[actor1.name][3] != 1:
+                        #         print("Grounded")
+                        #     else:
+                        #         print("air")
 
         for name, direction in collided_actors_directions.items():
             self.actors[name].collided_sides = direction
-            if name == "Character":
-                print(direction)
+    
 

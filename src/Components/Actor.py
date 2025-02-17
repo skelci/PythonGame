@@ -2,15 +2,28 @@ from components.datatypes import *
 from components.material import Material
 
 
-
 class Actor:
-    def __init__(self, name, half_size, position = Vector(), visible = False, material = None, restitution = 1):
+    def __init__(self, game_refrence, name, half_size, position = Vector(), visible = False, material = None, restitution = 1):
+        self.game_refrence = game_refrence
         self.name = name
         self.half_size = half_size
         self.position = position
         self.visible = visible
         self.material = material
         self.restitution = restitution
+
+
+    @property
+    def game_refrence(self):
+        return self.__game_refrence
+    
+
+    @game_refrence.setter
+    def game_refrence(self, value):
+        if value.__class__.__name__ == "Game":
+            self.__game_refrence = value
+        else:
+            raise Exception("Game refrence must be a Game object:", value)
 
 
     @property
@@ -98,4 +111,7 @@ class Actor:
     def on_collision(self, collision_data):
         pass
 
+
+    def __str__(self):
+        return self.name
 

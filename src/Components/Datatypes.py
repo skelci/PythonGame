@@ -6,7 +6,7 @@ import math
 
 
 pi = math.pi
-gravity  = -9.80665
+gravity = -9.80665
 kinda_small_number = 0.001
 
 

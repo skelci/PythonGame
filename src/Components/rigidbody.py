@@ -5,8 +5,8 @@ from components.datatypes import *
 
 
 class Rigidbody(Actor):
-    def __init__(self, name, half_size, position = Vector(), visible = False, material = "", restitution = 0.5, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 1, gravity_scale = 1, friction = 0.5, air_resistance = 0.1):
-        super().__init__(name, half_size, position, visible, material, restitution)
+    def __init__(self, game_refrence, name, half_size, position = Vector(), visible = False, material = "", restitution = 0.5, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 1, gravity_scale = 1, friction = 0.5, air_resistance = 0.1):
+        super().__init__(game_refrence, name, half_size, position, visible, material, restitution)
 
         self.velocity = initial_velocity
         self.min_velocity = min_velocity
@@ -128,20 +128,21 @@ class Rigidbody(Actor):
         if self.collided_sides[3] == 0:
             self.velocity.y += gravity * self.gravity_scale * delta_time
 
-        # Friction
-        if self.collided_sides[3] != 0 or self.collided_sides[2] != 0:
-            v_change = self.velocity.x * self.friction * delta_time
-            if self.velocity.abs.x < abs(v_change):
-                self.velocity.x = 0
-            else:
-                self.velocity -= v_change
-        
         # Air resistance
         v_change = self.velocity * self.air_resistance * delta_time
         if self.velocity.length < v_change.length:
             self.velocity = Vector(0, 0)
         else:
             self.velocity -= v_change
+        
+        # Friction
+        if self.collided_sides[3] != 0:
+            v_change = self.velocity.x * self.friction * delta_time
+            if self.velocity.abs.x < abs(v_change):
+                self.velocity.x = 0
+            else:
+                self.velocity -= v_change
+        
 
 
     def is_colliding(self, collided_actor):

@@ -7,8 +7,8 @@ from components.datatypes import *
 class GameBase:
     def __init__(self):
         self.window_title = "Game"
-        self.window_width = 800
-        self.window_height = 600
+        self.window_width = 1600
+        self.window_height = 900
         self.camera_width = 10
         self.fps_cap = 60
         self.min_tps = 50
