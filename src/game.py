@@ -72,6 +72,12 @@ class Player(Character):
 
         self.game_refrence.die()
 
+    def tick(self, delta_time):
+        super().tick(delta_time)
+
+        if not -10 < self.position.y < 10:
+            self.game_refrence.die()
+
 class Pipe(Actor):
     def tick(self, delta_time):
         super().tick(delta_time)
@@ -101,6 +107,8 @@ class Game(GameBase):
 
 
         regw(Text("dead", Vector(0, 0), Vector(1600, 900), 1, "res/fonts/arial.ttf", Color(0, 0, 0, 100), False, "You died", Color(255,0,0), 100, Alignment.CENTER))
+        regw(Text("score", Vector(700, 10), Vector(200, 40), 2, "res/fonts/arial.ttf", Color(0, 0, 0, 100), True, "Score: 0", Color(255, 255, 255), 32, Alignment.CENTER))
+
         reg(Player(self, "Player" , Vector(0.25, 0.25), Vector(-7, 3), material=bird_mat, gravity_scale=2, jump_velocity=8))
 
         eng.camera_position = Vector(0, 0)
@@ -110,7 +118,11 @@ class Game(GameBase):
 
         self.index = 0
         self.dead = False
+        self.score = 0
+
         self.clock = 0
+        self.score_clock = 0
+        self.start_delay = 0
 
     def die(self):
         self.engine.widgets["dead"].visible = True
@@ -129,6 +141,14 @@ class Game(GameBase):
             self.engine.actors["Player"].jump()
 
         self.clock += delta_time
+        self.start_delay += delta_time
+
+        if self.start_delay > 3.5:
+            self.score_clock += delta_time
+            if self.score_clock > 1:
+                self.score_clock = 0
+                self.score += 1
+                self.engine.widgets["score"].text = f"Score: {self.score}"
 
         if self.clock > 1:
             offset = r.randrange(-2, 2)
@@ -136,5 +156,6 @@ class Game(GameBase):
             self.index += 1
             reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(0.5, 10), Vector(12, offset + 13), True, self.pipe_mat))
             reg(Pipe(self,"Pipe_b_" + str(self.index), Vector(0.5, 10), Vector(12, offset - 13), True, self.pipe_mat))
+
 
         
