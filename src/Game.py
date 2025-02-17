@@ -123,16 +123,15 @@ class Game(GameBase):
         if not self.engine.running:
             return
         
+        reg = lambda actor: self.engine.register_actor(actor)
+
         if Key.SPACE in self.engine.released_keys:
             self.engine.actors["Player"].jump()
-        
-        offset = r.randrange(-2, 2)
-
-        reg = lambda actor: self.engine.register_actor(actor)
 
         self.clock += delta_time
 
         if self.clock > 1:
+            offset = r.randrange(-2, 2)
             self.clock = 0
             self.index += 1
             reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(0.5, 10), Vector(12, offset + 13), True, self.pipe_mat))
