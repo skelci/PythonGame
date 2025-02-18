@@ -16,32 +16,33 @@ import threading
 
 
 class Engine(Renderer):
-    def __init__(self, game):
-        self.fps = game.fps_cap
-        self.tps = game.min_tps
+    def __init__(self):
+        super().__init__(1600, 900, 10, "Game", False, True, Vector())
+        self.fps = 120
+        self.tps = 100
+        self.simulation_speed = 1
 
         self.__actors = {}
         self.__widgets = {}
-
-        pygame.init()
-        super().__init__(game.window_width, game.window_height, game.camera_width, game.window_title, game.fullscreen, game.windowed, game.camera_position)
-
-        self.running = True
-        self.__clock = pygame.time.Clock()
-        self.__actors_to_destroy = set()
-
         self.__pressed_keys = set()
         self.__released_keys = set()
+        self.__actors_to_destroy = set()
+        self.__fps_buffer = [0] * 30
+
+        self.__clock = pygame.time.Clock()
         self.__world_mouse_pos = Vector()
         self.__screen_mouse_pos = Vector()
 
         self.console = Console()
         self.__cmd_thread = threading.Thread(target=self.console.run)
         self.__cmd_thread.daemon = True
-        self.__cmd_thread.start()
-
-        self.__fps_buffer = [0] * 30
+        
         self.register_widget(Text("fps", Vector(10, 10), Vector(100, 20), 0, "res/fonts/arial.ttf", text_color=Color(0, 255, 0), font_size=20, text_alignment=Alignment.LEFT))
+        
+        self.__cmd_thread.start()
+        
+        pygame.init()
+        self.running = True
 
 
     @property
@@ -55,19 +56,6 @@ class Engine(Renderer):
             self.__fps = value
         else:
             raise Exception("FPS must be a positive integer:", value)
-
-
-    @property
-    def running(self):
-        return self.__running
-    
-
-    @running.setter
-    def running(self, value):
-        if isinstance(value, bool):
-            self.__running = value
-        else:
-            raise Exception("Running must be a boolean:", value)
         
 
     @property
@@ -81,6 +69,19 @@ class Engine(Renderer):
             self.__tps = value
         else:
             raise Exception("TPS must be a positive number:", value)
+        
+
+    @property
+    def simulation_speed(self):
+        return self.__simulation_speed
+    
+
+    @simulation_speed.setter
+    def simulation_speed(self, value):
+        if isinstance(value, (int, float)) and value >= 0:
+            self.__simulation_speed = value
+        else:
+            raise Exception("Simulation speed must be a positive number:", value)
 
 
     @property
@@ -94,11 +95,6 @@ class Engine(Renderer):
     
 
     @property
-    def clock(self):
-        return self.__clock
-    
-
-    @property
     def pressed_keys(self):
         return self.__pressed_keys
     
@@ -109,6 +105,11 @@ class Engine(Renderer):
     
 
     @property
+    def clock(self):
+        return self.__clock
+    
+
+    @property
     def world_mouse_pos(self):
         return self.__world_mouse_pos
     
@@ -116,6 +117,19 @@ class Engine(Renderer):
     @property
     def screen_mouse_pos(self):
         return self.__screen_mouse_pos
+
+
+    @property
+    def running(self):
+        return self.__running
+    
+
+    @running.setter
+    def running(self, value):
+        if isinstance(value, bool):
+            self.__running = value
+        else:
+            raise Exception("Running must be a boolean:", value)
 
 
     def register_actor(self, actor):
@@ -152,6 +166,8 @@ class Engine(Renderer):
             pygame.quit()
             return
         
+        delta_time *= self.simulation_speed
+
         left_delta_time = delta_time
         while left_delta_time > 0:
             self.__physics_step(min(left_delta_time, 1/self.tps))
