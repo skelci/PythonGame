@@ -7,6 +7,8 @@ from components.datatypes import *
 from components.rigidbody import Rigidbody
 from components.text import Text
 
+from components.game_math import *
+
 import pygame
 
 import threading
@@ -156,7 +158,7 @@ class Engine(Renderer):
             left_delta_time -= 1/self.tps
 
         for actor in self.actors.values():
-            if actor.visible:
+            if actor.visible and actor.material:
                 self.add_actor_to_draw(actor)
 
         for widget in self.widgets.values():
@@ -233,9 +235,9 @@ class Engine(Renderer):
             corrected_actors = {}
 
             for actor1 in self.actors.values():
-                if isinstance(actor1, Rigidbody):
+                if isinstance(actor1, Rigidbody) and actor1.simulate_physics:
                     for actor2 in self.actors.values():
-                        if actor2 is not actor1:
+                        if actor2 is not actor1 and actor2.collidable:
                             direction = actor1.collision_response_direction(actor2)
                             if not direction == Vector(0, 0):
                                 collisions_not_resolved = True
@@ -289,5 +291,28 @@ class Engine(Renderer):
 
         for name, direction in collided_actors_directions.items():
             self.actors[name].collided_sides = direction
+
+        overlaped_actors = {}
+        for actor1 in self.actors.values():
+            if actor1.generate_overlap_events:
+                actor1.half_size += kinda_small_number
+                for actor2 in self.actors.values():
+                    if actor1 is not actor2:
+                        if is_overlapping_rect(actor1, actor2):
+                            if actor2.name not in overlaped_actors:
+                                overlaped_actors[actor2.name] = set()
+                            overlaped_actors[actor2.name].add(actor1)
+                actor1.half_size -= kinda_small_number
+
+        for actor_name, overlaped_set in overlaped_actors.items():
+            for actor in overlaped_set - self.actors[actor_name].previously_collided:
+                self.actors[actor_name].on_overlap_begin(actor)
+            for actor in self.actors[actor_name].previously_collided - overlaped_set:
+                self.actors[actor_name].on_overlap_end(actor)
+
+        for actor_name, overlaped_set in overlaped_actors.items():
+            self.actors[actor_name].previously_collided = overlaped_set
+        
+                        
     
 

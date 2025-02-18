@@ -5,9 +5,10 @@ from components.datatypes import *
 
 
 class Rigidbody(Actor):
-    def __init__(self, game_refrence, name, half_size, position = Vector(), visible = False, material = "", restitution = 0.5, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 1, gravity_scale = 1, friction = 0.5, air_resistance = 0.1):
-        super().__init__(game_refrence, name, half_size, position, visible, material, restitution)
+    def __init__(self, game_ref, name, half_size, position = Vector(), generate_overlap_events = False, collidable = True, simulate_physics = True, visible = True, material = None, restitution = 0.5, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 1, gravity_scale = 1, friction = 0.5, air_resistance = 0.1):
+        super().__init__(game_ref, name, half_size, position, generate_overlap_events, collidable, visible, material, restitution)
 
+        self.simulate_physics = simulate_physics
         self.velocity = initial_velocity
         self.min_velocity = min_velocity
         self.mass = mass
@@ -16,6 +17,19 @@ class Rigidbody(Actor):
         self.air_resistance = air_resistance
 
         self.collided_sides = [0, 0, 0, 0] # right, left, top, bottom
+
+
+    @property
+    def simulate_physics(self):
+        return self.__simulate_physics
+    
+
+    @simulate_physics.setter
+    def simulate_physics(self, value):
+        if isinstance(value, bool):
+            self.__simulate_physics = value
+        else:
+            raise Exception("Simulate physics must be a boolean:", value)
         
 
     @property

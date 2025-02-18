@@ -28,14 +28,14 @@ from components.button import Button
 #         regw = lambda widget: eng.register_widget(widget)
 
 #         #   class     self, name,         half_size,        position,        visible, material, restitution, inital_velocity, min_velocity, mass, gravity_scale, friction, air_resistance
-#         reg(Actor    (self, "Cube1"     , Vector(10 , 0.5), Vector( 0 ,  5), True, grass, 1))
-#         reg(Actor    (self, "Cube2"     , Vector(0.5, 5  ), Vector( 10,  0), True, grass, 1))
-#         reg(Actor    (self, "Cube3"     , Vector(10 , 0.5), Vector( 0 , -5), True, grass, 1))
-#         reg(Actor    (self, "Cube4"     , Vector(0.5, 5  ), Vector(-10,  0), True, grass, 1))
-#         reg(Rigidbody(self, "Rigidbody1", Vector(0.5, 0.5), Vector( 2 ,  2), True, grass, 0.9, Vector(6, 7), 0, 8 , 1, 0.1, 0.01))
-#         reg(Rigidbody(self, "Rigidbody2", Vector(0.5, 0.5), Vector( 2 , -2), True, grass, 0.9, Vector(7, 6), 0, 4 , 1, 0.1, 0.01))
-#         reg(Rigidbody(self, "Rigidbody3", Vector(0.5, 0.5), Vector(-3 ,  2), True, grass, 0.9, Vector(4, 9), 0, 1 , 1, 0.1, 0.01))
-#         reg(Rigidbody(self, "Rigidbody4", Vector(0.5, 0.5), Vector(-3 , -2), True, grass, 0.9, Vector(9, 4), 0, 96, 1, 0.1, 0.01))
+#         reg(Actor    (self, "Cube1"     , Vector(10 , 0.5), Vector( 0 ,  5), False, True, True, grass, 1))
+#         reg(Actor    (self, "Cube2"     , Vector(0.5, 5  ), Vector( 10,  0), False, True, True, grass, 1))
+#         reg(Actor    (self, "Cube3"     , Vector(10 , 0.5), Vector( 0 , -5), False, True, True, grass, 1))
+#         reg(Actor    (self, "Cube4"     , Vector(0.5, 5  ), Vector(-10,  0), False, True, True, grass, 1))
+#         reg(Rigidbody(self, "Rigidbody1", Vector(0.5, 0.5), Vector( 2 ,  2), False, True, True, True, grass, 0.9, Vector(6, 7), 0, 8 , 1, 0.1, 0.01))
+#         reg(Rigidbody(self, "Rigidbody2", Vector(0.5, 0.5), Vector( 2 , -2), False, True, True, True, grass, 0.9, Vector(7, 6), 0, 4 , 1, 0.1, 0.01))
+#         reg(Rigidbody(self, "Rigidbody3", Vector(0.5, 0.5), Vector(-3 ,  2), False, True, True, True, grass, 0.9, Vector(4, 9), 0, 1 , 1, 0.1, 0.01))
+#         reg(Rigidbody(self, "Rigidbody4", Vector(0.5, 0.5), Vector(-3 , -2), False, True, True, True, grass, 0.9, Vector(9, 4), 0, 96, 1, 0.1, 0.01))
 #         reg(Character(self, "Character" , Vector(0.5, 1), material=grass, gravity_scale=1))
 
 #         regw(Button("idk", Vector(100, 100), Vector(200, 50), 0, border_color=Color(192, 31, 215), bg_color=Color(31, 2, 19), font="res/fonts/arial.ttf", text_color=Color(192, 31, 215), text="I don't know", font_size=20, thickness=5, action = lambda: print("I don't know"), hover_color=Color(60, 10, 80), click_color=Color(3, 10, 5)))
@@ -70,13 +70,13 @@ class Player(Character):
     def on_collision(self, collision_data):
         super().on_collision(collision_data)
 
-        self.game_refrence.die()
+        self.game_ref.die()
 
     def tick(self, delta_time):
         super().tick(delta_time)
 
         if not -10 < self.position.y < 10:
-            self.game_refrence.die()
+            self.game_ref.die()
 
 class Pipe(Actor):
     def tick(self, delta_time):
@@ -85,7 +85,25 @@ class Pipe(Actor):
         self.position.x -= 5 * delta_time
 
         if self.position.x < -15:
-            self.game_refrence.engine.destroy_actor(self.name)
+            self.game_ref.engine.destroy_actor(self.name)
+
+class ScoreUpdater(Actor):
+    def tick(self, delta_time):
+        super().tick(delta_time)
+
+        self.position.x -= 5 * delta_time
+
+        if self.position.x < -15:
+            self.game_ref.engine.destroy_actor(self.name)
+
+    def on_overlap_begin(self, other_actor):
+        super().on_collision(other_actor)
+        if other_actor.name != "Player":
+            return
+
+        self.game_ref.score += 1
+        self.game_ref.engine.widgets["score"].text = f"Score: {self.game_ref.score}"
+        self.game_ref.engine.destroy_actor(self.name)
 
 class Game(GameBase):
     def begin_play(self):
@@ -121,8 +139,6 @@ class Game(GameBase):
         self.score = 0
 
         self.clock = 0
-        self.score_clock = 0
-        self.start_delay = 0
 
     def die(self):
         self.engine.widgets["dead"].visible = True
@@ -141,21 +157,14 @@ class Game(GameBase):
             self.engine.actors["Player"].jump()
 
         self.clock += delta_time
-        self.start_delay += delta_time
-
-        if self.start_delay > 3.5:
-            self.score_clock += delta_time
-            if self.score_clock > 1:
-                self.score_clock = 0
-                self.score += 1
-                self.engine.widgets["score"].text = f"Score: {self.score}"
 
         if self.clock > 1:
             offset = r.randrange(-2, 2)
             self.clock = 0
             self.index += 1
-            reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(0.5, 10), Vector(12, offset + 13), True, self.pipe_mat))
-            reg(Pipe(self,"Pipe_b_" + str(self.index), Vector(0.5, 10), Vector(12, offset - 13), True, self.pipe_mat))
+            reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(0.5, 10), Vector(12, offset + 13), False, True, True, self.pipe_mat))
+            reg(Pipe(self,"Pipe_b_" + str(self.index), Vector(0.5, 10), Vector(12, offset - 13), False, True, True, self.pipe_mat))
+            reg(ScoreUpdater(self, "ScoreUpdater_" + str(self.index), Vector(0.5, 10), Vector(12, 0), False, False, False))
 
 
         
