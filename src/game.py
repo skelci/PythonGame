@@ -137,7 +137,7 @@ class Game(GameBase):
         regw(Text("dead", Vector(0, 0), Vector(1600, 900), 1, "res/fonts/arial.ttf", Color(0, 0, 0, 100), False, "You died", Color(255,0,0), 100, Alignment.CENTER))
         regw(Text("score", Vector(700, 10), Vector(200, 40), 2, "res/fonts/arial.ttf", Color(0, 0, 0, 100), True, "Score: 0", Color(255, 255, 255), 32, Alignment.CENTER))
 
-        rega(Player(self, "Player" , Vector(0.25, 0.25), Vector(-7, 0), material=bird_mat, gravity_scale=1, jump_velocity=4.5))
+        rega(Player(self, "Player" , Vector(0.25, 0.17), Vector(-7, 0), material=bird_mat, gravity_scale=1, jump_velocity=4.5))
 
         bgl_sky = BackgroundLayer(sky_mat, 15, 1)
 
