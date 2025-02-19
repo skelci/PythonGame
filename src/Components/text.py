@@ -28,7 +28,7 @@ class Text(Widget):
         if isinstance(value, str):
             self.__text = value
         else:
-            raise Exception("Text must be a string:", value)
+            raise TypeError("Text must be a string:", value)
         
 
     @property
@@ -41,7 +41,7 @@ class Text(Widget):
         if isinstance(value, Color):
             self.__text_color = value
         else:
-            raise Exception("Text color must be a Color:", value)
+            raise TypeError("Text color must be a Color:", value)
         
 
     @property
@@ -54,7 +54,7 @@ class Text(Widget):
         if isinstance(value, str) and os.path.exists(value):
             self.__font = value
         else:
-            raise Exception("Font must be a string:", value)
+            raise TypeError("Font must be a string:", value)
         
 
     @property
@@ -67,7 +67,7 @@ class Text(Widget):
         if isinstance(value, int) and value > 0:
             self.__font_size = value
         else:
-            raise Exception("Font size must be a positive integer:", value)
+            raise TypeError("Font size must be a positive integer:", value)
         
 
     @property
@@ -80,7 +80,7 @@ class Text(Widget):
         if isinstance(value, Alignment):
             self.__text_alignment = value
         else:
-            raise Exception("Text alignment must be an Alignment:", value)
+            raise TypeError("Text alignment must be an Alignment:", value)
         
 
     @property

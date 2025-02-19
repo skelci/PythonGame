@@ -30,7 +30,7 @@ class Button(Border):
         if isinstance(value, Color):
             self.__hover_color = value
         else:
-            raise Exception("Hover color must be a Color:", value)
+            raise TypeError("Hover color must be a Color:", value)
         
 
     @property
@@ -43,7 +43,7 @@ class Button(Border):
         if isinstance(value, Color):
             self.__click_color = value
         else:
-            raise Exception("Click color must be a Color:", value)
+            raise TypeError("Click color must be a Color:", value)
         
 
     @property
@@ -56,7 +56,7 @@ class Button(Border):
         if value is None or callable(value):
             self.__action = value
         else:
-            raise Exception("Action must be a function:", value)
+            raise TypeError("Action must be a function:", value)
         
 
     @property
@@ -69,7 +69,7 @@ class Button(Border):
         if isinstance(value, tuple) and len(value) == 2 and isinstance(value[0], Vector) and isinstance(value[1], Vector):
             self.__screen_rect = value
         else:
-            raise Exception("Screen rect must be a tuple of two Vectors:", value)
+            raise TypeError("Screen rect must be a tuple of two Vectors:", value)
         
 
     @property

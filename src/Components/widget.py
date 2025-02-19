@@ -24,7 +24,7 @@ class Widget:
         if isinstance(value, str):
             self.__name = value
         else:
-            raise Exception("Name must be a string:", value)
+            raise TypeError("Name must be a string:", value)
         
 
     @property
@@ -37,7 +37,7 @@ class Widget:
         if isinstance(value, Vector):
             self.__position = value
         else:
-            raise Exception("Position must be a Vector:", value)
+            raise TypeError("Position must be a Vector:", value)
         
 
     @property
@@ -50,7 +50,7 @@ class Widget:
         if isinstance(value, Vector):
             self.__size = value
         else:
-            raise Exception("Size must be a Vector:", value)
+            raise TypeError("Size must be a Vector:", value)
         
 
     @property
@@ -63,7 +63,7 @@ class Widget:
         if isinstance(value, int):
             self.__layer = value
         else:
-            raise Exception("Layer must be an int:", value)
+            raise TypeError("Layer must be an int:", value)
         
 
     @property
@@ -76,7 +76,7 @@ class Widget:
         if isinstance(value, Color):
             self.__color = value
         else:
-            raise Exception("Color must be a Color:", value)
+            raise TypeError("Color must be a Color:", value)
         
 
     @property
@@ -89,7 +89,7 @@ class Widget:
         if isinstance(value, bool):
             self.__visible = value
         else:
-            raise Exception("Visible must be a bool:", value)
+            raise TypeError("Visible must be a bool:", value)
         
 
     @property

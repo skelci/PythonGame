@@ -38,7 +38,7 @@ class Renderer:
                                                     pygame.NOFRAME if not self.windowed else 0 |
                                                     pygame.DOUBLEBUF | pygame.HWSURFACE)
         else:
-            raise Exception("Width must be a positive integer:", value)
+            raise TypeError("Width must be a positive integer:", value)
         
 
     @property
@@ -52,7 +52,7 @@ class Renderer:
             self.__title = value
             pygame.display.set_caption(self.__title)
         else:
-            raise Exception("Title must be a string:", value)
+            raise TypeError("Title must be a string:", value)
         
 
     @property
@@ -65,7 +65,7 @@ class Renderer:
         if isinstance(value, Vector):
             self.__camera_position = value
         else:
-            raise Exception("Camera position must be a Vector:", value)
+            raise TypeError("Camera position must be a Vector:", value)
         
 
     @property
@@ -78,7 +78,7 @@ class Renderer:
         if isinstance(value, (int, float)) and value > 0:
             self.__camera_width = value
         else:
-            raise Exception("Camera width must be a positive number:", value)
+            raise TypeError("Camera width must be a positive number:", value)
         
 
     @property
@@ -95,7 +95,7 @@ class Renderer:
                                                     pygame.NOFRAME if not self.windowed else 0 |
                                                     pygame.DOUBLEBUF | pygame.HWSURFACE)
         else:
-            raise Exception("Fullscreen must be a bool:", value)
+            raise TypeError("Fullscreen must be a bool:", value)
         
 
     @property
@@ -112,7 +112,7 @@ class Renderer:
                                                     pygame.NOFRAME if not value else 0 |
                                                     pygame.DOUBLEBUF | pygame.HWSURFACE)
         else:
-            raise Exception("Windowed must be a bool:", value)
+            raise TypeError("Windowed must be a bool:", value)
         
 
     @property
@@ -132,14 +132,14 @@ class Renderer:
 
     def add_actor_to_draw(self, actor):
         if not issubclass(type(actor), Actor):
-            raise Exception("Actor must be a subclass of Actor:", actor)
+            raise TypeError("Actor must be a subclass of Actor:", actor)
         
         self.__actors_to_draw.append(actor)
 
 
     def add_widget_to_draw(self, widget):
         if not issubclass(widget.__class__, Widget):
-            raise Exception("Widget must be a subclass of Widget:", widget)
+            raise TypeError("Widget must be a subclass of Widget:", widget)
         
         self.__widgets_to_draw.append(widget)
 
@@ -150,7 +150,8 @@ class Renderer:
 
 
     def render(self):
-        combined_surface = pygame.Surface((self.resolution.x, self.resolution.y))
+        combined_surface = pygame.Surface((self.resolution.x, self.resolution.y), pygame.SRCALPHA)
+        combined_surface.fill((0, 0, 0, 0))
 
         camera_ratio = self.resolution.x / self.camera_width
         
@@ -167,6 +168,11 @@ class Renderer:
 
         self.screen.blit(combined_surface, (0, 0))
         pygame.display.flip()
+
+
+    def draw_background(self, background):
+        bg_surface = background.get_bg_surface(self.camera_position, self.resolution, self.camera_width)
+        self.screen.blit(bg_surface, (0, 0))
 
 
     def __draw_rectangle_texture(self, screen, surface, size, top_left_position):

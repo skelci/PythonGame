@@ -29,7 +29,7 @@ class Rigidbody(Actor):
         if isinstance(value, bool):
             self.__simulate_physics = value
         else:
-            raise Exception("Simulate physics must be a boolean:", value)
+            raise TypeError("Simulate physics must be a boolean:", value)
         
 
     @property
@@ -42,7 +42,7 @@ class Rigidbody(Actor):
         if isinstance(value, Vector):
             self.__velocity = value
         else:
-            raise Exception("Velocity must be a Vector:", value)
+            raise TypeError("Velocity must be a Vector:", value)
         
 
     @property
@@ -55,7 +55,7 @@ class Rigidbody(Actor):
         if isinstance(value, (int, float)) and value >= 0:
             self.__min_velocity = value
         else:
-            raise Exception("Min velocity must be a positive float:", value)
+            raise TypeError("Min velocity must be a positive float:", value)
         
 
     @property
@@ -68,7 +68,7 @@ class Rigidbody(Actor):
         if isinstance(value, (int, float)) and value > 0:
             self.__mass = value
         else:
-            raise Exception("Mass must be a positive float:", value)
+            raise TypeError("Mass must be a positive float:", value)
         
 
     @property
@@ -81,7 +81,7 @@ class Rigidbody(Actor):
         if isinstance(value, (int, float)):
             self.__gravity_scale = value
         else:
-            raise Exception("Gravity scale must be a float:", value)
+            raise TypeError("Gravity scale must be a float:", value)
         
 
     @property
@@ -94,7 +94,7 @@ class Rigidbody(Actor):
         if isinstance(value, (int, float)) and value >= 0:
             self.__friction = value
         else:
-            raise Exception("Friction must be a positive float:", value)
+            raise TypeError("Friction must be a positive float:", value)
         
 
     @property
@@ -107,7 +107,7 @@ class Rigidbody(Actor):
         if isinstance(value, (int, float)) and value >= 0:
             self.__air_resistance = value
         else:
-            raise Exception("Air resistance must be a positive float:", value)
+            raise TypeError("Air resistance must be a positive float:", value)
         
 
     @property
@@ -120,7 +120,7 @@ class Rigidbody(Actor):
         if isinstance(value, list) and len(value) == 4:
             self.__collided_sides = value
         else:
-            raise Exception("Collided sides must be a list with lenght of 4:", value)
+            raise TypeError("Collided sides must be a list with lenght of 4:", value)
         
 
     def on_collision(self, collision_data):

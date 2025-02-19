@@ -98,6 +98,26 @@ class Vector:
         return NotImplemented
     
 
+    def __mod__(self, scalar):
+        if isinstance(scalar, Vector):
+            if scalar.x == 0 or scalar.y == 0:
+                raise ValueError("Cannot divide by zero.")
+            return Vector(
+                x=self.x % scalar.x,
+                y=self.y % scalar.y
+            )
+        
+        elif isinstance(scalar, (int, float)):
+            if scalar == 0:
+                raise ValueError("Cannot divide by zero.")
+            return Vector(
+                x=self.x % scalar,
+                y=self.y % scalar
+            )
+        
+        return NotImplemented
+    
+
     def __neg__(self):
         return Vector(
             -self.x,

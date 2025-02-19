@@ -23,7 +23,7 @@ class Border(Widget):
         if isinstance(value, Color):
             self.__border_color = value
         else:
-            raise Exception("Border color must be a Color:", value)
+            raise TypeError("Border color must be a Color:", value)
 
 
     @property
@@ -36,7 +36,7 @@ class Border(Widget):
         if isinstance(value, int) and 0 <= value <= min(*self.size):
             self.__thickness = value
         else:
-            raise Exception("Thickness must be an integer between 0 and the half of the smallest dimension of the widget:", value)
+            raise TypeError("Thickness must be an integer between 0 and the half of the smallest dimension of the widget:", value)
         
 
     @property

@@ -27,7 +27,7 @@ class Console:
         if isinstance(value, bool):
             self.__running = value
         else:
-            raise Exception("Running must be a boolean:", value)
+            raise TypeError("Running must be a boolean:", value)
         
 
     @property
@@ -40,7 +40,7 @@ class Console:
         if isinstance(value, list) and len(value) == 0:
             self.__cmd_output = value
         else:
-            raise Exception("Command output must be a list:", value)
+            raise TypeError("Command output must be a list:", value)
         
 
     @property
@@ -52,7 +52,7 @@ class Console:
         if isinstance(name, str) and isinstance(func, str):
             self.__commands[name] = func
         else:
-            raise Exception("Name and function must be strings:", name, func)
+            raise TypeError("Name and function must be strings:", name, func)
 
 
     def run(self):
@@ -80,7 +80,7 @@ class Console:
                 context[f"arg{idx}"] = arg
             try:
                 py_cmd = eval(f"f'''{template}'''", {}, context) # idk how this shit works, just don't touch it
-            except Exception as e:
+            except TypeError as e:
                 print("Insufised param count")
 
         else:

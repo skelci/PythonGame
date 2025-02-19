@@ -24,10 +24,13 @@ class Engine(Renderer):
 
         self.__actors = {}
         self.__widgets = {}
+        self.__backgrounds = {}
         self.__pressed_keys = set()
         self.__released_keys = set()
         self.__actors_to_destroy = set()
         self.__fps_buffer = [0] * 30
+
+        self.current_background = None
 
         self.__clock = pygame.time.Clock()
         self.__world_mouse_pos = Vector()
@@ -55,7 +58,7 @@ class Engine(Renderer):
         if isinstance(value, int) and value > 0:
             self.__fps = value
         else:
-            raise Exception("FPS must be a positive integer:", value)
+            raise TypeError("FPS must be a positive integer:", value)
         
 
     @property
@@ -68,7 +71,7 @@ class Engine(Renderer):
         if isinstance(value, (int, float)) and value > 0:
             self.__tps = value
         else:
-            raise Exception("TPS must be a positive number:", value)
+            raise TypeError("TPS must be a positive number:", value)
         
 
     @property
@@ -81,7 +84,7 @@ class Engine(Renderer):
         if isinstance(value, (int, float)) and value >= 0:
             self.__simulation_speed = value
         else:
-            raise Exception("Simulation speed must be a positive number:", value)
+            raise TypeError("Simulation speed must be a positive number:", value)
 
 
     @property
@@ -95,6 +98,11 @@ class Engine(Renderer):
     
 
     @property
+    def backgrounds(self):
+        return self.__backgrounds
+    
+
+    @property
     def pressed_keys(self):
         return self.__pressed_keys
     
@@ -102,6 +110,19 @@ class Engine(Renderer):
     @property
     def released_keys(self):
         return self.__released_keys
+        
+
+    @property
+    def current_background(self):
+        return self.__current_background
+    
+
+    @current_background.setter
+    def current_background(self, value):
+        if value in self.backgrounds or value is None:
+            self.__current_background = value
+        else:
+            raise Exception(f"Background {value} is not registered")
     
 
     @property
@@ -129,7 +150,7 @@ class Engine(Renderer):
         if isinstance(value, bool):
             self.__running = value
         else:
-            raise Exception("Running must be a boolean:", value)
+            raise TypeError("Running must be a boolean:", value)
 
 
     def register_actor(self, actor):
@@ -147,6 +168,12 @@ class Engine(Renderer):
         if widget.name in self.widgets:
             raise Exception(f"Widget {widget.name} is already registered")
         self.__widgets[widget.name] = widget
+
+
+    def register_background(self, background):
+        if background.name in self.backgrounds:
+            raise Exception(f"Background {background.name} is already registered")
+        self.__backgrounds[background.name] = background
 
 
     def tick(self):
@@ -187,6 +214,10 @@ class Engine(Renderer):
             del self.actors[actor_name]
         self.__actors_to_destroy.clear()
 
+        if self.current_background:
+            self.draw_background(self.backgrounds[self.current_background])
+        else:
+            self.screen.fill((0, 0, 0))
         self.render()
 
         return delta_time
@@ -200,7 +231,7 @@ class Engine(Renderer):
     def __execute_cmd(self, cmd):
         try:
             exec(cmd)
-        except Exception as e:
+        except TypeError as e:
             print(e)
 
 

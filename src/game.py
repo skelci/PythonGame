@@ -6,6 +6,7 @@ from components.datatypes import *
 from components.material import Material
 from components.character import Character
 from components.button import Button
+from components.background import *
 
 
 
@@ -60,6 +61,8 @@ from components.button import Button
 #         else:
 #             self.engine.actors["Character"].move_direction = 0
 
+
+
 import random as r
 from components.text import Text
 
@@ -79,7 +82,7 @@ class Player(Character):
     def tick(self, delta_time):
         super().tick(delta_time)
 
-        if not -10 < self.position.y < 10:
+        if not -4.4 < self.position.y < 10:
             self.game_ref.die()
 
 
@@ -123,16 +126,24 @@ class Game(GameBase):
         self.engine.title = "Birdie"
 
         bird_mat = Material("res/textures/birdie.png")
+        sky_mat = Material("res/textures/sky.png")
         self.pipe_mat = Material("res/textures/green.jpeg")
 
         eng = self.engine
-        reg = lambda actor: eng.register_actor(actor)
+        rega = lambda actor: eng.register_actor(actor)
         regw = lambda widget: eng.register_widget(widget)
+        regb = lambda bg: eng.register_background(bg)
 
         regw(Text("dead", Vector(0, 0), Vector(1600, 900), 1, "res/fonts/arial.ttf", Color(0, 0, 0, 100), False, "You died", Color(255,0,0), 100, Alignment.CENTER))
         regw(Text("score", Vector(700, 10), Vector(200, 40), 2, "res/fonts/arial.ttf", Color(0, 0, 0, 100), True, "Score: 0", Color(255, 255, 255), 32, Alignment.CENTER))
 
-        reg(Player(self, "Player" , Vector(0.25, 0.25), Vector(-7, 3), material=bird_mat, gravity_scale=1.5, jump_velocity=6))
+        rega(Player(self, "Player" , Vector(0.25, 0.25), Vector(-7, 0), material=bird_mat, gravity_scale=1, jump_velocity=4.5))
+
+        bgl_sky = BackgroundLayer(sky_mat, 15, 1)
+
+        regb(Background("sky", [bgl_sky]))
+
+        eng.current_background = "sky"
 
         eng.camera_position = Vector(0, 0)
         eng.camera_width = 20
@@ -141,6 +152,8 @@ class Game(GameBase):
 
         self.index = 0
         self.dead = False
+        eng.simulation_speed = 0
+        self.started = False
         self.score = 0
 
         self.clock = 0
@@ -157,6 +170,12 @@ class Game(GameBase):
         if self.dead:
             return
         if not self.engine.running:
+            return
+        
+        if not self.started:
+            if Key.SPACE in self.engine.released_keys:
+                self.started = True
+                self.engine.simulation_speed = 1
             return
         
         reg = lambda actor: self.engine.register_actor(actor)

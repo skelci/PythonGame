@@ -25,7 +25,7 @@ class Character(Rigidbody):
         if isinstance(value, (int, float)) and value >= 0:
             self.__jump_velocity = value
         else:
-            raise Exception("Jump velocity must be a positive float:", value)
+            raise TypeError("Jump velocity must be a positive float:", value)
         
 
     @property
@@ -38,7 +38,7 @@ class Character(Rigidbody):
         if isinstance(value, (int, float)) and value >= 0:
             self.__walk_speed = value
         else:
-            raise Exception("Walk speed must be a positive float:", value)
+            raise TypeError("Walk speed must be a positive float:", value)
         
 
     @property
@@ -51,7 +51,7 @@ class Character(Rigidbody):
         if isinstance(value, (int, float)) and value >= 0:
             self.__acceleration = value
         else:
-            raise Exception("Acceleration must be a positive float:", value)
+            raise TypeError("Acceleration must be a positive float:", value)
         
 
     @property
@@ -64,7 +64,7 @@ class Character(Rigidbody):
         if isinstance(value, (int, float)) and value >= 0:
             self.__air_control = value
         else:
-            raise Exception("Air control must be a positive float:", value)
+            raise TypeError("Air control must be a positive float:", value)
         
 
     @property
@@ -77,7 +77,7 @@ class Character(Rigidbody):
         if isinstance(value, int) and value in [-1, 0, 1]:
             self.__move_direction = value
         else:
-            raise Exception("Move direction must be -1, 0 or 1:", value)
+            raise TypeError("Move direction must be -1, 0 or 1:", value)
 
 
     @property

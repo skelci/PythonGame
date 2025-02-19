@@ -24,7 +24,7 @@ class Material:
         if isinstance(value, str):
             self.__texture_str = value
         else:
-            raise Exception("Texture_str must be a string:", value)
+            raise TypeError("Texture_str must be a string:", value)
         
 
     @property
@@ -37,7 +37,7 @@ class Material:
         if isinstance(value, bool):
             self.__mirrored = value
         else:
-            raise Exception("Mirrored must be a boolean:", value)
+            raise TypeError("Mirrored must be a boolean:", value)
         
 
     @property
@@ -51,8 +51,8 @@ class Material:
     def load_texture(self):
         if self.texture_str not in Material.__textures:
             if os.path.isfile(self.texture_str):
-                Material.__textures[self.texture_str] = pygame.image.load(self.texture_str)
+                Material.__textures[self.texture_str] = pygame.image.load(self.texture_str).convert_alpha() # why the f is does that shit of convert_alpha() make rendering 2x faster ?!?!?!
                 Material.__mirrored_textures[self.texture_str] = pygame.transform.flip(Material.__textures[self.texture_str], True, False)
             else:
-                raise Exception("Texture file not found:", self.texture_str)
+                raise TypeError("Texture file not found:", self.texture_str)
     

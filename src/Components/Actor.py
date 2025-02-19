@@ -27,7 +27,7 @@ class Actor:
         if value.__class__.__name__ == "Game":
             self.__game_ref = value
         else:
-            raise Exception("Game refrence must be a Game object:", value)
+            raise TypeError("Game refrence must be a Game object:", value)
 
 
     @property
@@ -40,7 +40,7 @@ class Actor:
         if isinstance(value, str):
             self.__name = value
         else:
-            raise Exception("Name must be a string:", value)
+            raise TypeError("Name must be a string:", value)
 
 
     @property
@@ -53,7 +53,7 @@ class Actor:
         if isinstance(value, Vector) and value.x > 0 and value.y > 0:
             self.__half_size = value
         else:
-            raise Exception("Half size must be a Vector:", value)
+            raise TypeError("Half size must be a Vector:", value)
         
 
     @property
@@ -66,7 +66,7 @@ class Actor:
         if isinstance(value, Vector):
             self.__position = value
         else:
-            raise Exception("Position must be a Vector:", value)
+            raise TypeError("Position must be a Vector:", value)
         
 
     @property
@@ -79,7 +79,7 @@ class Actor:
         if isinstance(value, bool):
             self.__generate_overlap_events = value
         else:
-            raise Exception("Generate overlap events must be a bool:", value)
+            raise TypeError("Generate overlap events must be a bool:", value)
         
 
     @property
@@ -92,7 +92,7 @@ class Actor:
         if isinstance(value, bool):
             self.__collidable = value
         else:
-            raise Exception("Simulate physics must be a bool:", value)
+            raise TypeError("Simulate physics must be a bool:", value)
         
 
     @property
@@ -105,7 +105,7 @@ class Actor:
         if isinstance(value, bool):
             self.__visible = value
         else:
-            raise Exception("Visible must be a bool:", value)
+            raise TypeError("Visible must be a bool:", value)
         
 
     @property
@@ -118,7 +118,7 @@ class Actor:
         if issubclass(value.__class__, Material) or value == None:
             self.__material = value
         else:
-            raise Exception("Material name must be a string None:", value)
+            raise TypeError("Material name must be a string None:", value)
         
 
     @property
@@ -131,7 +131,7 @@ class Actor:
         if isinstance(value, (int, float)) and 0 <= value <= 1:
             self.__restitution = value
         else:
-            raise Exception("Restitution must be a float between 0 and 1:", value)
+            raise TypeError("Restitution must be a float between 0 and 1:", value)
         
 
     @property
@@ -144,7 +144,7 @@ class Actor:
         if isinstance(value, set):
             self.__previously_collided = value
         else:
-            raise Exception("Previously collided must be a set:", value)
+            raise TypeError("Previously collided must be a set:", value)
 
 
     def tick(self, delta_time):
