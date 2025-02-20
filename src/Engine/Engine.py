@@ -4,14 +4,28 @@ from engine.console import Console
 
 from components.button import Button
 from components.datatypes import *
+from components.game_math import *
 from components.rigidbody import Rigidbody
 from components.text import Text
 
-from components.game_math import *
 
 import pygame
 
 import threading
+import time
+
+
+
+class InfoText(Text):
+    def __init__(self, name, pos, pre_text, after_text = ""):
+        super().__init__(name, pos, Vector(200, 24), 0, "res/fonts/arial.ttf", Color(0, 0, 0, 100), text_color=Color(0, 0, 255), font_size=20, text_alignment=Alignment.LEFT)
+
+        self.pre_text = pre_text
+        self.after_text = after_text
+
+
+    def set_value(self, value):
+        self.text = f" {self.pre_text}{value:.1f}{self.after_text}"
 
 
 
@@ -28,7 +42,6 @@ class Engine(Renderer):
         self.__pressed_keys = set()
         self.__released_keys = set()
         self.__actors_to_destroy = set()
-        self.__fps_buffer = [0] * 30
 
         self.current_background = None
 
@@ -39,8 +52,24 @@ class Engine(Renderer):
         self.console = Console()
         self.__cmd_thread = threading.Thread(target=self.console.run)
         self.__cmd_thread.daemon = True
-        
-        self.register_widget(Text("fps", Vector(10, 10), Vector(100, 20), 0, "res/fonts/arial.ttf", text_color=Color(0, 255, 0), font_size=20, text_alignment=Alignment.LEFT))
+
+        self.__stats = {
+            "fps": [0] * 30,
+            "events": [0] * 30,
+            "console_cmds": [0] * 30,
+            "physics": [0] * 30,
+            "render_regs": [0] * 30,
+            "bg_render": [0] * 30,
+            "render": [0] * 30,
+        }
+
+        self.register_widget(InfoText("fps", Vector(10, 12), "fps: "))
+        self.register_widget(InfoText("events", Vector(10, 36), "events: ", " ms"))
+        self.register_widget(InfoText("console_cmds", Vector(10, 60), "console cmds: ", " ms"))
+        self.register_widget(InfoText("physics", Vector(10, 84), "physics: ", " ms"))
+        self.register_widget(InfoText("render_regs", Vector(10, 108), "render regs: ", " ms"))
+        self.register_widget(InfoText("bg_render", Vector(10, 132), "bg render: ", " ms"))
+        self.register_widget(InfoText("render", Vector(10, 156), "render: ", " ms"))
         
         self.__cmd_thread.start()
         
@@ -180,14 +209,19 @@ class Engine(Renderer):
         self.clear()
         delta_time = self.clock.tick(self.fps) / 1000
 
-        self.__fps_buffer.append(1/delta_time)
-        self.__fps_buffer.pop(0)
-        self.widgets["fps"].text = f"{sum(self.__fps_buffer) / len(self.__fps_buffer):.1f}"
+        self.__stats["fps"].append(1 / delta_time / 1000)
+        self.__stats["fps"].pop(0)
+
+        self.__time_now = time.time()
 
         self.__handle_events()
+        
+        self.__time("events")
 
         if self.console.cmd_output:
             self.__execute_cmd(self.console.cmd_output.pop(0))
+
+        self.__time("console_cmds")
 
         if not self.running:
             pygame.quit()
@@ -200,6 +234,8 @@ class Engine(Renderer):
             self.__physics_step(min(left_delta_time, 1/self.tps))
             left_delta_time -= 1/self.tps
 
+        self.__time("physics")
+
         for actor in self.actors.values():
             if actor.visible and actor.material:
                 self.add_actor_to_draw(actor)
@@ -210,6 +246,8 @@ class Engine(Renderer):
                 if issubclass(widget.__class__, Button):
                     widget.tick(self.pressed_keys, Key.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
 
+        self.__time("render_regs")
+
         for actor_name in self.__actors_to_destroy:
             del self.actors[actor_name]
         self.__actors_to_destroy.clear()
@@ -218,9 +256,24 @@ class Engine(Renderer):
             self.draw_background(self.backgrounds[self.current_background])
         else:
             self.screen.fill((0, 0, 0))
+
+        self.__time("bg_render")
+
+        for name, stat in self.__stats.items():
+            self.widgets[name].set_value(sum(stat) / len(stat) * 1000)
+
         self.render()
 
+        self.__time("render")
+
         return delta_time
+    
+
+    def __time(self, stat_name):
+        time_after = time.time()
+        self.__stats[stat_name].append(time_after - self.__time_now)
+        self.__stats[stat_name].pop(0)
+        self.__time_now = time_after
     
 
     def __end(self):

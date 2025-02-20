@@ -109,7 +109,7 @@ class ScoreUpdater(Actor):
 
 
     def on_overlap_begin(self, other_actor):
-        super().on_collision(other_actor)
+        super().on_overlap_begin(other_actor)
         if other_actor.name != "Player":
             return
 
@@ -123,32 +123,38 @@ class Game(GameBase):
     def begin_play(self):
         super().begin_play()
 
-        self.engine.title = "Birdie"
+        eng = self.engine
+        regw = lambda widget: eng.register_widget(widget)
+        regb = lambda bg: eng.register_background(bg)
+        rega = lambda actor: eng.register_actor(actor)
 
         bird_mat = Material("res/textures/birdie.png")
         sky_mat = Material("res/textures/sky.png")
-        self.pipe_mat = Material("res/textures/green.jpeg")
 
-        eng = self.engine
-        rega = lambda actor: eng.register_actor(actor)
-        regw = lambda widget: eng.register_widget(widget)
-        regb = lambda bg: eng.register_background(bg)
-
+        bgl_sky = BackgroundLayer(sky_mat, 15, 1)
+        regb(Background("sky", [bgl_sky]))
+        rega(Player(self, "Player" , Vector(0.7, 0.5), Vector(-7, 0), material=bird_mat, jump_velocity=4.5))
         regw(Text("dead", Vector(0, 0), Vector(1600, 900), 1, "res/fonts/arial.ttf", Color(0, 0, 0, 100), False, "You died", Color(255,0,0), 100, Alignment.CENTER))
         regw(Text("score", Vector(700, 10), Vector(200, 40), 2, "res/fonts/arial.ttf", Color(0, 0, 0, 100), True, "Score: 0", Color(255, 255, 255), 32, Alignment.CENTER))
 
-        rega(Player(self, "Player" , Vector(0.25, 0.17), Vector(-7, 0), material=bird_mat, gravity_scale=1, jump_velocity=4.5))
-
-        bgl_sky = BackgroundLayer(sky_mat, 15, 1)
-
-        regb(Background("sky", [bgl_sky]))
-
         eng.current_background = "sky"
-
         eng.camera_position = Vector(0, 0)
         eng.camera_width = 20
-
         eng.widgets["fps"].visible = True
+
+        self.start()
+
+
+    def start(self):
+        self.engine.title = "Birdie"
+
+        self.pipe_mat = Material("res/textures/green.jpeg")
+
+        eng = self.engine
+        eng.actors["Player"].position = Vector(-7, 0)
+        eng.actors["Player"].velocity = Vector(0, 0)
+        eng.widgets["dead"].visible = False
+        eng.widgets["score"].text = "Score: 0"
 
         self.index = 0
         self.dead = False
@@ -167,8 +173,21 @@ class Game(GameBase):
 
     def tick(self):
         delta_time = super().tick()
+        if Key.ENTER in self.engine.released_keys and self.dead:
+            for actor in self.engine.actors:
+                if actor != "Player":
+                    self.engine.destroy_actor(actor)
+            self.start()
+
+        if not self.dead and Key.P in self.engine.released_keys:
+            self.engine.simulation_speed = 1 if self.engine.simulation_speed == 0 else 0
+
+        if Key.ESC in self.engine.released_keys:
+            self.engine.running = False
+
         if self.dead:
             return
+        
         if not self.engine.running:
             return
         
@@ -183,6 +202,7 @@ class Game(GameBase):
         if Key.SPACE in self.engine.released_keys:
             self.engine.actors["Player"].jump()
 
+
         self.clock += delta_time
 
         if self.clock > 1.5:
@@ -190,6 +210,7 @@ class Game(GameBase):
             self.clock = 0
             self.index += 1
             self.engine.simulation_speed += 0.005
+
             reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(0.5, 10), Vector(12, offset + 12), False, True, True, self.pipe_mat))
             reg(Pipe(self,"Pipe_b_" + str(self.index), Vector(0.5, 10), Vector(12, offset - 12), False, True, True, self.pipe_mat))
             reg(ScoreUpdater(self, "ScoreUpdater_" + str(self.index), Vector(0.5, 10), Vector(12, 0), False, False, False))

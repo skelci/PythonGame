@@ -6,6 +6,7 @@ class Console:
         self.running = True
         self.cmd_output = []
 
+        stat_widgets = ("fps", "events", "console_cmds", "physics", "render_regs", "bg_render", "render")
         self.__commands = {
             "exit": "self.running = False\nself.console.running = False",
             "help": "print('Commands:', ', '.join(self.console.commands.keys()))",
@@ -13,7 +14,15 @@ class Console:
             "raw": "{arg1}",
             "tp": "self.actors['{arg1}'].position = Vector({arg2}, {arg3})",
             
-            "sh_fps": "self.widgets['fps'].visible = not self.widgets['fps'].visible",
+            "stat_fps": "self.widgets['fps'].visible = not self.widgets['fps'].visible",
+            "stat_events": "self.widgets['events'].visible = not self.widgets['events'].visible",
+            "stat_console_cmds": "self.widgets['console_cmds'].visible = not self.widgets['console_cmds'].visible",
+            "stat_physics": "self.widgets['physics'].visible = not self.widgets['physics'].visible",
+            "stat_render_regs": "self.widgets['render_regs'].visible = not self.widgets['render_regs'].visible",
+            "stat_bg_render": "self.widgets['bg_render'].visible = not self.widgets['bg_render'].visible",
+            "stat_render": "self.widgets['render'].visible = not self.widgets['render'].visible",
+            "stat_all": f"for widget in self.widgets:\n\tif widget in {stat_widgets}:\n\t\tself.widgets[widget].visible = True",
+            "stat_none": f"for widget in self.widgets:\n\tif widget in {stat_widgets}:\n\t\tself.widgets[widget].visible = False",
         }
 
 
