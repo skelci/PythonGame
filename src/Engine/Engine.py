@@ -54,28 +54,28 @@ class Engine(Renderer):
         self.__cmd_thread.daemon = True
 
         self.__stats = {
-            "fps": [0] * 30,
-            "events": [0] * 30,
-            "console_cmds": [0] * 30,
-            "physics": [0] * 30,
-            "render_regs": [0] * 30,
-            "bg_render": [0] * 30,
-            "render": [0] * 30,
-            "actor_render": [0] * 30,
-            "widget_render": [0] * 30,
+            "fps":              [0] * 30,
+            "events":           [0] * 30,
+            "console_cmds":     [0] * 30,
+            "physics":          [0] * 30,
+            "render_regs":      [0] * 30,
+            "bg_render":        [0] * 30,
+            "render":           [0] * 30,
+            "actor_render":     [0] * 30,
+            "widget_render":    [0] * 30,
         }
 
         pygame.init()
-        
-        self.register_widget(InfoText("fps", Vector(10, 12), "fps: "))
-        self.register_widget(InfoText("events", Vector(10, 36), "events: ", " ms"))
-        self.register_widget(InfoText("console_cmds", Vector(10, 60), "console cmds: ", " ms"))
-        self.register_widget(InfoText("physics", Vector(10, 84), "physics: ", " ms"))
-        self.register_widget(InfoText("render_regs", Vector(10, 108), "render regs: ", " ms"))
-        self.register_widget(InfoText("bg_render", Vector(10, 132), "bg render: ", " ms"))
-        self.register_widget(InfoText("render", Vector(10, 156), "render: ", " ms"))
-        self.register_widget(InfoText("actor_render", Vector(10, 180), "actor render: ", " ms"))
-        self.register_widget(InfoText("widget_render", Vector(10, 204), "widget render: ", " ms"))
+
+        self.register_widget(InfoText("fps",            Vector(10, 12 ), "fps: "))
+        self.register_widget(InfoText("events",         Vector(10, 36 ), "events: ",        " ms"))
+        self.register_widget(InfoText("console_cmds",   Vector(10, 60 ), "console cmds: ",  " ms"))
+        self.register_widget(InfoText("physics",        Vector(10, 84 ), "physics: ",       " ms"))
+        self.register_widget(InfoText("render_regs",    Vector(10, 108), "render regs: ",   " ms"))
+        self.register_widget(InfoText("bg_render",      Vector(10, 132), "bg render: ",     " ms"))
+        self.register_widget(InfoText("render",         Vector(10, 156), "render: ",        " ms"))
+        self.register_widget(InfoText("actor_render",   Vector(10, 180), "actor render: ",  " ms"))
+        self.register_widget(InfoText("widget_render",  Vector(10, 204), "widget render: ", " ms"))
         
         self.__cmd_thread.start()
         
