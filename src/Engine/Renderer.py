@@ -5,6 +5,8 @@ from components.button import Button
 
 import pygame
 
+import time
+
 
 
 class Renderer:
@@ -150,11 +152,13 @@ class Renderer:
 
 
     def render(self):
-        combined_surface = pygame.Surface((self.resolution.x, self.resolution.y), pygame.SRCALPHA)
+        combined_surface = pygame.Surface(self.resolution.tuple, pygame.SRCALPHA)
         combined_surface.fill((0, 0, 0, 0))
 
         camera_ratio = self.resolution.x / self.camera_width
         
+        time_start = time.time()
+
         for a in self.actors_to_draw:
             top_left_position = (
                 camera_ratio * (a.position.x - a.half_size.x - self.camera_position.x) + self.resolution.x / 2,
@@ -162,12 +166,18 @@ class Renderer:
             )
             self.__draw_rectangle_texture(combined_surface, a.material.texture, a.half_size * 2 * camera_ratio, top_left_position)
 
+        time_actors = time.time()
+
         self.__widgets_to_draw.sort(key = lambda w: w.layer)
         for w in self.widgets_to_draw:
             self.__draw_widget(combined_surface, w)
 
+        time_widgets = time.time()
+
         self.screen.blit(combined_surface, (0, 0))
         pygame.display.flip()
+
+        return (time_actors - time_start, time_widgets - time_actors)
 
 
     def draw_background(self, background):

@@ -6,7 +6,7 @@ class Console:
         self.running = True
         self.cmd_output = []
 
-        stat_widgets = ("fps", "events", "console_cmds", "physics", "render_regs", "bg_render", "render")
+        stat_widgets = ("fps", "events", "console_cmds", "physics", "render_regs", "bg_render", "render", "actor_render", "widget_render")
         self.__commands = {
             "exit": "self.running = False\nself.console.running = False",
             "help": "print('Commands:', ', '.join(self.console.commands.keys()))",
@@ -21,6 +21,8 @@ class Console:
             "stat_render_regs": "self.widgets['render_regs'].visible = not self.widgets['render_regs'].visible",
             "stat_bg_render": "self.widgets['bg_render'].visible = not self.widgets['bg_render'].visible",
             "stat_render": "self.widgets['render'].visible = not self.widgets['render'].visible",
+            "stat_actor_render": "self.widgets['actor_render'].visible = not self.widgets['actor_render'].visible",
+            "stat_widget_render": "self.widgets['widget_render'].visible = not self.widgets['widget_render'].visible",
             "stat_all": f"for widget in self.widgets:\n\tif widget in {stat_widgets}:\n\t\tself.widgets[widget].visible = True",
             "stat_none": f"for widget in self.widgets:\n\tif widget in {stat_widgets}:\n\t\tself.widgets[widget].visible = False",
         }

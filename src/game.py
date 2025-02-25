@@ -133,7 +133,7 @@ class Game(GameBase):
 
         bgl_sky = BackgroundLayer(sky_mat, 15, 1)
         regb(Background("sky", [bgl_sky]))
-        rega(Player(self, "Player" , Vector(0.7, 0.5), Vector(-7, 0), material=bird_mat, jump_velocity=4.5))
+        rega(Player(self, "Player" , Vector(0.5, 0.35), Vector(-7, 0), material=bird_mat, jump_velocity=5))
         regw(Text("dead", Vector(0, 0), Vector(1600, 900), 1, "res/fonts/arial.ttf", Color(0, 0, 0, 100), False, "You died", Color(255,0,0), 100, Alignment.CENTER))
         regw(Text("score", Vector(700, 10), Vector(200, 40), 2, "res/fonts/arial.ttf", Color(0, 0, 0, 100), True, "Score: 0", Color(255, 255, 255), 32, Alignment.CENTER))
 
@@ -205,14 +205,14 @@ class Game(GameBase):
 
         self.clock += delta_time
 
-        if self.clock > 1.5:
+        if self.clock > 2:
             offset = r.randrange(-2, 2)
             self.clock = 0
             self.index += 1
-            self.engine.simulation_speed += 0.005
+            self.engine.simulation_speed += 0.01
 
-            reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(0.5, 10), Vector(12, offset + 12), False, True, True, self.pipe_mat))
-            reg(Pipe(self,"Pipe_b_" + str(self.index), Vector(0.5, 10), Vector(12, offset - 12), False, True, True, self.pipe_mat))
+            reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(1, 10), Vector(12, offset + 12), False, True, True, self.pipe_mat))
+            reg(Pipe(self,"Pipe_b_" + str(self.index), Vector(1, 10), Vector(12, offset - 12), False, True, True, self.pipe_mat))
             reg(ScoreUpdater(self, "ScoreUpdater_" + str(self.index), Vector(0.5, 10), Vector(12, 0), False, False, False))
 
 

@@ -18,7 +18,7 @@ import time
 
 class InfoText(Text):
     def __init__(self, name, pos, pre_text, after_text = ""):
-        super().__init__(name, pos, Vector(200, 24), 0, "res/fonts/arial.ttf", Color(0, 0, 0, 100), text_color=Color(0, 0, 255), font_size=20, text_alignment=Alignment.LEFT)
+        super().__init__(name, pos, Vector(215, 24), 0, "res/fonts/arial.ttf", Color(0, 0, 0, 100), text_color=Color(0, 0, 255), font_size=20, text_alignment=Alignment.LEFT)
 
         self.pre_text = pre_text
         self.after_text = after_text
@@ -61,8 +61,12 @@ class Engine(Renderer):
             "render_regs": [0] * 30,
             "bg_render": [0] * 30,
             "render": [0] * 30,
+            "actor_render": [0] * 30,
+            "widget_render": [0] * 30,
         }
 
+        pygame.init()
+        
         self.register_widget(InfoText("fps", Vector(10, 12), "fps: "))
         self.register_widget(InfoText("events", Vector(10, 36), "events: ", " ms"))
         self.register_widget(InfoText("console_cmds", Vector(10, 60), "console cmds: ", " ms"))
@@ -70,10 +74,11 @@ class Engine(Renderer):
         self.register_widget(InfoText("render_regs", Vector(10, 108), "render regs: ", " ms"))
         self.register_widget(InfoText("bg_render", Vector(10, 132), "bg render: ", " ms"))
         self.register_widget(InfoText("render", Vector(10, 156), "render: ", " ms"))
+        self.register_widget(InfoText("actor_render", Vector(10, 180), "actor render: ", " ms"))
+        self.register_widget(InfoText("widget_render", Vector(10, 204), "widget render: ", " ms"))
         
         self.__cmd_thread.start()
         
-        pygame.init()
         self.running = True
 
 
@@ -262,9 +267,14 @@ class Engine(Renderer):
         for name, stat in self.__stats.items():
             self.widgets[name].set_value(sum(stat) / len(stat) * 1000)
 
-        self.render()
+        render_time = self.render()
 
         self.__time("render")
+
+        self.__stats["actor_render"].append(render_time[0])
+        self.__stats["widget_render"].append(render_time[1])
+        self.__stats["actor_render"].pop(0)
+        self.__stats["widget_render"].pop(0)
 
         return delta_time
     

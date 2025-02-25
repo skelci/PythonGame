@@ -8,6 +8,8 @@ import pygame
 
 
 class Text(Widget):
+    __fonts = {}
+
     def __init__(self, name, position, size, layer, font, bg_color = Color(0, 0, 0, 0), visible = False, text = "", text_color = Color(255, 255, 255), font_size = 32, text_alignment = Alignment.CENTER):
         super().__init__(name, position, size, layer, bg_color, visible)
 
@@ -66,6 +68,7 @@ class Text(Widget):
     def font_size(self, value):
         if isinstance(value, int) and value > 0:
             self.__font_size = value
+            self.load_font()
         else:
             raise TypeError("Font size must be a positive integer:", value)
         
@@ -85,8 +88,7 @@ class Text(Widget):
 
     @property
     def surface(self):
-        font = pygame.font.Font(self.font, self.font_size)
-        text = font.render(self.text, True, self.text_color.tuple)
+        text = self.__fonts[self.__font_code].render(self.text, True, self.text_color.tuple)
         text_rect = None
         match self.text_alignment:
             case Alignment.LEFT:
@@ -100,3 +102,15 @@ class Text(Widget):
         surface.blit(text, text_rect)
 
         return surface
+    
+
+    @property
+    def __font_code(self):
+        return str(self.font_size) + self.font
+    
+
+    def load_font(self):
+        if self.__font_code not in self.__fonts:
+            self.__fonts[self.__font_code] = pygame.font.Font(self.font, self.font_size)
+
+
