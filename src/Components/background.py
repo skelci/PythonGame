@@ -10,7 +10,8 @@ class BackgroundLayer:
         self.width = width
         self.scroll_speed = scroll_speed
 
-        self.__buffered_material = None
+        self.__buffered_screen_res = None
+        self.__buffered_camera_width = None
 
 
     @property
@@ -53,20 +54,42 @@ class BackgroundLayer:
             raise TypeError("Scroll speed must be a number.")
         
 
-    def get_bg_surface(self, camera_pos, screen_res, camera_width):
-        bg_surface = pygame.Surface(screen_res.tuple)
-        scale_ratio = screen_res.x / camera_width * self.__width
+    def __set_buffer(self, screen_res, camera_width):
+        self.__buffered_screen_res = screen_res
+        self.__buffered_camera_width = camera_width
+        
+
+    def __create_bg_surface(self, screen_res, camera_width):
+        scale_ratio = screen_res.x / camera_width * self.width
         material_res = Vector(self.__texture.get_width(), self.__texture.get_height())
         scaled_material_surface = pygame.transform.scale(self.__texture, (scale_ratio, scale_ratio * material_res.y / material_res.x))
+        self.__scaled_material_res = Vector(scaled_material_surface.get_width(), scaled_material_surface.get_height())
 
-        scaled_material_res = Vector(scaled_material_surface.get_width(), scaled_material_surface.get_height())
+        x_tiles = math.ceil(screen_res.x / self.__scaled_material_res.x) + 1
+        y_tiles = math.ceil(screen_res.y / self.__scaled_material_res.y) + 1
+        
+        bg_surface = pygame.Surface((Vector(x_tiles, y_tiles) * self.__scaled_material_res).tuple)
 
-        top_left = ((camera_pos * self.scroll_speed) % scaled_material_res).abs
-        top_left -= scaled_material_res
+        for x in range(x_tiles):
+            for y in range(y_tiles):
+                bg_surface.blit(scaled_material_surface, (x * self.__scaled_material_res.x, y * self.__scaled_material_res.y))
 
-        for x in range(top_left.x, screen_res.x, scaled_material_res.x):
-            for y in range(top_left.y, screen_res.y, scaled_material_res.y):
-                bg_surface.blit(scaled_material_surface, (x, y))
+        self.__bg_surface = bg_surface
+
+
+    def get_bg_surface(self, camera_pos, screen_res, camera_width):
+        if not screen_res == self.__buffered_screen_res or not camera_width == self.__buffered_camera_width:
+            self.__set_buffer(screen_res, camera_width)
+            self.__create_bg_surface(screen_res, camera_width)
+
+        top_left = (camera_pos * self.scroll_speed) % self.__scaled_material_res
+        if top_left.x < 0:
+            top_left.x += self.__scaled_material_res.x
+        if top_left.y < 0:
+            top_left.y += self.__scaled_material_res.y
+
+        bg_surface = pygame.Surface(screen_res.tuple)
+        bg_surface.blit(self.__bg_surface, top_left.tuple)
 
         return bg_surface
 
