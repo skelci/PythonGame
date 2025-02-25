@@ -202,7 +202,6 @@ class Game(GameBase):
         if Key.SPACE in self.engine.released_keys:
             self.engine.actors["Player"].jump()
 
-
         self.clock += delta_time
 
         if self.clock > 2:
