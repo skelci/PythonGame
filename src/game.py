@@ -140,7 +140,7 @@ class Game(GameBase):
         eng.current_background = "sky"
         eng.camera_position = Vector(0, 0)
         eng.camera_width = 20
-        eng.widgets["fps"].visible = True
+        eng.console.handle_cmd("stat_all")
 
         self.start()
 
@@ -211,9 +211,9 @@ class Game(GameBase):
             self.index += 1
             self.engine.simulation_speed += 0.01
 
-            reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(1, 10), Vector(12, offset + 12), False, True, True, self.pipe_mat))
-            reg(Pipe(self,"Pipe_b_" + str(self.index), Vector(1, 10), Vector(12, offset - 12), False, True, True, self.pipe_mat))
-            reg(ScoreUpdater(self, "ScoreUpdater_" + str(self.index), Vector(0.5, 10), Vector(12, 0), False, False, False))
+            reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(1, 3), Vector(12, offset + 5), False, True, True, self.pipe_mat))
+            reg(Pipe(self,"Pipe_b_" + str(self.index), Vector(1, 3), Vector(12, offset - 5), False, True, True, self.pipe_mat))
+            reg(ScoreUpdater(self, "ScoreUpdater_" + str(self.index), Vector(0.5, 2), Vector(12, 0), False, False, False))
 
 
         

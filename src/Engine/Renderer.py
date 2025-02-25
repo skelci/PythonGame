@@ -152,9 +152,6 @@ class Renderer:
 
 
     def render(self):
-        combined_surface = pygame.Surface(self.resolution.tuple, pygame.SRCALPHA)
-        combined_surface.fill((0, 0, 0, 0))
-
         camera_ratio = self.resolution.x / self.camera_width
         
         time_start = time.time()
@@ -164,17 +161,16 @@ class Renderer:
                 camera_ratio * (a.position.x - a.half_size.x - self.camera_position.x) + self.resolution.x / 2,
                 camera_ratio * -(a.position.y + a.half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
             )
-            self.__draw_rectangle_texture(combined_surface, a.material.texture, a.half_size * 2 * camera_ratio, top_left_position)
+            self.__draw_rectangle_texture(a.material.texture, a.half_size * 2 * camera_ratio, top_left_position)
 
         time_actors = time.time()
 
         self.__widgets_to_draw.sort(key = lambda w: w.layer)
         for w in self.widgets_to_draw:
-            self.__draw_widget(combined_surface, w)
+            self.__draw_widget(w)
 
         time_widgets = time.time()
 
-        self.screen.blit(combined_surface, (0, 0))
         pygame.display.flip()
 
         return (time_actors - time_start, time_widgets - time_actors)
@@ -185,13 +181,13 @@ class Renderer:
         self.screen.blit(bg_surface, (0, 0))
 
 
-    def __draw_rectangle_texture(self, screen, surface, size, top_left_position):
+    def __draw_rectangle_texture(self, surface, size, top_left_position):
         scaled_texture = pygame.transform.scale(surface, size.rounded.tuple)
         
-        screen.blit(scaled_texture, top_left_position)
+        self.screen.blit(scaled_texture, top_left_position)
 
 
-    def __draw_widget(self, screen, widget):
+    def __draw_widget(self, widget):
         camera_ratio = Vector()
         camera_ratio.x = self.resolution.x / 1600
         camera_ratio.y = self.resolution.y / 900
@@ -204,5 +200,5 @@ class Renderer:
 
         widget.screen_rect = (top_left_position, top_left_position + size)
 
-        self.__draw_rectangle_texture(screen, widget.surface, size, top_left_position.tuple)
+        self.__draw_rectangle_texture(widget.surface, size, top_left_position.tuple)
         

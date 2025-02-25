@@ -4,7 +4,7 @@
 class Console:
     def __init__(self):
         self.running = True
-        self.cmd_output = []
+        self.__cmd_output = []
 
         stat_widgets = ("fps", "events", "console_cmds", "physics", "render_regs", "bg_render", "render", "actor_render", "widget_render")
         self.__commands = {
@@ -44,14 +44,6 @@ class Console:
     @property
     def cmd_output(self):
         return self.__cmd_output
-    
-
-    @cmd_output.setter
-    def cmd_output(self, value):
-        if isinstance(value, list) and len(value) == 0:
-            self.__cmd_output = value
-        else:
-            raise TypeError("Command output must be a list:", value)
         
 
     @property
@@ -75,10 +67,10 @@ class Console:
         cmd = input("> ")
 
         if cmd:
-            self.__handle_cmd(cmd)
+            self.handle_cmd(cmd)
 
 
-    def __handle_cmd(self, cmd):
+    def handle_cmd(self, cmd):
         cmd_args = cmd.split(" ")
 
         py_cmd = ""
