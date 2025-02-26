@@ -88,6 +88,10 @@ class Player(Character):
 
 
 class Pipe(Actor):
+    def __init__(self, game_ref, name, position, material):
+        super().__init__(game_ref, name, Vector(1, 3), position, material=material)
+
+
     def tick(self, delta_time):
         super().tick(delta_time)
 
@@ -114,6 +118,7 @@ class ScoreUpdater(Actor):
             return
 
         self.game_ref.score += 1
+        self.game_ref.engine.simulation_speed += 0.01
         self.game_ref.engine.widgets["score"].text = f"Score: {self.game_ref.score}"
         self.game_ref.engine.destroy_actor(self.name)
 
@@ -180,7 +185,7 @@ class Game(GameBase):
             self.start()
 
         if not self.dead and Key.P in self.engine.released_keys:
-            self.engine.simulation_speed = 1 if self.engine.simulation_speed == 0 else 0
+            self.engine.simulation_speed = 1 if self.engine.simulation_speed == 0 else 1 + self.score * 0.01
 
         if Key.ESC in self.engine.released_keys:
             self.engine.running = False
@@ -208,10 +213,9 @@ class Game(GameBase):
             offset = r.randrange(-2, 2)
             self.clock = 0
             self.index += 1
-            self.engine.simulation_speed += 0.01
 
-            reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(1, 3), Vector(12, offset + 5), False, True, True, self.pipe_mat))
-            reg(Pipe(self,"Pipe_b_" + str(self.index), Vector(1, 3), Vector(12, offset - 5), False, True, True, self.pipe_mat))
+            reg(Pipe(self,"Pipe_t_" + str(self.index), Vector(12, offset + 5), self.pipe_mat))
+            reg(Pipe(self,"Pipe_b_" + str(self.index), Vector(12, offset - 5), self.pipe_mat))
             reg(ScoreUpdater(self, "ScoreUpdater_" + str(self.index), Vector(0.5, 2), Vector(12, 0), False, False, False))
 
 
