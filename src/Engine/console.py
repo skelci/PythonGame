@@ -12,6 +12,7 @@ class Console:
             "help": "print('Commands:', ', '.join(self.console.commands.keys()))",
             "print": "print({arg1})",
             "raw": "{arg1}",
+            "sim_speed": "self.simulation_speed = float({arg1})",
             "tp": "self.actors['{arg1}'].position = Vector({arg2}, {arg3})",
             
             "stat_fps": "self.widgets['fps'].visible = not self.widgets['fps'].visible",

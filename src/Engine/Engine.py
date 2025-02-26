@@ -294,7 +294,7 @@ class Engine(Renderer):
     def __execute_cmd(self, cmd):
         try:
             exec(cmd)
-        except TypeError as e:
+        except Exception as e:
             print(e)
 
 

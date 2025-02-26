@@ -5,8 +5,8 @@ from components.datatypes import *
 
 
 class Character(Rigidbody):
-    def __init__(self, game_ref, name, half_size, position = Vector(), generate_overlap_events = True, collidable = True, simulate_physics = True, visible = True, material = None, restitution = 0, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 100, gravity_scale = 1, friction = 8, air_resistance = 0.1, jump_velocity = 7, walk_speed = 5, acceleration = 10, air_control = 0.2):
-        super().__init__(game_ref, name, half_size, position, generate_overlap_events, collidable, simulate_physics, visible, material, restitution, initial_velocity, min_velocity, mass, gravity_scale, friction, air_resistance)
+    def __init__(self, game_ref, name, half_size, position = Vector(), generate_overlap_events = True, collidable = True, simulate_physics = True, visible = True, material = None, restitution = 0, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 100, gravity_scale = 1, air_resistance = 0.1, deceleration = 10, jump_velocity = 7, walk_speed = 5, acceleration = 10, air_control = 0.2):
+        super().__init__(game_ref, name, half_size, position, generate_overlap_events, collidable, simulate_physics, visible, material, restitution, initial_velocity, min_velocity, mass, gravity_scale, air_resistance, deceleration)
         
         self.jump_velocity = jump_velocity
         self.walk_speed = walk_speed
@@ -97,7 +97,7 @@ class Character(Rigidbody):
             if self.is_grounded:
                 self.velocity.x += dad
                 if self.velocity.abs.x > self.walk_speed:
-                    self.velocity.x -= self.walk_speed * self.friction * dad
+                    self.velocity.x -= self.walk_speed * dad
                     if self.velocity.abs.x < self.walk_speed:
                         self.velocity.x = direction * self.walk_speed
             else:
@@ -123,7 +123,7 @@ class Character(Rigidbody):
             self.velocity.y = 0
 
         # Gravity
-        if self.collided_sides[3] == 0:
+        if not self.is_grounded:
             self.velocity.y += gravity * self.gravity_scale * delta_time
 
         # Air resistance
@@ -132,14 +132,14 @@ class Character(Rigidbody):
             self.velocity = Vector(0, 0)
         else:
             self.velocity -= v_change
-        
+
         # Friction
         if self.is_grounded and self.move_direction == 0:
-            v_change = self.velocity.x * self.friction * delta_time
-            if self.velocity.abs.x < abs(v_change):
+            v_change = self.deceleration * delta_time
+            if self.velocity.abs.x <= v_change:
                 self.velocity.x = 0
             else:
-                self.velocity -= v_change
+                self.velocity.x -= v_change * self.velocity.x / self.velocity.abs.x
 
         self.__move(delta_time)
 

@@ -5,7 +5,7 @@ from components.datatypes import *
 
 
 class Rigidbody(Actor):
-    def __init__(self, game_ref, name, half_size, position = Vector(), generate_overlap_events = False, collidable = True, simulate_physics = True, visible = True, material = None, restitution = 0.5, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 1, gravity_scale = 1, friction = 0.5, air_resistance = 0.1):
+    def __init__(self, game_ref, name, half_size, position = Vector(), generate_overlap_events = False, collidable = True, simulate_physics = True, visible = True, material = None, restitution = 0.5, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 1, gravity_scale = 1, air_resistance = 0.1, deceleration = 10):
         super().__init__(game_ref, name, half_size, position, generate_overlap_events, collidable, visible, material, restitution)
 
         self.simulate_physics = simulate_physics
@@ -13,8 +13,8 @@ class Rigidbody(Actor):
         self.min_velocity = min_velocity
         self.mass = mass
         self.gravity_scale = gravity_scale
-        self.friction = friction
         self.air_resistance = air_resistance
+        self.deceleration = deceleration
 
         self.collided_sides = [0, 0, 0, 0] # right, left, top, bottom
 
@@ -85,19 +85,6 @@ class Rigidbody(Actor):
         
 
     @property
-    def friction(self):
-        return self.__friction
-    
-
-    @friction.setter
-    def friction(self, value):
-        if isinstance(value, (int, float)) and value >= 0:
-            self.__friction = value
-        else:
-            raise TypeError("Friction must be a positive float:", value)
-        
-
-    @property
     def air_resistance(self):
         return self.__air_resistance
     
@@ -108,6 +95,19 @@ class Rigidbody(Actor):
             self.__air_resistance = value
         else:
             raise TypeError("Air resistance must be a positive float:", value)
+        
+
+    @property
+    def deceleration(self):
+        return self.__deceleration
+    
+
+    @deceleration.setter
+    def deceleration(self, value):
+        if isinstance(value, (int, float)) and value >= 0:
+            self.__deceleration = value
+        else:
+            raise TypeError("Friction must be a positive float:", value)
         
 
     @property
@@ -151,12 +151,11 @@ class Rigidbody(Actor):
         
         # Friction
         if self.collided_sides[3] != 0:
-            v_change = self.velocity.x * self.friction * delta_time
-            if self.velocity.abs.x < abs(v_change):
+            v_change = self.deceleration * delta_time
+            if self.velocity.abs.x < v_change:
                 self.velocity.x = 0
             else:
-                self.velocity -= v_change
-        
+                self.velocity.x -= v_change * math.ceil(self.velocity.abs.x)
 
 
     def is_colliding(self, collided_actor):
