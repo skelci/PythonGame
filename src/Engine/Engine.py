@@ -1,6 +1,7 @@
 from engine.renderer import Renderer
 
 from engine.console import Console
+from engine.build import *
 
 from components.button import Button
 from components.datatypes import *
@@ -52,6 +53,8 @@ class Engine(Renderer):
         self.console = Console()
         self.__cmd_thread = threading.Thread(target=self.console.run)
         self.__cmd_thread.daemon = True
+
+        self.builder = Build("./build", "./packaged", ["./src"], ["./src", "./res"])
 
         self.__stats = {
             "fps":              [0] * 30,
