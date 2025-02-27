@@ -8,8 +8,9 @@ class Console:
 
         stat_widgets = ("fps", "events", "console_cmds", "physics", "render_regs", "bg_render", "render", "actor_render", "widget_render")
         self.__commands = {
-            "build_server": "self.builder.build_server()",
+            "build_clear": "self.builder.clear_build()",
             "build_client": "self.builder.build_client()",
+            "build_server": "self.builder.build_server()",
             "exit": "self.running = False\nself.console.running = False",
             "help": "print('Commands:', ', '.join(self.console.commands.keys()))",
             "print": "print({arg1})",

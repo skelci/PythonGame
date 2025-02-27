@@ -78,12 +78,16 @@ class Build:
                     self.__parse_file(file, BuildType.SERVER)
 
         for file in self.__get_all_files(self.build_dir + "/src_cache/server"):
-            shutil.copy(file, self.package_dir + "/server/src/" + "/".join(file.split("/")[:3]))
+            copy_dest = self.package_dir + "/server/src/"
+            os.makedirs(os.path.dirname(copy_dest + "/".join(file.split("/")[3:])), exist_ok=True)
+            shutil.copy(file, copy_dest + "/".join(file.split("/")[3:]))
 
         for folder in self.server_folders:
             for file in self.__get_all_files(folder):
-                if not file.endswith(".py"):
-                    shutil.copy(file, self.package_dir + file)
+                if not file.endswith(".py") and not file.endswith(".pyc"):
+                    dest_dir = self.package_dir + "/server/" + file
+                    os.makedirs(os.path.dirname(dest_dir), exist_ok=True)
+                    shutil.copy(file, dest_dir)
 
         with open(self.package_dir + "/server/run.bat", "w") as f:
             f.write("python ./src/main.py")
@@ -96,15 +100,24 @@ class Build:
                     self.__parse_file(file, BuildType.CLIENT)
 
         for file in self.__get_all_files(self.build_dir + "/src_cache/client"):
-            shutil.copy(file, self.package_dir + "/client/src/" + "/".join(file.split("/")[:3]))
+            copy_dest = self.package_dir + "/client/src/"
+            os.makedirs(os.path.dirname(copy_dest + "/".join(file.split("/")[3:])), exist_ok=True)
+            shutil.copy(file, copy_dest + "/".join(file.split("/")[3:]))
 
         for folder in self.client_folders:
             for file in self.__get_all_files(folder):
-                if not file.endswith(".py"):
-                    shutil.copy(file, self.package_dir + file)
+                if not file.endswith(".py") and not file.endswith(".pyc"):
+                    dest_dir = self.package_dir + "/server/" + file
+                    os.makedirs(os.path.dirname(dest_dir), exist_ok=True)
+                    shutil.copy(file, dest_dir)
 
         with open(self.package_dir + "/client/run.bat", "w") as f:
             f.write("python ./src/main.py")
+
+
+    def clear_build(self):
+        shutil.rmtree(self.build_dir)
+        shutil.rmtree(self.package_dir)
 
 
     def __get_all_files(self, folder):
@@ -119,14 +132,18 @@ class Build:
         with open(file, "r") as f:
             lines = f.readlines()
 
-        if line[0].startswith("#*attr"):
+        if len(lines) == 0:
+            return
+
+        if lines[0].startswith("#*attr"):
             if build_type == BuildType.CLIENT and line[0][7:] == "SERVER":
                 return
             if build_type == BuildType.SERVER and line[0][7:] == "CLIENT":
                 return                
 
-        file_name = self.build_dir + "/src_cache/" + "server/" if build_type == BuildType.SERVER else "client/" + file
+        file_name = self.build_dir + "/src_cache/" + ("server/" if build_type == BuildType.SERVER else "client/") + "/".join(file.split("/")[1:])
 
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
         f = open(file_name, "w")
 
         define = False
