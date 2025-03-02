@@ -1,3 +1,5 @@
+#?attr ENGINE
+
 from enum import IntEnum
 
 import os
@@ -8,10 +10,10 @@ import shutil
 class BuildType(IntEnum):
     SERVER = 0
     CLIENT = 1
-    ALL = 2
+    COMBINED = 2
 
 
-class Build:
+class Builder:
     def __init__(self, build_dir, package_dir, server_folders, client_folders):
         self.build_dir = build_dir
         self.package_dir = package_dir
@@ -77,10 +79,10 @@ class Build:
                 if file.endswith(".py"):
                     self.__parse_file(file, BuildType.SERVER)
 
-        for file in self.__get_all_files(self.build_dir + "/src_cache/server"):
-            copy_dest = self.package_dir + "/server/src/"
-            os.makedirs(os.path.dirname(copy_dest + "/".join(file.split("/")[3:])), exist_ok=True)
-            shutil.copy(file, copy_dest + "/".join(file.split("/")[3:]))
+        for file in self.__get_all_files(self.build_dir + "/server/src_cache"):
+            copy_dest = self.package_dir + "/server/src/" + "/".join(file.split("\\")[1:])
+            os.makedirs(os.path.dirname(copy_dest), exist_ok=True)
+            shutil.copy(file, copy_dest)
 
         for folder in self.server_folders:
             for file in self.__get_all_files(folder):
@@ -99,15 +101,15 @@ class Build:
                 if file.endswith(".py"):
                     self.__parse_file(file, BuildType.CLIENT)
 
-        for file in self.__get_all_files(self.build_dir + "/src_cache/client"):
-            copy_dest = self.package_dir + "/client/src/"
-            os.makedirs(os.path.dirname(copy_dest + "/".join(file.split("/")[3:])), exist_ok=True)
-            shutil.copy(file, copy_dest + "/".join(file.split("/")[3:]))
+        for file in self.__get_all_files(self.build_dir + "/client/src_cache"):
+            copy_dest = self.package_dir + "/client/src/" + "/".join(file.split("\\")[1:])
+            os.makedirs(os.path.dirname(copy_dest), exist_ok=True)
+            shutil.copy(file, copy_dest)
 
         for folder in self.client_folders:
             for file in self.__get_all_files(folder):
                 if not file.endswith(".py") and not file.endswith(".pyc"):
-                    dest_dir = self.package_dir + "/server/" + file
+                    dest_dir = self.package_dir + "/client/" + file
                     os.makedirs(os.path.dirname(dest_dir), exist_ok=True)
                     shutil.copy(file, dest_dir)
 
@@ -115,9 +117,12 @@ class Build:
             f.write("python ./src/main.py")
 
 
-    def clear_build(self):
-        shutil.rmtree(self.build_dir)
-        shutil.rmtree(self.package_dir)
+    def clear_build(self, build_type = BuildType.COMBINED):
+        dir_suffix = ("/server", "/client", "")[build_type]
+        if os.path.exists(self.build_dir + dir_suffix):
+            shutil.rmtree(self.build_dir + dir_suffix)
+        if os.path.exists(self.package_dir + dir_suffix):
+            shutil.rmtree(self.package_dir + dir_suffix)
 
 
     def __get_all_files(self, folder):
@@ -135,53 +140,51 @@ class Build:
         if len(lines) == 0:
             return
 
-        if lines[0].startswith("#*attr"):
-            if build_type == BuildType.CLIENT and line[0][7:] == "SERVER":
+        if lines[0].startswith("#?attr"):
+            if lines[0][7:] == "ENGINE":
                 return
-            if build_type == BuildType.SERVER and line[0][7:] == "CLIENT":
-                return                
+            if build_type == BuildType.CLIENT and lines[0][7:] == "SERVER":
+                return
+            if build_type == BuildType.SERVER and lines[0][7:] == "CLIENT":
+                return
 
-        file_name = self.build_dir + "/src_cache/" + ("server/" if build_type == BuildType.SERVER else "client/") + "/".join(file.split("/")[1:])
+        file_name = self.build_dir + ("/server/" if build_type == BuildType.SERVER else "/client/") + "src_cache/" + "/".join(file.split("\\")[1:])
 
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         f = open(file_name, "w")
 
-        define = False
+        should_skip = False
         
         for line in lines:
-            if line.strip().startswith("#*"):
+            if line.strip().startswith("#?"):
                 line = line.strip()
-                if len(line) < 8:
+                if len(line) < 7:
                     print("Invalid line:", file, ":", line)
                     continue
 
                 if build_type == BuildType.SERVER:
-                    match line[2:]:
+                    match line[2:7]:
                         case "ifdef":
-                            if line[8:] == "SERVER":
-                                define = True
+                            if line[8:] == "CLIENT" or line[8:] == "ENGINE":
+                                should_skip = True
 
                         case "endif":
-                            define = False
+                            should_skip = False
                         
                 if build_type == BuildType.CLIENT:
-                    match line[2:]:
+                    match line[2:7]:
                         case "ifdef":
-                            if line[8:] == "CLIENT":
-                                define = True
+                            if line[8:] == "SERVER" or line[8:] == "ENGINE":
+                                should_skip = True
 
                         case "endif":
-                            define = False
+                            should_skip = False
 
             else:
-                if not define:
+                if not should_skip:
                     f.write(line)
 
         f.close()
-                                        
-
-    def __handle_resource(self, file):
-        pass
 
 
 

@@ -1,4 +1,4 @@
-from engine.game_base import GameBase
+from engine.game_base import *
 
 from components.actor import Actor
 from components.rigidbody import Rigidbody
@@ -13,60 +13,82 @@ import random as r
 
 
 
+#?ifdef CLIENT
+class ClientGame(ClientGameBase):
+    pass
+
+#?endif
+
+
+
+#?ifdef SERVER
+class ServerGame(ServerGameBase):
+    def __init__(self):
+        super().__init__()
+
+        self.engine.console.handle_cmd("build_server")
+        self.engine.console.handle_cmd("build_client")
+
+#?endif
+
+
+
+# All games below need a serious refactor. They were made before adding multiplayer support and are not compatible with it.
+
 # Below is a simple physics simulation, uncomment to run it -------------------
 
 
 
-class Game(GameBase):
-    def begin_play(self):
-        super().begin_play()
+# class Game(GameBase):
+#     def begin_play(self):
+#         super().begin_play()
 
-        grass = Material("res/textures/grass.jpeg")
+#         grass = Material("res/textures/grass.jpeg")
 
-        self.engine.title = "Game"
-        self.engine.width = 1200
-        self.engine.height = 800
-        self.engine.windowed = True
-        self.engine.tps = 30
-        self.engine.fps = 240
+#         self.engine.title = "Game"
+#         self.engine.width = 1200
+#         self.engine.height = 800
+#         self.engine.windowed = True
+#         self.engine.tps = 30
+#         self.engine.fps = 240
 
-        # Register actors & widgets after engine has been initialized
-        eng = self.engine
-        reg = lambda actor: eng.register_actor(actor)
-        regw = lambda widget: eng.register_widget(widget)
+#         # Register actors & widgets after engine has been initialized
+#         eng = self.engine
+#         reg = lambda actor: eng.register_actor(actor)
+#         regw = lambda widget: eng.register_widget(widget)
 
-        reg(Actor    (self, "Cube1"     , Vector(10 , 0.5), Vector( 0 ,  5), False, True, True, grass, 1))
-        reg(Actor    (self, "Cube2"     , Vector(0.5, 5  ), Vector( 10,  0), False, True, True, grass, 1))
-        reg(Actor    (self, "Cube3"     , Vector(10 , 0.5), Vector( 0 , -5), False, True, True, grass, 1))
-        reg(Actor    (self, "Cube4"     , Vector(0.5, 5  ), Vector(-10,  0), False, True, True, grass, 1))
-        reg(Character(self, "Character" , Vector(0.5, 1), material=grass, gravity_scale=1))
+#         reg(Actor    (self, "Cube1"     , Vector(10 , 0.5), Vector( 0 ,  5), False, True, True, grass, 1))
+#         reg(Actor    (self, "Cube2"     , Vector(0.5, 5  ), Vector( 10,  0), False, True, True, grass, 1))
+#         reg(Actor    (self, "Cube3"     , Vector(10 , 0.5), Vector( 0 , -5), False, True, True, grass, 1))
+#         reg(Actor    (self, "Cube4"     , Vector(0.5, 5  ), Vector(-10,  0), False, True, True, grass, 1))
+#         reg(Character(self, "Character" , Vector(0.5, 1), material=grass, gravity_scale=1))
 
-        for i in range(20):
-            reg(Rigidbody(self, "Rigidbody_" + str(i), Vector(0.25, 0.25), Vector(i%10 - 5, i//10 - 3), False, True, True, True, grass, 1, Vector(r.randrange(-5, 5), r.randrange(-5, 5)), 0, r.randrange(1, 4), 1, 0, 0))
+#         for i in range(20):
+#             reg(Rigidbody(self, "Rigidbody_" + str(i), Vector(0.25, 0.25), Vector(i%10 - 5, i//10 - 3), False, True, True, True, grass, 1, Vector(r.randrange(-5, 5), r.randrange(-5, 5)), 0, r.randrange(1, 4), 1, 0, 0))
 
-        regw(Button("idk", Vector(100, 100), Vector(200, 50), -1, border_color=Color(192, 31, 215), bg_color=Color(31, 2, 19), font="res/fonts/arial.ttf", text_color=Color(192, 31, 215), text="I don't know", font_size=20, thickness=5, action = lambda: print("I don't know"), hover_color=Color(60, 10, 80), click_color=Color(3, 10, 5)))
+#         regw(Button("idk", Vector(100, 100), Vector(200, 50), -1, border_color=Color(192, 31, 215), bg_color=Color(31, 2, 19), font="res/fonts/arial.ttf", text_color=Color(192, 31, 215), text="I don't know", font_size=20, thickness=5, action = lambda: print("I don't know"), hover_color=Color(60, 10, 80), click_color=Color(3, 10, 5)))
 
-        eng.camera_position = Vector(0, 0)
-        eng.camera_width = 20
+#         eng.camera_position = Vector(0, 0)
+#         eng.camera_width = 20
 
-        eng.widgets["idk"].visible = True
+#         eng.widgets["idk"].visible = True
 
 
-    def tick(self):
-        delta_time = super().tick()
-        if not self.engine.running:
-            return
+#     def tick(self):
+#         delta_time = super().tick()
+#         if not self.engine.running:
+#             return
         
-        if Key.SPACE in self.engine.pressed_keys:
-            self.engine.actors["Character"].jump()
-        if Key.A in self.engine.pressed_keys:
-            self.engine.actors["Character"].move_direction = -1
-        elif Key.D in self.engine.pressed_keys:
-            self.engine.actors["Character"].move_direction = 1
-        else:
-            self.engine.actors["Character"].move_direction = 0
-        if Key.P in self.engine.released_keys:
-            self.engine.simulation_speed = 1 if self.engine.simulation_speed == 0 else 0
+#         if Key.SPACE in self.engine.pressed_keys:
+#             self.engine.actors["Character"].jump()
+#         if Key.A in self.engine.pressed_keys:
+#             self.engine.actors["Character"].move_direction = -1
+#         elif Key.D in self.engine.pressed_keys:
+#             self.engine.actors["Character"].move_direction = 1
+#         else:
+#             self.engine.actors["Character"].move_direction = 0
+#         if Key.P in self.engine.released_keys:
+#             self.engine.simulation_speed = 1 if self.engine.simulation_speed == 0 else 0
 
 
 

@@ -1,4 +1,7 @@
-import pygame
+#?attr CLIENT
+
+import pygame # type: ignore
+
 import os
 
 
@@ -51,8 +54,9 @@ class Material:
     def load_texture(self):
         if self.texture_str not in Material.__textures:
             if os.path.isfile(self.texture_str):
-                Material.__textures[self.texture_str] = pygame.image.load(self.texture_str).convert_alpha() # why the f is does that shit of convert_alpha() make rendering 2x faster ?!?!?!
+                Material.__textures[self.texture_str] = pygame.image.load(self.texture_str).convert_alpha() # why the f does that shit of convert_alpha() make rendering 2x faster ?!?!?!
                 Material.__mirrored_textures[self.texture_str] = pygame.transform.flip(Material.__textures[self.texture_str], True, False)
             else:
                 raise TypeError("Texture file not found:", self.texture_str)
-    
+
+

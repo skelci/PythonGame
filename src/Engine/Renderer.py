@@ -1,9 +1,11 @@
+#?attr CLIENT
+
 from components.datatypes import *
 from components.actor import Actor
 from components.widget import Widget
 from components.button import Button
 
-import pygame
+import pygame # type: ignore
 
 import time
 

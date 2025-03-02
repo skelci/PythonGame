@@ -1,22 +1,40 @@
-from engine.engine import Engine
+from engine.engine import *
 
 from components.datatypes import *
 
 
 
-class GameBase:
+#?ifdef CLIENT
+class ClientGameBase:
+    def __init__(self):
+        self.__engine = ClientEngine()
+    
+
     @property
     def engine(self):
         return self.__engine
 
 
-    def begin_play(self):
-        self.__engine = Engine()
+    def tick(self):
+        return self.engine.tick() 
+
+#?endif
+
+
+
+#?ifdef SERVER
+class ServerGameBase:
+    def __init__(self):
+        self.__engine = ServerEngine()
+    
+
+    @property
+    def engine(self):
+        return self.__engine
 
 
     def tick(self):
-        return self.engine.tick() 
-    
+        return self.engine.tick()
 
-    def end_play(self):
-        pass
+#?endif
+

@@ -1,48 +1,35 @@
+#?attr SERVER
 
 
 
 class Console:
     def __init__(self):
-        self.running = True
+        self.__running = True
         self.__cmd_output = []
 
-        stat_widgets = ("fps", "events", "console_cmds", "physics", "render_regs", "bg_render", "render", "actor_render", "widget_render")
         self.__commands = {
-            "build_clear": "self.builder.clear_build()",
-            "build_client": "self.builder.build_client()",
-            "build_server": "self.builder.build_server()",
-            "exit": "self.running = False\nself.console.running = False",
             "help": "print('Commands:', ', '.join(self.console.commands.keys()))",
             "print": "print({arg1})",
             "raw": "{arg1}",
             "sim_speed": "self.simulation_speed = float({arg1})",
+            "stop": "self.stop()\nself.console.stop()",
             "tp": "self.actors['{arg1}'].position = Vector({arg2}, {arg3})",
+
+            "build_clear": "self.builder.clear_build()",
+            "build_client": "self.builder.clear_build(BuildType.CLIENT)\nself.builder.build_client()",
+            "build_server": "self.builder.clear_build(BuildType.SERVER)\nself.builder.build_server()",
             
-            "stat_fps": "self.widgets['fps'].visible = not self.widgets['fps'].visible",
-            "stat_events": "self.widgets['events'].visible = not self.widgets['events'].visible",
-            "stat_console_cmds": "self.widgets['console_cmds'].visible = not self.widgets['console_cmds'].visible",
-            "stat_physics": "self.widgets['physics'].visible = not self.widgets['physics'].visible",
-            "stat_render_regs": "self.widgets['render_regs'].visible = not self.widgets['render_regs'].visible",
-            "stat_bg_render": "self.widgets['bg_render'].visible = not self.widgets['bg_render'].visible",
-            "stat_render": "self.widgets['render'].visible = not self.widgets['render'].visible",
-            "stat_actor_render": "self.widgets['actor_render'].visible = not self.widgets['actor_render'].visible",
-            "stat_widget_render": "self.widgets['widget_render'].visible = not self.widgets['widget_render'].visible",
-            "stat_all": f"for widget in self.widgets:\n\tif widget in {stat_widgets}:\n\t\tself.widgets[widget].visible = True",
-            "stat_none": f"for widget in self.widgets:\n\tif widget in {stat_widgets}:\n\t\tself.widgets[widget].visible = False",
+            "stat_tps": "print('tps:', self.get_stat('tps'))",
+            "stat_console_cmds": "print('console_cmds:', self.get_stat('console_cmds'), 'ms')",
+            "stat_physics": "print('physics:', self.get_stat('physics'), 'ms')",
+            "stat_widget_tick": "print('widget_tick:', self.get_stat('widget_tick'), 'ms')",
+            "stat_all": "for stat in ('tps', 'console_cmds', 'physics', 'widget_tick'):\n\tprint(self.get_stat(stat))",
         }
 
 
     @property
     def running(self):
         return self.__running
-    
-
-    @running.setter
-    def running(self, value):
-        if isinstance(value, bool):
-            self.__running = value
-        else:
-            raise TypeError("Running must be a boolean:", value)
         
 
     @property
@@ -53,6 +40,10 @@ class Console:
     @property
     def commands(self):
         return self.__commands
+    
+
+    def stop(self):
+        self.__running = False
     
 
     def register_command(self, name, func):
