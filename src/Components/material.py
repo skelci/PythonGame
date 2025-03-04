@@ -58,5 +58,6 @@ class Material:
                 Material.__mirrored_textures[self.texture_str] = pygame.transform.flip(Material.__textures[self.texture_str], True, False)
             else:
                 raise TypeError("Texture file not found:", self.texture_str)
+            
 
 

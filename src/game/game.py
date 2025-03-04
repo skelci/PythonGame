@@ -29,6 +29,10 @@ class ServerGame(ServerGameBase):
         self.engine.console.handle_cmd("build_server")
         self.engine.console.handle_cmd("build_client")
 
+        self.engine.max_tps = 300
+
+        self.engine.start_network("0.0.0.0", 5555, 10)
+
 #?endif
 
 

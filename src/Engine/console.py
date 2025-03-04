@@ -21,9 +21,10 @@ class Console:
             
             "stat_tps": "print('tps:', self.get_stat('tps'))",
             "stat_console_cmds": "print('console_cmds:', self.get_stat('console_cmds'), 'ms')",
-            "stat_physics": "print('physics:', self.get_stat('physics'), 'ms')",
+            "level_updates": "print('level_updates:', self.get_stat('level_updates'), 'ms')",
             "stat_widget_tick": "print('widget_tick:', self.get_stat('widget_tick'), 'ms')",
-            "stat_all": "for stat in ('tps', 'console_cmds', 'physics', 'widget_tick'):\n\tprint(self.get_stat(stat))",
+            "stat_network": "print('network:', self.get_stat('network'), 'ms')",
+            "stat_all": "for stat in ('tps', 'console_cmds', 'level_updates', 'widget_tick', 'network'):\n\tprint(stat + ': ' + self.get_stat(stat))",
         }
 
 

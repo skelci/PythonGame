@@ -2,6 +2,7 @@ import socket
 import threading
 import queue
 import sqlite3 as sql
+import ast
 from abc import ABC, abstractmethod
 
 
@@ -13,10 +14,10 @@ class Network(ABC):
         self.__running = True
         
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.__output_queue = queue.Queue()
-        self.__input_queue = queue.Queue()
+        self._output_queue = queue.Queue()
+        self._input_queue = queue.Queue()
 
-        sending_thread = threading.Thread(target=self.__send_data)
+        sending_thread = threading.Thread(target=self._send_data)
         sending_thread.daemon = True
         sending_thread.start()
 
@@ -45,21 +46,29 @@ class Network(ABC):
             self.__port = value
         else:
             raise TypeError("Port must be an integer between 0 and 65535:", value)
+        
+
+    @property
+    def running(self):
+        return self.__running
 
 
     def __parse_data(self, data):
-        return data.decode("ascii").split(chr(31))
+        return ast.literal_eval(data.decode("ascii"))
+    
+
+    def __parse_for_send(self, cmd, data):
+        return f"({cmd},{data})".encode("ascii")
     
 
     @abstractmethod
-    def __send_data(self):
+    def _send_data(self):
         pass
 
 
     def get_data(self):
-        if not self.__input_queue.empty():
-            return self.__input_queue.get()
-        return None
+        if not self._input_queue.empty():
+            return self._input_queue.get()
     
 
     def stop(self):
@@ -79,15 +88,14 @@ class ClientNetwork(Network):
         self.__conn_thread.start()
 
 
-    def send(self, data):
-        data_str = chr(31).join(data)
-        self.__input_queue.put(data_str.encode("ascii"))
+    def send(self, cmd, data):
+        self.__input_queue.put(self.__parse_for_send(cmd, data))
 
 
-    def __send_data(self):
+    def _send_data(self):
         while self.running:
-            if not self.__output_queue.empty():
-                data = self.__output_queue.get()
+            if not self._output_queue.empty():
+                data = self._output_queue.get()
                 self.socket.send(data)
 
 
@@ -96,7 +104,7 @@ class ClientNetwork(Network):
             data = self.socket.recv(1024)
             if not data:
                 break
-            self.__output_queue.put(self.__parse_data(data))
+            self._output_queue.put(self.__parse_data(data))
         self.socket.close()
         
 #?endif
@@ -105,9 +113,11 @@ class ClientNetwork(Network):
 
 #?ifdef SERVER
 class ServerNetwork(Network):
-    def __init__(self, address, port, max_connections):
+    def __init__(self, address, port, max_connections, on_connect):
         super().__init__(address, port)
         self.max_connections = max_connections
+
+        self.__on_connect = on_connect
 
         self.__db_conn = sql.connect("server.db")
         self.__db_cursor = self.__db_conn.cursor()
@@ -145,15 +155,14 @@ class ServerNetwork(Network):
             raise TypeError("Max connections must be a positive integer:", value)
 
 
-    def send(self, id, data):
-        data_str = chr(31).join(data)
-        self.__input_queue.put((id, data_str.encode("ascii")))
+    def send(self, id, cmd, data):
+        self.__input_queue.put((id, self.__parse_for_send(cmd, data)))
 
 
-    def __send_data(self):
+    def _send_data(self):
         while self.running:
-            if not self.__output_queue.empty():
-                id, data = self.__output_queue.get()
+            if not self._output_queue.empty():
+                id, data = self._output_queue.get()
                 conn = self.__id_to_conn[id]
                 conn.send(data)
         
@@ -173,11 +182,13 @@ class ServerNetwork(Network):
             if result:
                 break
 
+        self.__on_connect(self.__conn_to_id[conn])
+
         while self.running:
             data = conn.recv(1024)
             if not data:
                 break
-            self.__output_queue.put((self.__conn_to_id[conn], data.decode("ascii")))
+            self._output_queue.put((self.__conn_to_id[conn], data.decode("ascii")))
 
         self.__id_to_conn.pop(self.__conn_to_id[conn])
         self.__conn_to_id.pop(conn)

@@ -98,6 +98,26 @@ class Vector:
         return NotImplemented
     
 
+    def __floordiv__(self, scalar):
+        if isinstance(scalar, Vector):
+            if scalar.x == 0 or scalar.y == 0:
+                raise ValueError("Cannot divide by zero.")
+            return Vector(
+                x=self.x // scalar.x,
+                y=self.y // scalar.y
+            )
+        
+        elif isinstance(scalar, (int, float)):
+            if scalar == 0:
+                raise ValueError("Cannot divide by zero.")
+            return Vector(
+                x=self.x // scalar,
+                y=self.y // scalar
+            )
+        
+        return NotImplemented
+    
+
     def __mod__(self, scalar):
         if isinstance(scalar, Vector):
             if scalar.x == 0 or scalar.y == 0:
@@ -166,6 +186,13 @@ class Vector:
         return self.x * other.x + self.y * other.y
     
 
+    def distance(self, other):
+        if not isinstance(other, Vector):
+            raise TypeError(f"other must be a Vector, got {type(other).__name__}")
+        
+        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
+    
+
 
 @dataclass
 class Color:
@@ -222,6 +249,8 @@ class Key(IntEnum):
     MOUSE_RIGHT =       3
     MOUSE_SCROLL_UP =   4
     MOUSE_SCROLL_DOWN = 5
+    MOUSE_4 =           6
+    MOUSE_5 =           7
 
     BACKSPACE =         8
     TAB =               9

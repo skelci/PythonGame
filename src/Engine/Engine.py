@@ -1,17 +1,16 @@
 from engine.renderer import Renderer
-
 from engine.console import Console
 from engine.builder import *
 from engine.network import *
 
-from components.button import Button
 from components.actor import Actor
-from components.widget import Widget
+from components.button import Button
 from components.background import Background
+from components.level import Level
+from components.text import Text
+from components.widget import Widget
 from components.datatypes import *
 from components.game_math import *
-from components.rigidbody import Rigidbody
-from components.text import Text
 
 #?ifdef CLIENT
 import pygame # type: ignore
@@ -19,23 +18,7 @@ import pygame # type: ignore
 
 import threading
 import time
-from abc import ABC, abstractmethod
-
-
-
-#?ifdef CLIENT
-class InfoText(Text):
-    def __init__(self, name, pos, pre_text, after_text = ""):
-        super().__init__(name, pos, Vector(215, 24), 0, "res/fonts/arial.ttf", Color(0, 0, 0, 100), text_color=Color(0, 0, 255), font_size=20, text_alignment=Alignment.LEFT)
-
-        self.pre_text = pre_text
-        self.after_text = after_text
-
-
-    def set_value(self, value):
-        self.text = f" {self.pre_text}{value:.1f}{self.after_text}"
-
-#?endif
+from abc import ABC
 
 
 
@@ -65,7 +48,21 @@ class Engine(ABC):
 
 
 
+
 #?ifdef CLIENT
+class InfoText(Text):
+    def __init__(self, name, pos, pre_text, after_text = ""):
+        super().__init__(name, pos, Vector(215, 24), 0, "res/fonts/arial.ttf", Color(0, 0, 0, 100), text_color=Color(0, 0, 255), font_size=20, text_alignment=Alignment.LEFT)
+
+        self.pre_text = pre_text
+        self.after_text = after_text
+
+
+    def set_value(self, value):
+        self.text = f" {self.pre_text}{value:.1f}{self.after_text}"
+
+
+
 class ClientEngine(Engine, Renderer):
     def __init__(self):
         Engine.__init__(self)
@@ -80,6 +77,8 @@ class ClientEngine(Engine, Renderer):
 
         self.current_background = None
         self.__network = None
+
+        self.__network_commands = {}
 
         self.__pressed_keys = set()
         self.__released_keys = set()
@@ -99,6 +98,7 @@ class ClientEngine(Engine, Renderer):
             "render":           [0] * 30,
             "actor_render":     [0] * 30,
             "widget_render":    [0] * 30,
+            "network":          [0] * 30,
         }
 
         self.register_widget(InfoText("fps",            Vector(10, 12 ), "fps: "))
@@ -108,6 +108,7 @@ class ClientEngine(Engine, Renderer):
         self.register_widget(InfoText("render",         Vector(10, 156), "render: ",        " ms"))
         self.register_widget(InfoText("actor_render",   Vector(10, 180), "actor render: ",  " ms"))
         self.register_widget(InfoText("widget_render",  Vector(10, 204), "widget render: ", " ms"))
+        self.register_widget(InfoText("network",        Vector(10, 228), "network: ",       " ms"))
         
 
     @property
@@ -183,6 +184,13 @@ class ClientEngine(Engine, Renderer):
         return self.__screen_mouse_pos
     
 
+    def regisrer_network_command(self, cmd, func):
+        if isinstance(cmd, str) and callable(func):
+            self.__network_commands[cmd] = func
+        else:
+            raise TypeError("Command must be a string and function must be a function:", cmd, func)
+    
+
     def register_actor(self, actor):
         if actor.name in self.actors or not issubclass(actor.__class__, Actor):
             raise Exception(f"Actor {actor.name} is already registered or wrong data type")
@@ -208,6 +216,10 @@ class ClientEngine(Engine, Renderer):
 
     def connect(self, address, port):
         self.network = ClientNetwork(address, port)
+
+
+    def join_level(self, level_name):
+        self.network.send("join_level", level_name)
     
 
     def tick(self):
@@ -263,14 +275,30 @@ class ClientEngine(Engine, Renderer):
         self.__stats["actor_render"].pop(0)
         self.__stats["widget_render"].pop(0)
 
+        self.__handle_network()
+
+        self.__time("network")
+
         return delta_time
+
+
+    def __handle_network(self):
+        if not self.network:
+            return
+        while True:
+            cmd, data = self.network.get_data()
+            if not data:
+                break
+
+            self.__network_commands[cmd](data)
     
 
     def __update_mouse_pos(self, screen_pos):
+        self.__screen_mouse_pos = screen_pos
         if self.network:
             world_mouse_pos = (screen_pos - self.resolution / 2) * self.camera_width / self.resolution.x + self.camera_position
             self.network.send("world_mouse_pos", world_mouse_pos)
-        self.__screen_mouse_pos = screen_pos
+            self.network.send("screen_mouse_pos", screen_pos)
 
 
     def __handle_events(self):
@@ -318,7 +346,15 @@ class ClientEngine(Engine, Renderer):
 
 
 
+
 #?ifdef SERVER
+class Player:
+    def __init__(self):
+        self.level = None
+        self.previous_chunk = None
+
+
+
 class TPS:
     def __init__(self, max_tps):
         self.max_tps = max_tps
@@ -339,14 +375,13 @@ class ServerEngine(Engine):
     def __init__(self):
         super().__init__()
 
-        self.simulation_speed = 1
         self.__max_tps = 30
 
-        self.__actors = {}
-        self.__widgets = {}
-        self.__backgrounds = {}
+        self.__network = None
 
-        self.__actors_to_destroy = set()
+        self.__levels = {}
+
+        self.__players = {}
 
         self.__console = Console()
         self.__cmd_thread = threading.Thread(target=self.console.run)
@@ -356,8 +391,13 @@ class ServerEngine(Engine):
         self.__stats = {
             "tps":              [0] * 30,
             "console_cmds":     [0] * 30,
-            "physics":          [0] * 30,
+            "level_updates":    [0] * 30,
             "widget_tick":      [0] * 30,
+            "network":          [0] * 30,
+        }
+
+        self.__network_commands = {
+            "join_level": self.__join_level,
         }
 
         self.__clock = TPS(self.max_tps)
@@ -366,30 +406,11 @@ class ServerEngine(Engine):
     @property
     def console(self):
         return self.__console
-        
-
-    @property
-    def simulation_speed(self):
-        return self.__simulation_speed
     
 
     @property
     def max_tps(self):
         return self.__max_tps
-    
-
-    @property
-    def actors(self):
-        return self.__actors
-    
-
-    @property
-    def widgets(self):
-        return self.__widgets
-    
-    @property
-    def backgrounds(self):
-        return self.__backgrounds
     
 
     @max_tps.setter
@@ -399,23 +420,37 @@ class ServerEngine(Engine):
             self.__clock.max_tps = value
         else:
             raise TypeError("TPS must be a positive number:", value)
+
+
+    @property
+    def network(self):
+        return self.__network
     
 
-    @simulation_speed.setter
-    def simulation_speed(self, value):
-        if isinstance(value, (int, float)) and value >= 0:
-            self.__simulation_speed = value
+    @property
+    def levels(self):
+        return self.__levels
+    
+
+    def register_network_command(self, cmd, func):
+        if isinstance(cmd, str) and callable(func):
+            self.__network_commands[cmd] = func
         else:
-            raise TypeError("Simulation speed must be a positive number:", value)
+            raise TypeError("Command must be a string and function must be a function:", cmd, func)
         
 
-    def destroy_actor(self, actor_name):
-        if actor_name in self.actors:
-            self.__actors_to_destroy.add(actor_name)
+    def start_network(self, address, port, max_connections):
+        self.__network = ServerNetwork(address, port, max_connections, self.__on_player_connect)
+        
+
+    def register_level(self, level):
+        if level.name in self.__levels or not issubclass(level.__class__, Level):
+            raise Exception(f"Level {level.name} is already registered or wrong data type")
+        self.__levels[level.name] = level
 
 
     def get_stat(self, stat_name):
-        return f"{stat_name}: {sum(self.__stats[stat_name]) / len(self.__stats[stat_name]) * 1000:.2f}" + (" ms" if not stat_name == "tps" else "")
+        return f"{sum(self.__stats[stat_name]) / len(self.__stats[stat_name]) * 1000:.2f}" + (" ms" if not stat_name == "tps" else "")
     
 
     def tick(self):
@@ -430,33 +465,72 @@ class ServerEngine(Engine):
             self.__execute_cmd(self.console.cmd_output.pop(0))
 
         self.__time("console_cmds")
-        
-        delta_time *= self.simulation_speed
 
-        self.__physics_step(delta_time)
+        for level in self.__levels.values():
+            level.tick(delta_time)
 
-        self.__time("physics")
+            updates = level.get_updates()
+            if not updates:
+                continue
 
-        for widget in self.widgets.values():
-            if widget.visible and issubclass(widget.__class__, Button):
-                widget.tick(self.pressed_keys, Key.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)         #TODO fix this
+            for player_id, player in self.__players.items():
+                if player_id.level != level.name:
+                    continue
 
-        self.__time("widget_tick")
+                p_chk = player.previous_chunk
+                c_chk = level.get_chunk_num(level.actors["__Player_" + str(player_id)].position)
+                
+                for x in range(c_chk.x - level.update_distance, c_chk.x + level.update_distance + 1):
+                    for y in range(c_chk.y - level.update_distance, c_chk.y + level.update_distance + 1):
+                        if max(p_chk.x - c_chk.x) - level.update_distance <= x <= min(p_chk.x - c_chk.x) + level.update_distance and max(p_chk.y - c_chk.y) - level.update_distance <= y <= min(p_chk.y - c_chk.y) + level.update_distance:
+                            for actor_name, update in updates.items():
+                                sync_data, chunk_num = update
+                                if chunk_num == Vector(x, y):
+                                    self.network.send(player_id, "update_actor", (actor_name, sync_data))
 
-        for actor_name in self.__actors_to_destroy:
-            del self.actors[actor_name]
-        self.__actors_to_destroy.clear()
+                        else:
+                            for actor in level.chunks[x][y]:
+                                self.network.send(player_id, "register_actor", actor.get_for_full_net_sync())
+
+        self.__time("level_updates")
+
+        self.__handle_network()
+
+        self.__time("network")
 
         return delta_time
+    
+
+    def __on_player_connect(self, id):
+        self.__players[id] = Player()
+    
+
+    def __handle_network(self):
+        if not self.network:
+            print("You forgot to call start_network")
+            return
+        
+        while True:
+            data = self.network.get_data()
+            if not data:
+                break
+
+            id, data = data
+            cmd, data = data
+
+            if cmd in self.__network_commands:
+                self.__network_commands[cmd](id, data)
+            else:
+                print(f"Unknown network request: {cmd}")
 
 
     def __execute_cmd(self, cmd):
-        # try:
+        try:
             exec(cmd)
-        # except Exception as e:
-        #     print(e)
+        except Exception as e:
+            print(e)
 
-        
+
     def __time(self, stat_name):
         time_after = time.time()
         self.__stats[stat_name].append(time_after - self.__time_now)
@@ -464,94 +538,15 @@ class ServerEngine(Engine):
         self.__time_now = time_after
 
 
-    def __physics_step(self, delta_time):
-        for actor in self.actors.values():
-            actor.tick(delta_time)
-
-        for actor in self.actors.values():
-            if isinstance(actor, Rigidbody):
-                actor.position += actor.velocity * delta_time
-
-        max_iterations = 8
-        collisions_not_resolved = True
-        collided_actors = {}
-
-        while collisions_not_resolved and max_iterations > 0:
-            collisions_not_resolved = False
-            corrected_actors = {}
-
-            for actor1 in self.actors.values():
-                if isinstance(actor1, Rigidbody) and actor1.simulate_physics:
-                    for actor2 in self.actors.values():
-                        if actor2 is not actor1 and actor2.collidable:
-                            direction = actor1.collision_response_direction(actor2)
-                            if not direction == Vector(0, 0):
-                                collisions_not_resolved = True
-
-                                if actor1.name not in corrected_actors:
-                                    corrected_actors[actor1.name] = Vector(0, 0)
-                                corrected_actors[actor1.name] += direction
-
-                                if actor1.name not in collided_actors:
-                                    collided_actors[actor1.name] = [None, Vector(0, 0)]
-                                collided_actors[actor1.name][0] = CollisionData( direction.normalized, actor2.velocity if hasattr(actor2, "velocity") else Vector(0, 0), actor2.restitution, actor2.mass if hasattr(actor2, "mass") else float("inf"), actor2)
-                                if actor2.name not in collided_actors:
-                                    collided_actors[actor2.name] = [None, Vector(0, 0)]
-                                collided_actors[actor2.name][0] = CollisionData(-direction.normalized, actor1.velocity, actor1.restitution, actor1.mass, actor1)
-
-                                collided_actors[actor1.name][1] += direction
-
-            for name, direction in corrected_actors.items():
-                self.actors[name].position += direction
-
-            max_iterations -= 1
-
-        for name in collided_actors:
-            collided_actors[name][0].normal = collided_actors[name][1].normalized
-            self.actors[name].on_collision(collided_actors[name][0])
-
-        collided_actors_directions = {}
-        for actor1 in self.actors.values():
-            if isinstance(actor1, Rigidbody):
-                for actor2 in self.actors.values():
-                    if actor2 is not actor1:
-                        actor1.half_size += kinda_small_number
-                        direction = actor1.collision_response_direction(actor2)
-                        if actor1.name not in collided_actors_directions:
-                            collided_actors_directions[actor1.name] = [0, 0, 0, 0]
-                        # right, left, top, bottom
-                        if direction.x < 0:
-                            collided_actors_directions[actor1.name][0] = 1
-                        if direction.x > 0:
-                            collided_actors_directions[actor1.name][1] = 1
-                        if direction.y < 0:
-                            collided_actors_directions[actor1.name][2] = 1
-                        if direction.y > 0:
-                            collided_actors_directions[actor1.name][3] = 1
-                        actor1.half_size -= kinda_small_number
-
-        for name, direction in collided_actors_directions.items():
-            self.actors[name].collided_sides = direction
-
-        overlaped_actors = {}
-        for actor1 in self.actors.values():
-            if actor1.generate_overlap_events:
-                actor1.half_size += kinda_small_number
-                for actor2 in self.actors.values():
-                    if actor1 is not actor2:
-                        if is_overlapping_rect(actor1, actor2):
-                            if actor2.name not in overlaped_actors:
-                                overlaped_actors[actor2.name] = set()
-                            overlaped_actors[actor2.name].add(actor1)
-                actor1.half_size -= kinda_small_number
-
-        for actor_name, overlaped_set in overlaped_actors.items():
-            for actor in overlaped_set - self.actors[actor_name].previously_collided:
-                self.actors[actor_name].on_overlap_begin(actor)
-            for actor in self.actors[actor_name].previously_collided - overlaped_set:
-                self.actors[actor_name].on_overlap_end(actor)
-
-        for actor_name, overlaped_set in overlaped_actors.items():
-            self.actors[actor_name].previously_collided = overlaped_set
+    def __join_level(self, id, data):
+        level_name = data
+        if level_name in self.levels:
+            self.__players[id].level = level_name
+            self.levels[level_name].register_actor(self, self.levels[level_name].default_character("__Player_" + str(id)))
+            self.__players[id].previous_chunk = self.levels[level_name].get_chunk_num(self.levels[level_name].actors["__Player_" + str(id)].position)
+        else:
+            print(f"Level {level_name} not found")
 
 #?endif
+
+

@@ -16,6 +16,13 @@ class Actor:
 
         self.previously_collided = set()
 
+        self.__outdated = {
+            "half_size": False,
+            "position": False,
+            "visible": False,
+            "material": False,
+        }
+
 
     @property
     def game_ref(self):
@@ -52,6 +59,7 @@ class Actor:
     def half_size(self, value):
         if isinstance(value, Vector) and value.x > 0 and value.y > 0:
             self.__half_size = value
+            self.__outdated["half_size"] = True
         else:
             raise TypeError("Half size must be a Vector:", value)
         
@@ -65,6 +73,7 @@ class Actor:
     def position(self, value):
         if isinstance(value, Vector):
             self.__position = value
+            self.__outdated["position"] = True
         else:
             raise TypeError("Position must be a Vector:", value)
         
@@ -104,6 +113,7 @@ class Actor:
     def visible(self, value):
         if isinstance(value, bool):
             self.__visible = value
+            self.__outdated["visible"] = True
         else:
             raise TypeError("Visible must be a bool:", value)
         
@@ -117,6 +127,7 @@ class Actor:
     def material(self, value):
         if issubclass(value.__class__, Material) or value == None:
             self.__material = value
+            self.__outdated["material"] = True
         else:
             raise TypeError("Material name must be a string None:", value)
         
@@ -145,6 +156,31 @@ class Actor:
             self.__previously_collided = value
         else:
             raise TypeError("Previously collided must be a set:", value)
+        
+
+    #?ifdef SERVER
+    def get_for_full_net_sync(self):
+        for key in self.__outdated:
+            self.__outdated[key] = False
+        return {
+            "name": self.name,
+            "half_size": self.half_size,
+            "position": self.position,
+            "visible": self.visible,
+            "material": self.material.name if self.material else None
+        }
+    
+
+    def get_for_net_sync(self):
+        out = {}
+        for key in self.__outdated:
+            if self.__outdated[key]:
+                if key == "material":
+                    out[key] = self.material.name if self.material else None
+                out[key] = getattr(self, key)
+                self.__outdated[key] = False
+
+        return out
 
 
     def tick(self, delta_time):
@@ -161,6 +197,7 @@ class Actor:
 
     def on_overlap_end(self, other_actor):
         pass
+    #?endif
 
     
     def __str__(self):
