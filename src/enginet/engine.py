@@ -1,19 +1,19 @@
-from engine.renderer import Renderer
-from engine.console import Console
-from engine.builder import *
-from engine.network import *
+from enginet.renderer import Renderer
+from enginet.console import Console
+from enginet.builder import *
+from enginet.network import *
 
-from components.actor import Actor
-from components.rigidbody import Rigidbody
-from components.character import Character
-from components.material import Material
-from components.button import Button
-from components.background import Background
-from components.level import Level
-from components.text import Text
-from components.widget import Widget
-from components.datatypes import *
-from components.game_math import *
+from componentst.actor import Actor
+from componentst.rigidbody import Rigidbody
+from componentst.character import Character
+from componentst.material import Material
+from componentst.button import Button
+from componentst.background import Background
+from componentst.level import Level
+from componentst.text import Text
+from componentst.widget import Widget
+from componentst.datatypes import *
+from componentst.game_math import *
 
 #?ifdef CLIENT
 import pygame # type: ignore

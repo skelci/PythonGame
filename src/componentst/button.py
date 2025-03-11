@@ -1,8 +1,8 @@
-from components.border import Border
+from componentst.border import Border
 
-from components.text import Text
-from components.datatypes import *
-from components.game_math import *
+from componentst.text import Text
+from componentst.datatypes import *
+from componentst.game_math import *
 
 
 

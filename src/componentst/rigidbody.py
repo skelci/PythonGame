@@ -1,6 +1,6 @@
-from components.actor import Actor
+from componentst.actor import Actor
 
-from components.datatypes import *
+from componentst.datatypes import *
 
 
 

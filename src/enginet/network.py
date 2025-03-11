@@ -1,4 +1,4 @@
-from components.datatypes import *
+from componentst.datatypes import *
 
 import socket
 import threading

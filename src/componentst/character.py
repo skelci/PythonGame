@@ -1,6 +1,6 @@
-from components.rigidbody import Rigidbody
+from componentst.rigidbody import Rigidbody
 
-from components.datatypes import *
+from componentst.datatypes import *
 
 
 

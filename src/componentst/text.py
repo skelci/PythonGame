@@ -1,6 +1,6 @@
-from components.widget import Widget
+from componentst.widget import Widget
 
-from components.datatypes import *
+from componentst.datatypes import *
 
 import os
 import pygame
