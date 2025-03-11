@@ -14,3 +14,13 @@ def is_overlapping_rect(rect1, rect2):
         rect2.position.y + rect2.half_size.y - (rect1.position.y - rect1.half_size.y)
     ))
 
+
+
+def lerp(a, b, t):
+    return a + (b - a) * t
+
+
+
+def get_chunk_cords(pos):
+        return pos // 16
+

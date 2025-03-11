@@ -3,8 +3,15 @@ from components.material import Material
 
 
 class Actor:
-    def __init__(self, game_ref, name, half_size, position = Vector(), generate_overlap_events = False, collidable = True, visible = True, material = None, restitution = 1):
-        self.game_ref = game_ref
+    def __init__(self, engine_ref, name, half_size, position = Vector(), generate_overlap_events = False, collidable = True, visible = True, material = None, restitution = 1):
+        self.__outdated = {
+            "half_size": False,
+            "position": False,
+            "visible": False,
+            "material": False,
+        }
+
+        self.engine_ref = engine_ref
         self.name = name
         self.half_size = half_size
         self.position = position
@@ -16,25 +23,23 @@ class Actor:
 
         self.previously_collided = set()
 
-        self.__outdated = {
-            "half_size": False,
-            "position": False,
-            "visible": False,
-            "material": False,
-        }
+        for k, v in self.__outdated.items():
+            if v:
+                self.__outdated[k] = False
+
 
 
     @property
-    def game_ref(self):
-        return self.__game_ref
+    def engine_ref(self):
+        return self.__engine_ref
     
 
-    @game_ref.setter
-    def game_ref(self, value):
-        if value.__class__.__name__ == "Game":
-            self.__game_ref = value
+    @engine_ref.setter
+    def engine_ref(self, value):
+        if value.__class__.__name__ == "ServerEngine" or value.__class__.__name__ == "ClientEngine":
+            self.__engine_ref = value
         else:
-            raise TypeError("Game refrence must be a Game object:", value)
+            raise TypeError("Engine refrence must be a Engine object:", value)
 
 
     @property
@@ -158,16 +163,31 @@ class Actor:
             raise TypeError("Previously collided must be a set:", value)
         
 
+    #?ifdef CLIENT
+    def update_from_net_sync(self, data):
+        for key in data:
+            match key:
+                case "half_size":
+                    self.half_size = Vector(*data[key])
+                case "position":
+                    self.position = Vector(*data[key])
+                case "visible":
+                    self.visible = data[key]
+                case "material":
+                    self.material = self.engine_ref.get_material(data[key])
+        
+
     #?ifdef SERVER
     def get_for_full_net_sync(self):
         for key in self.__outdated:
             self.__outdated[key] = False
         return {
+            "type": self.__class__.__name__,
             "name": self.name,
             "half_size": self.half_size,
             "position": self.position,
             "visible": self.visible,
-            "material": self.material.name if self.material else None
+            "material": self.material.texture_str if self.material else None
         }
     
 
@@ -202,6 +222,5 @@ class Actor:
     
     def __str__(self):
         return self.name
-    
 
 

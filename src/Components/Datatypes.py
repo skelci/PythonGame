@@ -143,6 +143,10 @@ class Vector:
             -self.x,
             -self.y
         )
+    
+
+    def __hash__(self):
+        return hash(self.tuple)
 
     
     @property
@@ -175,6 +179,22 @@ class Vector:
     
 
     @property
+    def floored(self):
+        return Vector(
+            math.floor(self.x),
+            math.floor(self.y)
+        )
+    
+
+    @property
+    def ceiled(self):
+        return Vector(
+            math.ceil(self.x),
+            math.ceil(self.y)
+        )
+    
+
+    @property
     def tuple(self):
         return (self.x, self.y)
     
@@ -186,11 +206,22 @@ class Vector:
         return self.x * other.x + self.y * other.y
     
 
-    def distance(self, other):
+    def squared_distance(self, other):
         if not isinstance(other, Vector):
             raise TypeError(f"other must be a Vector, got {type(other).__name__}")
         
-        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
+        return (self.x - other.x) ** 2 + (self.y - other.y) ** 2
+    
+
+    def distance(self, other):        
+        return self.squared_distance(other) ** 0.5
+    
+
+    def manhattan_distance(self, other):
+        if not isinstance(other, Vector):
+            raise TypeError(f"other must be a Vector, got {type(other).__name__}")
+
+        return abs(self.x - other.x) + abs(self.y - other.y)
     
 
 

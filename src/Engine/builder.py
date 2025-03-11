@@ -4,6 +4,7 @@ from enum import IntEnum
 
 import os
 import shutil
+import time
 
 
 
@@ -74,6 +75,9 @@ class Builder:
 
 
     def build_server(self):
+        print("Building server...")
+        build_start = time.time()
+
         for folder in self.server_folders:
             for file in self.__get_all_files(folder):
                 if file.endswith(".py"):
@@ -94,8 +98,13 @@ class Builder:
         with open(self.package_dir + "/server/run.bat", "w") as f:
             f.write("python ./src/main.py")
 
+        print(f"Server built in {time.time() - build_start:.3f} seconds.")
+
 
     def build_client(self):
+        print("Building client...")
+        build_start = time.time()
+
         for folder in self.client_folders:
             for file in self.__get_all_files(folder):
                 if file.endswith(".py"):
@@ -115,6 +124,8 @@ class Builder:
 
         with open(self.package_dir + "/client/run.bat", "w") as f:
             f.write("python ./src/main.py")
+
+        print(f"Client built in {time.time() - build_start:.3f} seconds")
 
 
     def clear_build(self, build_type = BuildType.COMBINED):
@@ -141,19 +152,25 @@ class Builder:
             return
 
         if lines[0].startswith("#?attr"):
-            if lines[0][7:] == "ENGINE":
+            attr = lines[0][7:].strip()
+            if attr not in ("ENGINE", "SERVER", "CLIENT"):
+                print("Invalid attribute:", file, ":", attr)
                 return
-            if build_type == BuildType.CLIENT and lines[0][7:] == "SERVER":
+
+            if attr == "ENGINE":
                 return
-            if build_type == BuildType.SERVER and lines[0][7:] == "CLIENT":
+            elif build_type == BuildType.CLIENT and attr == "SERVER":
                 return
+            elif build_type == BuildType.SERVER and attr == "CLIENT":
+                return
+            
 
         file_name = self.build_dir + ("/server/" if build_type == BuildType.SERVER else "/client/") + "src_cache/" + "/".join(file.split("\\")[1:])
 
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         f = open(file_name, "w")
 
-        should_skip = False
+        should_skip = 0
         
         for line in lines:
             if line.strip().startswith("#?"):
@@ -166,19 +183,19 @@ class Builder:
                     match line[2:7]:
                         case "ifdef":
                             if line[8:] == "CLIENT" or line[8:] == "ENGINE":
-                                should_skip = True
+                                should_skip += 1
 
                         case "endif":
-                            should_skip = False
+                            should_skip -= 1
                         
                 if build_type == BuildType.CLIENT:
                     match line[2:7]:
                         case "ifdef":
                             if line[8:] == "SERVER" or line[8:] == "ENGINE":
-                                should_skip = True
+                                should_skip += 1
 
                         case "endif":
-                            should_skip = False
+                            should_skip -= 1
 
             else:
                 if not should_skip:

@@ -4,6 +4,9 @@ from engine.builder import *
 from engine.network import *
 
 from components.actor import Actor
+from components.rigidbody import Rigidbody
+from components.character import Character
+from components.material import Material
 from components.button import Button
 from components.background import Background
 from components.level import Level
@@ -51,8 +54,8 @@ class Engine(ABC):
 
 #?ifdef CLIENT
 class InfoText(Text):
-    def __init__(self, name, pos, pre_text, after_text = ""):
-        super().__init__(name, pos, Vector(215, 24), 0, "res/fonts/arial.ttf", Color(0, 0, 0, 100), text_color=Color(0, 0, 255), font_size=20, text_alignment=Alignment.LEFT)
+    def __init__(self, name, pos_y, pre_text, after_text = ""):
+        super().__init__(name, Vector(10, pos_y * 24 + 10), Vector(215, 24), 0, "res/fonts/arial.ttf", Color(0, 0, 0, 100), text_color=Color(0, 0, 255), font_size=20, text_alignment=Alignment.LEFT)
 
         self.pre_text = pre_text
         self.after_text = after_text
@@ -71,20 +74,27 @@ class ClientEngine(Engine, Renderer):
         self.fps = 120
         self.tps = 20
 
-        self.__actors = {}
-        self.__widgets = {}
-        self.__backgrounds = {}
+        self.__network = None
+        self.__level = Level("Engine_Level", Character)
 
         self.current_background = None
-        self.__network = None
-
-        self.__network_commands = {}
-
+        
+        self.__widgets = {}
         self.__pressed_keys = set()
         self.__released_keys = set()
         self.__screen_mouse_pos = Vector()
 
-        self.__actors_to_destroy = set()
+        self.__network_commands = {
+            "register_actor": self.__register_actor,
+            "update_actor": self.__update_actor,
+            "destroy_actor": self.__destroy_actor,
+        }
+
+        self.__actor_templates = {
+            "Actor": Actor,
+            "Rigidbody": Rigidbody,
+            "Character": Character,
+        }
         
         pygame.init()
 
@@ -101,15 +111,15 @@ class ClientEngine(Engine, Renderer):
             "network":          [0] * 30,
         }
 
-        self.register_widget(InfoText("fps",            Vector(10, 12 ), "fps: "))
-        self.register_widget(InfoText("events",         Vector(10, 36 ), "events: ",        " ms"))
-        self.register_widget(InfoText("render_regs",    Vector(10, 108), "render regs: ",   " ms"))
-        self.register_widget(InfoText("bg_render",      Vector(10, 132), "bg render: ",     " ms"))
-        self.register_widget(InfoText("render",         Vector(10, 156), "render: ",        " ms"))
-        self.register_widget(InfoText("actor_render",   Vector(10, 180), "actor render: ",  " ms"))
-        self.register_widget(InfoText("widget_render",  Vector(10, 204), "widget render: ", " ms"))
-        self.register_widget(InfoText("network",        Vector(10, 228), "network: ",       " ms"))
-        
+        self.register_widget(InfoText("fps",            0, "fps: "))
+        self.register_widget(InfoText("events",         1, "events: ",        " ms"))
+        self.register_widget(InfoText("render_regs",    2, "render regs: ",   " ms"))
+        self.register_widget(InfoText("bg_render",      3, "bg render: ",     " ms"))
+        self.register_widget(InfoText("render",         4, "render: ",        " ms"))
+        self.register_widget(InfoText("actor_render",   5, "actor render: ",  " ms"))
+        self.register_widget(InfoText("widget_render",  6, "widget render: ", " ms"))
+        self.register_widget(InfoText("network",        7, "network: ",       " ms"))
+
 
     @property
     def fps(self):
@@ -144,29 +154,25 @@ class ClientEngine(Engine, Renderer):
 
     @current_background.setter
     def current_background(self, value):
-        if value in self.backgrounds or value is None:
+        if value in self.level.backgrounds or value is None:
             self.__current_background = value
         else:
             raise Exception(f"Background {value} is not registered")
         
 
     @property
-    def actors(self):
-        return self.__actors
-    
-
-    @property
     def widgets(self):
         return self.__widgets
-    
-    @property
-    def backgrounds(self):
-        return self.__backgrounds
-        
+
 
     @property
     def network(self):
         return self.__network
+    
+
+    @property
+    def level(self):
+        return self.__level
          
 
     @property
@@ -184,30 +190,34 @@ class ClientEngine(Engine, Renderer):
         return self.__screen_mouse_pos
     
 
+    def show_all_stats(self):
+        for name, _ in self.__stats.items():
+            self.widgets[name].visible = True
+
+
+    def hide_all_stats(self):
+        for name, _ in self.__stats.items():
+            self.widgets[name].visible = False
+
+
+    def add_actor_template(self, name, actor):
+        if name in self.__actor_templates or not issubclass(actor, Actor):
+            raise Exception(f"Actor template {name} is already registered or wrong data type")
+        self.__actor_templates[name] = actor
+    
+
+    def register_widget(self, widget):
+        if widget.name in self.__widgets or not isinstance(widget, Widget):
+            raise Exception(f"Widget {widget.name} is already registered or wrong data type")
+        self.__widgets[widget.name] = widget           
+    
+
     def regisrer_network_command(self, cmd, func):
-        if isinstance(cmd, str) and callable(func):
+        if isinstance(cmd, str) and callable(func) and cmd not in self.__network_commands:
             self.__network_commands[cmd] = func
         else:
             raise TypeError("Command must be a string and function must be a function:", cmd, func)
-    
 
-    def register_actor(self, actor):
-        if actor.name in self.actors or not issubclass(actor.__class__, Actor):
-            raise Exception(f"Actor {actor.name} is already registered or wrong data type")
-        self.__actors[actor.name] = actor
-
-
-    def register_widget(self, widget):
-        if widget.name in self.widgets or not issubclass(widget.__class__, Widget):
-            raise Exception(f"Widget {widget.name} is already registered or wrong data type")
-        self.__widgets[widget.name] = widget
-
-
-    def register_background(self, background):
-        if background.name in self.backgrounds or not issubclass(background.__class__, Background):
-            raise Exception(f"Background {background.name} is already registered or wrong data type")
-        self.__backgrounds[background.name] = background
-    
 
     def destroy_actor(self, actor_name):
         if actor_name in self.actors:
@@ -215,12 +225,13 @@ class ClientEngine(Engine, Renderer):
     
 
     def connect(self, address, port):
-        self.network = ClientNetwork(address, port)
+        self.__network = ClientNetwork(address, port)
 
 
     def join_level(self, level_name):
         self.network.send("join_level", level_name)
-    
+        self.network.send("update_distance", (self.camera_width // 16 + 1) // 2)
+
 
     def tick(self):
         self.clear()
@@ -238,9 +249,9 @@ class ClientEngine(Engine, Renderer):
 
         if not self.running:
             pygame.quit()
-            return
+            return delta_time
 
-        for actor in self.actors.values():
+        for actor in self.__level.actors.values():
             if actor.visible and actor.material:
                 self.add_actor_to_draw(actor)
 
@@ -248,16 +259,12 @@ class ClientEngine(Engine, Renderer):
             if widget.visible:
                 self.add_widget_to_draw(widget)
                 if issubclass(widget.__class__, Button):
-                    widget.tick(self.pressed_keys, Key.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)         #TODO fix this
+                    widget.tick(self.pressed_keys, Key.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
 
         self.__time("render_regs")
 
-        for actor_name in self.__actors_to_destroy:
-            del self.actors[actor_name]
-        self.__actors_to_destroy.clear()
-
         if self.current_background:
-            self.draw_background(self.backgrounds[self.current_background])
+            self.draw_background(self.level.backgrounds[self.current_background])
         else:
             self.screen.fill((0, 0, 0))
 
@@ -286,19 +293,22 @@ class ClientEngine(Engine, Renderer):
         if not self.network:
             return
         while True:
-            cmd, data = self.network.get_data()
+            data = self.network.get_data()
             if not data:
                 break
+            cmd, data = data
 
-            self.__network_commands[cmd](data)
+            if cmd in self.__network_commands:
+                self.__network_commands[cmd](data)
+            else:
+                print(f"[Client] Unknown network request: {cmd}")
     
 
     def __update_mouse_pos(self, screen_pos):
         self.__screen_mouse_pos = screen_pos
-        if self.network:
+        if self.network and self.network.id != -1:
             world_mouse_pos = (screen_pos - self.resolution / 2) * self.camera_width / self.resolution.x + self.camera_position
             self.network.send("world_mouse_pos", world_mouse_pos)
-            self.network.send("screen_mouse_pos", screen_pos)
 
 
     def __handle_events(self):
@@ -308,30 +318,30 @@ class ClientEngine(Engine, Renderer):
                 case pygame.QUIT:
                     self.stop()
                     if self.network:
-                        self.network.close()
+                        self.network.stop()
 
                 case pygame.MOUSEBUTTONDOWN:
                     self.__pressed_keys.add(Key(event.button))
-                    if self.network:
+                    if self.network and self.network.id != -1:
                         self.network.send("mouse_button_down", Key(event.button))
 
                 case pygame.MOUSEBUTTONUP:
                     self.__pressed_keys.remove(Key(event.button))
                     self.__released_keys.add(Key(event.button))
-                    if self.network:
+                    if self.network and self.network.id != -1:
                         self.network.send("mouse_button_up", Key(event.button))
 
                 case pygame.KEYDOWN:
                     self.__pressed_keys.add(event.key)
-                    if self.network:
+                    if self.network and self.network.id != -1:
                         self.network.send("key_down", event.key)
 
                 case pygame.KEYUP:
                     self.__pressed_keys.remove(event.key)
                     self.__released_keys.add(event.key)
-                    if self.network:
+                    if self.network and self.network.id != -1:
                         self.network.send("key_up", event.key)
-                        
+
         screen_mouse_position = Vector(*pygame.mouse.get_pos())
         self.__update_mouse_pos(screen_mouse_position)
 
@@ -341,6 +351,21 @@ class ClientEngine(Engine, Renderer):
         self.__stats[stat_name].append(time_after - self.__time_now)
         self.__stats[stat_name].pop(0)
         self.__time_now = time_after
+
+
+    def __register_actor(self, data):
+        if data["name"] not in self.__level.actors:
+            self.__level.register_actor(self.__actor_templates[data["type"]](self, data["name"], data["half_size"], data["position"], visible=data["visible"], material=Material(data["material"]) if data["material"] else None))
+
+
+    def __update_actor(self, data):
+        actor = data[0]
+        if actor in self.__level.actors:
+            self.__level.actors[actor].update_from_net_sync(data[1])
+
+
+    def __destroy_actor(self, data):
+        self.__level.destroy_actor(data)
 
 #?endif
 
@@ -352,6 +377,9 @@ class Player:
     def __init__(self):
         self.level = None
         self.previous_chunk = None
+        self.world_mouse_pos = Vector()
+        self.update_distance = 0
+        self.position = Vector()
 
 
 
@@ -364,9 +392,10 @@ class TPS:
     def tick(self):
         delta_time = time.time() - self.__last_time
         self.__last_time = time.time()
-        if delta_time < 1 / self.max_tps:
-            time.sleep(1 / self.max_tps - delta_time)
-            delta_time = 1 / self.max_tps
+        min_ms = 1 / self.max_tps
+        if delta_time < min_ms:
+            time.sleep(min_ms - delta_time)
+            delta_time = min_ms
         return delta_time        
 
 
@@ -379,9 +408,8 @@ class ServerEngine(Engine):
 
         self.__network = None
 
-        self.__levels = {}
-
         self.__players = {}
+        self.__levels = {}
 
         self.__console = Console()
         self.__cmd_thread = threading.Thread(target=self.console.run)
@@ -398,6 +426,8 @@ class ServerEngine(Engine):
 
         self.__network_commands = {
             "join_level": self.__join_level,
+            "world_mouse_pos": self.__world_mouse_pos,
+            "update_distance": self.__update_distance,
         }
 
         self.__clock = TPS(self.max_tps)
@@ -428,8 +458,19 @@ class ServerEngine(Engine):
     
 
     @property
+    def players(self):
+        return self.__players
+    
+
+    @property
     def levels(self):
         return self.__levels
+        
+
+    def register_level(self, level):
+        if level.name in self.__levels or not isinstance(level, Level):
+            raise Exception(f"Level {level.name} is already registered or wrong data type")
+        self.__levels[level.name] = level
     
 
     def register_network_command(self, cmd, func):
@@ -441,12 +482,6 @@ class ServerEngine(Engine):
 
     def start_network(self, address, port, max_connections):
         self.__network = ServerNetwork(address, port, max_connections, self.__on_player_connect)
-        
-
-    def register_level(self, level):
-        if level.name in self.__levels or not issubclass(level.__class__, Level):
-            raise Exception(f"Level {level.name} is already registered or wrong data type")
-        self.__levels[level.name] = level
 
 
     def get_stat(self, stat_name):
@@ -466,23 +501,35 @@ class ServerEngine(Engine):
 
         self.__time("console_cmds")
 
-        for level in self.__levels.values():
+        for level in self.levels.values():
+            for player_id, player in self.__players.items():
+                if player.level == level.name:
+                    self.__players[player_id].position = level.actors["__Player_" + str(player_id)].position
+
+            destroyed_actors = level.get_destroyed()
+
+            if destroyed_actors:
+                for player_id, player in self.__players.items():
+                    if player.level == level.name:
+                        for actor_name in destroyed_actors:
+                            self.network.send(player_id, "destroy_actor", actor_name)
+
             level.tick(delta_time)
 
-            updates = level.get_updates()
+            updates = level.get_updates((player for player in self.__players.values() if player.level == level.name))
             if not updates:
                 continue
 
             for player_id, player in self.__players.items():
-                if player_id.level != level.name:
+                if player.level != level.name:
                     continue
 
                 p_chk = player.previous_chunk
-                c_chk = level.get_chunk_num(level.actors["__Player_" + str(player_id)].position)
+                c_chk = get_chunk_cords(player.position)
                 
-                for x in range(c_chk.x - level.update_distance, c_chk.x + level.update_distance + 1):
-                    for y in range(c_chk.y - level.update_distance, c_chk.y + level.update_distance + 1):
-                        if max(p_chk.x - c_chk.x) - level.update_distance <= x <= min(p_chk.x - c_chk.x) + level.update_distance and max(p_chk.y - c_chk.y) - level.update_distance <= y <= min(p_chk.y - c_chk.y) + level.update_distance:
+                for x in range(c_chk.rounded.x - player.update_distance, c_chk.rounded.x + player.update_distance + 1):
+                    for y in range(c_chk.rounded.y - player.update_distance, c_chk.rounded.y + player.update_distance + 1):
+                        if max(p_chk.x, c_chk.x) - player.update_distance <= x <= min(p_chk.x, c_chk.x) + player.update_distance and max(p_chk.y, c_chk.y) - player.update_distance <= y <= min(p_chk.y, c_chk.y) + player.update_distance: #TODO fix if player distance changes
                             for actor_name, update in updates.items():
                                 sync_data, chunk_num = update
                                 if chunk_num == Vector(x, y):
@@ -490,7 +537,9 @@ class ServerEngine(Engine):
 
                         else:
                             for actor in level.chunks[x][y]:
-                                self.network.send(player_id, "register_actor", actor.get_for_full_net_sync())
+                                self.network.send(player_id, "register_actor", level.actors[actor].get_for_full_net_sync())
+
+                player.previous_chunk = c_chk
 
         self.__time("level_updates")
 
@@ -521,7 +570,7 @@ class ServerEngine(Engine):
             if cmd in self.__network_commands:
                 self.__network_commands[cmd](id, data)
             else:
-                print(f"Unknown network request: {cmd}")
+                print(f"[Server] Unknown network request: {cmd}")
 
 
     def __execute_cmd(self, cmd):
@@ -538,14 +587,35 @@ class ServerEngine(Engine):
         self.__time_now = time_after
 
 
+    def __full_player_sync(self, id):
+        player = self.__players[id]
+        level = self.levels[player.level]
+        player_chunk = get_chunk_cords(player.position)
+        for x in range(player_chunk.rounded.x - player.update_distance, player_chunk.rounded.x + player.update_distance + 1):
+            for y in range(player_chunk.y - player.update_distance, player_chunk.y + player.update_distance + 1):
+                if x in level.chunks and y in level.chunks[x]:
+                    for actor in level.chunks[x][y]:
+                        self.network.send(id, "register_actor", level.actors[actor].get_for_full_net_sync())
+
+
     def __join_level(self, id, data):
         level_name = data
         if level_name in self.levels:
             self.__players[id].level = level_name
-            self.levels[level_name].register_actor(self, self.levels[level_name].default_character("__Player_" + str(id)))
-            self.__players[id].previous_chunk = self.levels[level_name].get_chunk_num(self.levels[level_name].actors["__Player_" + str(id)].position)
+            self.levels[level_name].register_actor(self.levels[level_name].default_character(self, "__Player_" + str(id))) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, everything else should be hardcoded
+            self.__players[id].previous_chunk = get_chunk_cords(self.levels[level_name].actors["__Player_" + str(id)].position)
+            self.__full_player_sync(id)
         else:
             print(f"Level {level_name} not found")
+
+
+    def __world_mouse_pos(self, id, data):
+        self.__players[id].world_mouse_pos = data
+
+
+    def __update_distance(self, id, data):
+        self.__players[id].update_distance = data
+        self.__full_player_sync(id)
 
 #?endif
 

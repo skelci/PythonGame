@@ -1,8 +1,9 @@
+from components.datatypes import *
+
 import socket
 import threading
 import queue
 import sqlite3 as sql
-import ast
 from abc import ABC, abstractmethod
 
 
@@ -14,6 +15,7 @@ class Network(ABC):
         self.__running = True
         
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self._output_queue = queue.Queue()
         self._input_queue = queue.Queue()
 
@@ -33,7 +35,7 @@ class Network(ABC):
             self.__address = value
         else:
             raise TypeError("Address must be a string:", value)
-        
+
 
     @property
     def port(self):
@@ -53,12 +55,26 @@ class Network(ABC):
         return self.__running
 
 
-    def __parse_data(self, data):
-        return ast.literal_eval(data.decode("ascii"))
+    @staticmethod
+    def _parse_data(data):
+        try:
+            decoded = data.decode("ascii").strip(chr(23))
+            parts = decoded.split(chr(23))
+            results = []
+            for p in parts:
+                results.append(eval(p))
+                
+            return results
+        except Exception as e:
+            print(f"Error parsing data {data}: {e}")
+            return ("", "")
     
 
-    def __parse_for_send(self, cmd, data):
-        return f"({cmd},{data})".encode("ascii")
+    @staticmethod
+    def _parse_for_send(cmd, data):
+        if isinstance(data, str):
+            data = f"'{data}'"
+        return f"('{cmd}',{data}){chr(23)}".encode("ascii")
     
 
     @abstractmethod
@@ -87,9 +103,16 @@ class ClientNetwork(Network):
         self.__conn_thread.daemon = True
         self.__conn_thread.start()
 
+        self.__id = -1
+
+
+    @property
+    def id(self):
+        return self.__id
+
 
     def send(self, cmd, data):
-        self.__input_queue.put(self.__parse_for_send(cmd, data))
+        self._output_queue.put(self._parse_for_send(cmd, data))
 
 
     def _send_data(self):
@@ -104,7 +127,18 @@ class ClientNetwork(Network):
             data = self.socket.recv(1024)
             if not data:
                 break
-            self._output_queue.put(self.__parse_data(data))
+
+            parsed_data = self._parse_data(data)
+            for d in parsed_data:
+                if self.id == -1:
+                    cmd, id = d
+                    if cmd == "register_outcome":
+                        self.__id = id
+                        continue
+
+                self._input_queue.put(d)
+
+        self.__id = -1
         self.socket.close()
         
 #?endif
@@ -119,7 +153,7 @@ class ServerNetwork(Network):
 
         self.__on_connect = on_connect
 
-        self.__db_conn = sql.connect("server.db")
+        self.__db_conn = sql.connect("server.db", check_same_thread=False)
         self.__db_cursor = self.__db_conn.cursor()
         self.__db_cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -132,7 +166,6 @@ class ServerNetwork(Network):
 
         self.socket.bind((self.address, self.port))
         self.socket.listen(self.max_connections)
-        
 
         accept_thread = threading.Thread(target=self.__accept_connections)
         accept_thread.daemon = True
@@ -156,13 +189,15 @@ class ServerNetwork(Network):
 
 
     def send(self, id, cmd, data):
-        self.__input_queue.put((id, self.__parse_for_send(cmd, data)))
+        self._output_queue.put((id, self._parse_for_send(cmd, data)))
 
 
     def _send_data(self):
         while self.running:
             if not self._output_queue.empty():
                 id, data = self._output_queue.get()
+                if not id in self.__id_to_conn:
+                    continue
                 conn = self.__id_to_conn[id]
                 conn.send(data)
         
@@ -170,16 +205,24 @@ class ServerNetwork(Network):
     def __accept_connections(self):
         while self.running:
             conn, _ = self.socket.accept()
-            client_thread = threading.Thread(target=self.__handle_client, args=conn)
+            client_thread = threading.Thread(target=self.__handle_client, args=(conn,))
             client_thread.daemon = True
             client_thread.start()
 
 
     def __handle_client(self, conn):
-        login_data = conn.recv(1024)
         while True:
-            result = self.__handle_login(login_data, conn)
-            if result:
+            login_data = conn.recv(1024)
+            parsed_data = self._parse_data(login_data)
+            logged_in = False
+
+            for d in parsed_data:
+                result = self.__handle_login(d, conn)
+                if result:
+                    logged_in = True
+                    break
+
+            if logged_in:
                 break
 
         self.__on_connect(self.__conn_to_id[conn])
@@ -188,7 +231,10 @@ class ServerNetwork(Network):
             data = conn.recv(1024)
             if not data:
                 break
-            self._output_queue.put((self.__conn_to_id[conn], data.decode("ascii")))
+
+            parsed_data = self._parse_data(data)
+            for d in parsed_data:
+                self._input_queue.put((self.__conn_to_id[conn], d))
 
         self.__id_to_conn.pop(self.__conn_to_id[conn])
         self.__conn_to_id.pop(conn)
@@ -196,27 +242,28 @@ class ServerNetwork(Network):
 
 
     def __handle_login(self, login_data, conn):
-        request, username, password = self.__parse_data(login_data)
+        request, data = login_data
+        username, password = data
 
         match request:
             case "register":
                 result = self.__register_user(username, password)
                 if result == -1:
-                    conn.send(b"-1")
+                    conn.send(b"('register_outcome',-1)")
                     return False
                 self.__conn_to_id[conn] = result
                 self.__id_to_conn[result] = conn
-                conn.send(str(result).encode("ascii"))
+                self.send(result, "register_outcome", result)
                 return True
 
             case "login":
                 result = self.__login_user(username, password)
                 if result == -1:
-                    conn.send(b"-1")
+                    conn.send(b"('register_outcome',-1)")
                     return False
                 self.__conn_to_id[conn] = result
                 self.__id_to_conn[result] = conn
-                conn.send(str(result).encode("ascii"))
+                self.send(result, "register_outcome", result)
                 return True
 
             case _:

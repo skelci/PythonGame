@@ -10,26 +10,21 @@ from components.game_math import *
 
 
 class Level:
-    def __init__(self, name, default_character, actors = [], widgets = [], backgrounds = [], simulation_speed = 1, gravity = 1, update_distance = 2):
+    def __init__(self, name, default_character, actors = [], backgrounds = [], simulation_speed = 1, gravity = 1):
         self.name = name
-        self.defoult_character = default_character
-        self.actors = {}
-        self.widgets = {}
-        self.backgrounds = {}
+        self.default_character = default_character
+        self.__actors = {}
+        self.__backgrounds = {}
         self.simulation_speed = simulation_speed
         self.gravity = gravity
-        self.update_distance = update_distance
 
         self.__actors_to_destroy = set()
+        self.__chunks = {}
 
         for actor in actors:
             self.register_actor(actor)
-        for widget in widgets:
-            self.register_widget(widget)
         for background in backgrounds:
             self.register_background(background)
-
-        self.__chunk_map = {}
 
 
 
@@ -53,20 +48,16 @@ class Level:
 
     @default_character.setter
     def default_character(self, value):
-        if issubclass(value.__class__, Character):
+        if issubclass(value, Character):
             self.__default_character = value
         else:
+            print(value.__class__)
             raise TypeError("Default character must be a subclass of Character:", value)
         
 
     @property
     def actors(self):
         return self.__actors
-    
-
-    @property
-    def widgets(self):
-        return self.__widgets
     
 
     @property
@@ -101,21 +92,8 @@ class Level:
         
 
     @property
-    def update_distance(self):
-        return self.__update_distance
-    
-
-    @update_distance.setter
-    def update_distance(self, value):
-        if isinstance(value, (int, float)) and value > 0:
-            self.__update_distance = value
-        else:
-            raise TypeError("Update distance must be a positive number:", value)
-        
-
-    @property
-    def chunk_map(self):
-        return self.__chunk_map
+    def chunks(self):
+        return self.__chunks
         
 
     def register_actor(self, actor):
@@ -133,40 +111,27 @@ class Level:
             raise ValueError("Actor not found in level:", actor)
         
 
-    def register_widget(self, widget):
-        if issubclass(widget.__class__, Widget):
-            self.widgets[widget.name] = widget
-        else:
-            raise TypeError("Widget must be a subclass of Widget:", widget)
-        
-
     def register_background(self, background):
         if issubclass(background.__class__, Background):
             self.backgrounds[background.name] = background
         else:
             raise TypeError("Background must be a subclass of Background:", background)
-    
-
-    def get_chunk_num(self, pos):
-        return pos // 16
         
 
     #?ifdef SERVER
-    def get_updates(self, positions: list):
+    def get_updates(self, players):
         actor_updates = {}
-        positions = set(positions)
-        pos_copy = positions.copy()
-        positions.clear()
-        for pos in pos_copy:
-            for x in range(-self.update_distance, self.update_distance +1):
-                for y in range(-self.update_distance, self.update_distance +1):
-                    chunk_pos = self.get_chunk_num(Vector(x, y)) + Vector(x, y)
+        positions = set()
+        for pos in players:
+            for x in range(-pos.update_distance, pos.update_distance + 1):
+                for y in range(-pos.update_distance, pos.update_distance + 1):
+                    chunk_pos = get_chunk_cords(pos.position) + Vector(x, y)
                     positions.add(chunk_pos)
 
         for pos in positions:
             chunk_x, chunk_y = pos.tuple
-            if chunk_x in self.__chunk_map and chunk_y in self.__chunk_map[chunk_x]:
-                for actor_name in self.__chunk_map[chunk_x][chunk_y]:
+            if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
+                for actor_name in self.__chunks[chunk_x][chunk_y]:
                     sync_data = self.actors[actor_name].get_for_net_sync()
                     if sync_data:
                         actor_updates[actor_name] = (sync_data, pos)
@@ -184,15 +149,11 @@ class Level:
         
 
     def tick(self, delta_time):
-        self.__chunk_map.clear() 
+        self.__chunks.clear() 
         for actor in self.actors.values(): #* not optimal, but it will do for now
             self.__add_actor_to_chunk(actor)
 
         self.__physics_step(delta_time * self.simulation_speed)
-
-        for widget in self.widgets.values():
-            if widget.visible and issubclass(widget.__class__, Button):
-                widget.tick(self.pressed_keys, Key.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)         #TODO fix this
         
 
     def __physics_step(self, delta_time):
@@ -287,12 +248,12 @@ class Level:
 
 
     def __add_actor_to_chunk(self, actor):
-        chunk_x, chunk_y = self.get_chunk_num(actor.position)
-        if chunk_x not in self.__chunk_map:
-            self.__chunk_map[chunk_x] = {}
-        if chunk_y not in self.__chunk_map[chunk_x]:
-            self.__chunk_map[chunk_x][chunk_y] = set()
-        self.__chunk_map[chunk_x][chunk_y].add(actor.name)
+        chunk_x, chunk_y = get_chunk_cords(actor.position)
+        if chunk_x not in self.__chunks:
+            self.__chunks[chunk_x] = {}
+        if chunk_y not in self.__chunks[chunk_x]:
+            self.__chunks[chunk_x][chunk_y] = set()
+        self.__chunks[chunk_x][chunk_y].add(actor.name)
         
     #?endif
 
