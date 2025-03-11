@@ -1,11 +1,11 @@
-from componentst.datatypes import *
-from componentst.widget import Widget
-from componentst.button import Button
-from componentst.actor import Actor
-from componentst.background import Background
-from componentst.rigidbody import Rigidbody
-from componentst.character import Character
-from componentst.game_math import *
+from components.datatypes import *
+from components.widget import Widget
+from components.button import Button
+from components.actor import Actor
+from components.background import Background
+from components.rigidbody import Rigidbody
+from components.character import Character
+from components.game_math import *
 
 
 

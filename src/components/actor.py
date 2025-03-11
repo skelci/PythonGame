@@ -1,5 +1,5 @@
-from componentst.datatypes import *
-from componentst.material import Material
+from components.datatypes import *
+from components.material import Material
 
 
 class Actor:

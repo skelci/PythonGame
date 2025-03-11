@@ -1,4 +1,4 @@
-from componentst.datatypes import *
+from components.datatypes import *
 
 import pygame
 

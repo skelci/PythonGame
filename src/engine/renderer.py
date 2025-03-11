@@ -1,9 +1,9 @@
 #?attr CLIENT
 
-from componentst.datatypes import *
-from componentst.actor import Actor
-from componentst.widget import Widget
-from componentst.button import Button
+from components.datatypes import *
+from components.actor import Actor
+from components.widget import Widget
+from components.button import Button
 
 import pygame # type: ignore
 

@@ -1,14 +1,14 @@
-from enginet.game_base import *
+from engine.game_base import *
 
-from componentst.actor import Actor
-from componentst.rigidbody import Rigidbody
-from componentst.datatypes import *
-from componentst.material import Material
-from componentst.character import Character
-from componentst.button import Button
-from componentst.background import *
-from componentst.text import Text
-from componentst.level import Level
+from components.actor import Actor
+from components.rigidbody import Rigidbody
+from components.datatypes import *
+from components.material import Material
+from components.character import Character
+from components.button import Button
+from components.background import *
+from components.text import Text
+from components.level import Level
 
 import random as r
 #TODO change every isubclass to isinstance
