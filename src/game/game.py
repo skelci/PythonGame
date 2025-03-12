@@ -22,7 +22,7 @@ class TestLevel(Level):
         )
 
         backgrounds = (
-            Background("sky", (BackgroundLayer(Material(Color(192, 31, 215)), 20, .25),)),
+            Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, .25),)),
         )
 
         super().__init__("Test_Level", Character, actors, backgrounds)
