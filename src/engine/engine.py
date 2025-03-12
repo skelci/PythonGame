@@ -592,7 +592,7 @@ class ServerEngine(Engine):
         level = self.levels[player.level]
         player_chunk = get_chunk_cords(player.position)
         for x in range(player_chunk.rounded.x - player.update_distance, player_chunk.rounded.x + player.update_distance + 1):
-            for y in range(player_chunk.y - player.update_distance, player_chunk.y + player.update_distance + 1):
+            for y in range(player_chunk.rounded.y - player.update_distance, player_chunk.rounded.y + player.update_distance + 1):
                 if x in level.chunks and y in level.chunks[x]:
                     for actor in level.chunks[x][y]:
                         self.network.send(id, "register_actor", level.actors[actor].get_for_full_net_sync())

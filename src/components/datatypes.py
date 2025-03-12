@@ -251,6 +251,10 @@ class Color:
         yield self.a
 
 
+    def __hash__(self):
+        return hash(self.tuple)
+
+
     @property
     def tuple(self):
         return (self.r, self.g, self.b, self.a)

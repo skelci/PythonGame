@@ -18,11 +18,11 @@ import random as r
 class TestLevel(Level):
     def __init__(self, engine_ref):
         actors = (
-            Actor(engine_ref, "Ground", Vector(1, 1), Vector(0, -1), material = Material("./res/textures/grass.jpeg")),
+            Actor(engine_ref, "Ground", Vector(1, 1), Vector(0, -1), material = Material(Color(192, 31, 215))),
         )
 
         backgrounds = (
-            Background("sky", (BackgroundLayer(Material("./res/textures/sky.png"), 20, .25),)),
+            Background("sky", (BackgroundLayer(Material(Color(192, 31, 215)), 20, .25),)),
         )
 
         super().__init__("Test_Level", Character, actors, backgrounds)
