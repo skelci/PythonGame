@@ -656,7 +656,7 @@ class ServerEngine(Engine):
         level_name = data
         if level_name in self.levels:
             self.__players[id].level = level_name
-            self.levels[level_name].register_actor(self.levels[level_name].default_character(self, self.get_player_actor(id))) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, everything else should be hardcoded
+            self.levels[level_name].register_actor(self.levels[level_name].default_character(self, self.get_player_actor(id), Vector())) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
             self.__players[id].previous_chunk = get_chunk_cords(self.levels[level_name].actors[self.get_player_actor(id)].position)
             self.__full_player_sync(id)
         else:

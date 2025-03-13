@@ -121,7 +121,7 @@ class ClientNetwork(Network):
                 data = self._output_queue.get()
                 try:
                     self.socket.send(data)
-                except ConnectionResetError:
+                except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
                     break
 
 
@@ -130,7 +130,7 @@ class ClientNetwork(Network):
             data = None
             try:
                 data = self.socket.recv(1024)
-            except ConnectionResetError:
+            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
                 break
 
             if not data:
@@ -209,7 +209,7 @@ class ServerNetwork(Network):
                 conn = self.__id_to_conn[id]
                 try:
                     conn.send(data)
-                except ConnectionResetError or ConnectionAbortedError:
+                except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
                     break
         
 
@@ -241,7 +241,7 @@ class ServerNetwork(Network):
         while self.running:
             try:
                 data = conn.recv(1024)
-            except ConnectionResetError or ConnectionAbortedError:
+            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
                 break
 
             if not data:
