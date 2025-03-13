@@ -12,6 +12,11 @@ from components.level import Level
 
 import random as r
 #TODO change every isubclass to isinstance
+class Grass(Actor):
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref,"grass", position = position,half_size = Vector(0.5, 0.5), material = Material(Color(0, 255, 0)))
+        self.position = position
+
 
 
 
@@ -62,6 +67,9 @@ class TestLevel(Level):
     def __init__(self, engine_ref):
         actors = (
             Actor(engine_ref, "Ground", Vector(1, 1), Vector(0, -1), material = Material(Color(192, 31, 215))),
+            # Grass(engine_ref, position = Vector(0,-1)),
+
+            
         )
 
         backgrounds = (
