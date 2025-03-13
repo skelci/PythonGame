@@ -46,6 +46,11 @@ class Engine(ABC):
         return self.__world_mouse_pos
 
 
+    @staticmethod
+    def get_player_actor(player_id):
+        return "__Player_" + str(player_id)
+
+
     def stop(self):
         self.__running = False
 
@@ -493,11 +498,6 @@ class ServerEngine(Engine):
     @property
     def levels(self):
         return self.__levels
-    
-
-    @staticmethod
-    def get_player_actor(player_id):
-        return "__Player_" + str(player_id)
         
 
     def register_level(self, level):
