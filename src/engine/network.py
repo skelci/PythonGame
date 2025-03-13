@@ -124,8 +124,10 @@ class ClientNetwork(Network):
 
     def __handle_connection(self):
         while self.running:
-            data = self.socket.recv(1024)
-            if not data:
+            data = b""
+            try:
+                data = self.socket.recv(1024)
+            except ConnectionResetError:
                 break
 
             parsed_data = self._parse_data(data)
@@ -228,8 +230,9 @@ class ServerNetwork(Network):
         self.__on_connect(self.__conn_to_id[conn])
 
         while self.running:
-            data = conn.recv(1024)
-            if not data:
+            try:
+                data = conn.recv(1024)
+            except ConnectionResetError:
                 break
 
             parsed_data = self._parse_data(data)
