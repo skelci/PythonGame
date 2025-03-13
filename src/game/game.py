@@ -68,6 +68,9 @@ class ClientGame(ClientGameBase):
         if not self.current_level:
             self.current_level = "Test_Level"
             self.engine.join_level(self.current_level)
+            return
+        if f"__Player_{self.engine.network.id}" in self.engine.level.actors:
+            self.engine.camera_position = self.engine.level.actors[f"__Player_{self.engine.network.id}"].position
 
 #?endif
 
@@ -77,21 +80,15 @@ class ClientGame(ClientGameBase):
 class TestLevel(Level):
     def __init__(self, engine_ref):
         actors = (
-
-            Dirt(engine_ref, "Dirt", Vector(0,-2)),
-            Dirt(engine_ref, "Dirt_1", Vector(1,-2)),
-            Dirt(engine_ref, "Dirt_2", Vector(2,-2)),
-            )
-        for i in range(-24, 25):	
-            actors += (Grass(engine_ref, "Grass_" + str(i), Vector(i, 1))),
-            for j in range(0, -14, -1):
+        )
+        # Grass and dirt
+        for i in range(-24, 25):
+            actors += (Grass(engine_ref, "Grass_" + str(i), Vector(i, -1))),
+            for j in range(-2, -14, -1):
                 actors += (Dirt(engine_ref, "Dirt_" + str(i) + str(j), Vector(i, j))),
         
-        backgrounds = (
-            Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, .25),)),
-        )
-
-        super().__init__("Test_Level", TestPlayer, actors, backgrounds)
+       
+        super().__init__("Test_Level", TestPlayer, actors, "sky")
 
 
 
@@ -125,5 +122,6 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.W, KeyPressType.HOLD, KeyHandler.key_W)
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
+
 
 #?endif
