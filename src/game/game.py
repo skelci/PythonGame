@@ -86,12 +86,8 @@ class TestLevel(Level):
             actors += (Grass(engine_ref, "Grass_" + str(i), Vector(i, 1))),
             for j in range(0, -14, -1):
                 actors += (Dirt(engine_ref, "Dirt_" + str(i) + str(j), Vector(i, j))),
-        
-        backgrounds = (
-            Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, .25),)),
-        )
 
-        super().__init__("Test_Level", TestPlayer, actors, backgrounds)
+        super().__init__("Test_Level", TestPlayer, actors, "sky")
 
 
 
