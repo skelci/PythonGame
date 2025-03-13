@@ -200,10 +200,10 @@ class ClientEngine(Engine, Renderer):
             self.widgets[name].visible = False
 
 
-    def add_actor_template(self, name, actor):
-        if name in self.__actor_templates or not issubclass(actor, Actor):
-            raise Exception(f"Actor template {name} is already registered or wrong data type")
-        self.__actor_templates[name] = actor
+    def add_actor_template(self, actor):
+        if not issubclass(actor, Actor):
+            raise Exception(f"Actor template {actor.__name__} is already registered or wrong data type")
+        self.__actor_templates[actor.__name__] = actor
     
 
     def register_widget(self, widget):
@@ -547,7 +547,12 @@ class ServerEngine(Engine):
                 c_chk = get_chunk_cords(player.position)
                 
                 for x in range(c_chk.rounded.x - player.update_distance, c_chk.rounded.x + player.update_distance + 1):
+                    if x not in level.chunks:
+                        continue
                     for y in range(c_chk.rounded.y - player.update_distance, c_chk.rounded.y + player.update_distance + 1):
+                        if y not in level.chunks[x]:
+                            continue
+
                         if max(p_chk.x, c_chk.x) - player.update_distance <= x <= min(p_chk.x, c_chk.x) + player.update_distance and max(p_chk.y, c_chk.y) - player.update_distance <= y <= min(p_chk.y, c_chk.y) + player.update_distance: #TODO fix if player distance changes
                             for actor_name, update in updates.items():
                                 sync_data, chunk_num = update
@@ -560,27 +565,30 @@ class ServerEngine(Engine):
 
                 player.previous_chunk = c_chk
 
-        for player_id in self.__players:
-            for key in self.__players[player_id].triggered_keys:
+        for id in self.__players:
+            if not self.__players[id].level:
+                continue
+
+            for key in self.__players[id].triggered_keys:
                 if key in self.__registered_keys:
                     press_type, func = self.__registered_keys[key]
                     if press_type == KeyPressType.TRIGGER:
-                        func(self, player_id)
+                        func(self, self.levels[self.players[id].level], id)
 
-            for key in self.__players[player_id].pressed_keys:
+            for key in self.__players[id].pressed_keys:
                 if key in self.__registered_keys:
                     press_type, func = self.__registered_keys[key]
                     if press_type == KeyPressType.HOLD:
-                        func(self, player_id)
+                        func(self, self.levels[self.players[id].level], id)
 
-            for key in self.__players[player_id].released_keys:
+            for key in self.__players[id].released_keys:
                 if key in self.__registered_keys:
                     press_type, func = self.__registered_keys[key]
                     if press_type == KeyPressType.TRIGGER:
-                        func(self, player_id)
+                        func(self, self.levels[self.players[id].level], id)
 
-            self.__players[player_id].released_keys.clear()
-            self.__players[player_id].triggered_keys.clear()
+            self.__players[id].released_keys.clear()
+            self.__players[id].triggered_keys.clear()
 
         self.__time("level_updates")
 
