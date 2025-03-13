@@ -14,7 +14,7 @@ import random as r
 #TODO change every isubclass to isinstance
 class Grass(Actor):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass.jpeg"))
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(0, 255, 0)))
         self.position = position
 
 class Dirt(Actor):
@@ -70,38 +70,16 @@ class ClientGame(ClientGameBase):
 class TestLevel(Level):
     def __init__(self, engine_ref):
         actors = (
-            Grass(engine_ref, "Grass", Vector(-24,-1)),
-            Grass(engine_ref, "Grass_1", Vector(-23,-1)),
-            Grass(engine_ref, "Grass_2", Vector(-22,-1)),
-            Grass(engine_ref, "Grass_3", Vector(-21,-1)),
-            Grass(engine_ref, "Grass_4", Vector(-20,-1)),
-            Grass(engine_ref, "Grass_5", Vector(-19,-1)),
-            Grass(engine_ref, "Grass_6", Vector(-18,-1)),
-            Grass(engine_ref, "Grass_7", Vector(-17,-1)),
-            Grass(engine_ref, "Grass_8", Vector(-16,-1)),
-            Grass(engine_ref, "Grass_9", Vector(-15,-1)),
-            Grass(engine_ref, "Grass_10", Vector(-14,-1)),
-            Grass(engine_ref, "Grass_11", Vector(-13,-1)),
-            Grass(engine_ref, "Grass_12", Vector(-12,-1)),
-            Grass(engine_ref, "Grass_13", Vector(-11,-1)),
-            Grass(engine_ref, "Grass_14", Vector(-10,-1)),
-            Grass(engine_ref, "Grass_15", Vector(-9,-1)),
-            Grass(engine_ref, "Grass_16", Vector(-8,-1)),
-            Grass(engine_ref, "Grass_17", Vector(-7,-1)),
-            Grass(engine_ref, "Grass_18", Vector(-6,-1)),
-            Grass(engine_ref, "Grass_19", Vector(-5,-1)),
-            Grass(engine_ref, "Grass_20", Vector(-4,-1)),
-            Grass(engine_ref, "Grass_21", Vector(-3,-1)),
-            Grass(engine_ref, "Grass_22", Vector(-2,-1)),
-            Grass(engine_ref, "Grass_23", Vector(-1,-1)),
-            Grass(engine_ref, "Grass_24", Vector(0,-1)),
 
             Dirt(engine_ref, "Dirt", Vector(0,-2)),
             Dirt(engine_ref, "Dirt_1", Vector(1,-2)),
             Dirt(engine_ref, "Dirt_2", Vector(2,-2)),
-    
-        )
-
+            )
+        for i in range(-24, 25):	
+            actors += (Grass(engine_ref, "Grass_" + str(i), Vector(i, 1))),
+            for j in range(0, -14, -1):
+                actors += (Dirt(engine_ref, "Dirt_" + str(i) + str(j), Vector(i, j))),
+        
         backgrounds = (
             Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, .25),)),
         )
@@ -142,6 +120,3 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
 
 #?endif
-
-
-
