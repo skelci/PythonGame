@@ -18,6 +18,19 @@ class Grass(Actor):
         self.position = position
 
 
+class TestPlayer(Character):
+    def __init__(self, engine_ref, name):
+        super().__init__(engine_ref, name, position=Vector(3, 0), material = Material(Color(0, 0, 255)))
+
+
+
+class Grass(Actor):
+    def __init__(self, engine_ref, name, position):
+        super().__init__(engine_ref, name, Vector(0.5, 0.5), position, material = Material(Color(0, 255, 0)))
+                     
+
+    def __del__(self):
+        self.engine_ref.current_level.regiister_actor(TestPlayer(self.engine_ref, "Test_Player"))
 
 
 #?ifdef CLIENT
@@ -34,6 +47,8 @@ class ClientGame(ClientGameBase):
         self.current_level = None
 
         self.engine.show_all_stats()
+
+        self.engine.add_actor_template(TestPlayer)
 
 
     def tick(self):
@@ -57,12 +72,6 @@ class ClientGame(ClientGameBase):
 
 
 #?ifdef SERVER
-class TestPlayer(Character):
-    def __init__(self, engine_ref, name):
-        super().__init__(engine_ref, name, position=Vector(2, 0), material = Material(Color(0, 0, 255)))
-
-
-
 class TestLevel(Level):
     def __init__(self, engine_ref):
         actors = (
@@ -82,18 +91,18 @@ class TestLevel(Level):
 
 class KeyHandler:
     @staticmethod
-    def key_W(engine_ref, id):
-        engine_ref.levels[engine_ref.players[id].level].actors[engine_ref.get_player_actor(id)].jump()
+    def key_W(engine_ref, level_ref, id):
+        level_ref.actors[engine_ref.get_player_actor(id)].jump()
     
 
     @staticmethod
-    def key_A(engine_ref, id):
-        engine_ref.levels[engine_ref.players[id].level].actors[engine_ref.get_player_actor(id)].move_direction = -1
+    def key_A(engine_ref, level_ref, id):
+        level_ref.actors[engine_ref.get_player_actor(id)].move_direction = -1
 
 
     @staticmethod
-    def key_D(engine_ref, id):
-        engine_ref.levels[engine_ref.players[id].level].actors[engine_ref.get_player_actor(id)].move_direction = 1
+    def key_D(engine_ref, level_ref, id):
+        level_ref.actors[engine_ref.get_player_actor(id)].move_direction = 1
 
 
 
