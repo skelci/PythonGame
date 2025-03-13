@@ -28,18 +28,22 @@ class ClientGame(ClientGameBase):
     def __init__(self):
         super().__init__()
 
-        self.engine.camera_width = 48
+        eng = self.engine
 
-        self.engine.connect("localhost", 5555)
+        eng.camera_width = 48
+
+        eng.connect("localhost", 5555)
 
         self.clock_1s = 0
 
         self.current_level = None
 
-        self.engine.show_all_stats()
+        eng.show_all_stats()
 
-        self.engine.add_actor_template(TestPlayer)
-        self.engine.add_actor_template(Grass)
+        eng.add_actor_template(TestPlayer)
+        eng.add_actor_template(Grass)
+
+        eng.register_background(Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, 0.25), )))
 
 
     def tick(self):
@@ -72,11 +76,7 @@ class TestLevel(Level):
             
         )
 
-        backgrounds = (
-            Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, .25),)),
-        )
-
-        super().__init__("Test_Level", TestPlayer, actors, backgrounds)
+        super().__init__("Test_Level", TestPlayer, actors, "sky")
 
 
 
