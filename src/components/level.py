@@ -97,6 +97,10 @@ class Level:
         
 
     def register_actor(self, actor):
+        #?ifdef SERVER
+        if actor.name in self.actors:
+            raise ValueError("Actor with the same name already exists in level:", actor.name)
+        #?endif
         if issubclass(actor.__class__, Actor):
             self.actors[actor.name] = actor
             self.__add_actor_to_chunk(actor)

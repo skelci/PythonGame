@@ -3,7 +3,7 @@ from components.material import Material
 
 
 class Actor:
-    def __init__(self, engine_ref, name, half_size, position = Vector(), generate_overlap_events = False, collidable = True, visible = True, material = None, restitution = 1):
+    def __init__(self, engine_ref, name, position, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, visible = True, material = None, restitution = 1):
         self.__outdated = {
             "half_size": False,
             "position": False,
@@ -184,10 +184,7 @@ class Actor:
         return {
             "type": self.__class__.__name__,
             "name": self.name,
-            "half_size": self.half_size,
             "position": self.position,
-            "visible": self.visible,
-            "material": self.material.texture_str if self.material else None
         }
     
 

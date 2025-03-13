@@ -354,11 +354,13 @@ class ClientEngine(Engine, Renderer):
 
 
     def __register_actor(self, data):
-        if data["name"] not in self.__level.actors:
-            material = None
-            if data["material"] is not None:
-                material = Material(data["material"])
-            self.__level.register_actor(self.__actor_templates[data["type"]](self, data["name"], data["half_size"], data["position"], visible=data["visible"], material=material))
+        if data["name"] in self.__level.actors:
+            return
+        
+        if data["type"] not in self.__actor_templates:
+            raise Exception(f"Actor template {data['type']} is not registered")
+
+        self.__level.register_actor(self.__actor_templates[data["type"]](self, data["name"], data["position"])) # if it crashes in this line, it's because actor class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
 
 
     def __update_actor(self, data):

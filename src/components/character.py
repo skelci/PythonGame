@@ -5,8 +5,8 @@ from components.datatypes import *
 
 
 class Character(Rigidbody):
-    def __init__(self, engine_ref, name, half_size = Vector(0.4, 0.8), position = Vector(), generate_overlap_events = True, collidable = True, simulate_physics = True, visible = True, material = None, restitution = 0, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 100, gravity_scale = 1, air_resistance = 0.1, deceleration = 10, jump_velocity = 7, walk_speed = 5, acceleration = 10, air_control = 0.2):
-        super().__init__(engine_ref, name, half_size, position, generate_overlap_events, collidable, simulate_physics, visible, material, restitution, initial_velocity, min_velocity, mass, gravity_scale, air_resistance, deceleration)
+    def __init__(self, engine_ref, name, position = Vector(), half_size = Vector(0.5, 0.5), generate_overlap_events = True, collidable = True, simulate_physics = True, visible = True, material = None, restitution = 0, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 100, gravity_scale = 1, air_resistance = 0.1, deceleration = 10, jump_velocity = 7, walk_speed = 5, acceleration = 10, air_control = 0.2):
+        super().__init__(engine_ref, name, position, half_size, generate_overlap_events, collidable, simulate_physics, visible, material, restitution, initial_velocity, min_velocity, mass, gravity_scale, air_resistance, deceleration)
         
         self.jump_velocity = jump_velocity
         self.walk_speed = walk_speed

@@ -13,24 +13,14 @@ from components.level import Level
 import random as r
 #TODO change every isubclass to isinstance
 class Grass(Actor):
-    def __init__(self, engine_ref, position):
-        super().__init__(engine_ref,"grass", position = position,half_size = Vector(0.5, 0.5), material = Material(Color(0, 255, 0)))
+    def __init__(self, engine_ref, name, position):
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(0, 255, 0)))
         self.position = position
 
 
 class TestPlayer(Character):
     def __init__(self, engine_ref, name):
         super().__init__(engine_ref, name, position=Vector(3, 0), material = Material(Color(0, 0, 255)))
-
-
-
-class Grass(Actor):
-    def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, Vector(0.5, 0.5), position, material = Material(Color(0, 255, 0)))
-                     
-
-    def __del__(self):
-        self.engine_ref.current_level.regiister_actor(TestPlayer(self.engine_ref, "Test_Player"))
 
 
 #?ifdef CLIENT
@@ -49,6 +39,7 @@ class ClientGame(ClientGameBase):
         self.engine.show_all_stats()
 
         self.engine.add_actor_template(TestPlayer)
+        self.engine.add_actor_template(Grass)
 
 
     def tick(self):
@@ -75,8 +66,8 @@ class ClientGame(ClientGameBase):
 class TestLevel(Level):
     def __init__(self, engine_ref):
         actors = (
-            Actor(engine_ref, "Ground", Vector(1, 1), Vector(0, -1), material = Material(Color(192, 31, 215))),
-            # Grass(engine_ref, position = Vector(0,-1)),
+            Grass(engine_ref, "Grass", Vector(0,-1)),
+            Grass(engine_ref, "Grass_1", Vector(2,-1)),
 
             
         )
