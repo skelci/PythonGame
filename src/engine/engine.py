@@ -77,17 +77,19 @@ class ClientEngine(Engine, Renderer):
         self.__network = None
         self.__level = Level("Engine_Level", Character)
 
-        self.current_background = None
-        
         self.__widgets = {}
+        self.__backgrounds = {}
         self.__pressed_keys = set()
         self.__released_keys = set()
         self.__screen_mouse_pos = Vector()
+
+        self.current_background = None
 
         self.__network_commands = {
             "register_actor": self.__register_actor,
             "update_actor": self.__update_actor,
             "destroy_actor": self.__destroy_actor,
+            "background": self.__background,
         }
 
         self.__actor_templates = {
@@ -154,7 +156,7 @@ class ClientEngine(Engine, Renderer):
 
     @current_background.setter
     def current_background(self, value):
-        if value in self.level.backgrounds or value is None:
+        if value in self.backgrounds or value is None:
             self.__current_background = value
         else:
             raise Exception(f"Background {value} is not registered")
@@ -163,6 +165,11 @@ class ClientEngine(Engine, Renderer):
     @property
     def widgets(self):
         return self.__widgets
+
+
+    @property
+    def backgrounds(self):
+        return self.__backgrounds
 
 
     @property
@@ -209,7 +216,13 @@ class ClientEngine(Engine, Renderer):
     def register_widget(self, widget):
         if widget.name in self.__widgets or not isinstance(widget, Widget):
             raise Exception(f"Widget {widget.name} is already registered or wrong data type")
-        self.__widgets[widget.name] = widget           
+        self.__widgets[widget.name] = widget
+
+
+    def register_background(self, background):
+        if background.name in self.__backgrounds or not isinstance(background, Background):
+            raise Exception(f"Background {background.name} is already registered or wrong data type")
+        self.__backgrounds[background.name] = background
     
 
     def regisrer_network_command(self, cmd, func):
@@ -264,7 +277,7 @@ class ClientEngine(Engine, Renderer):
         self.__time("render_regs")
 
         if self.current_background:
-            self.draw_background(self.level.backgrounds[self.current_background])
+            self.draw_background(self.backgrounds[self.current_background])
         else:
             self.screen.fill((0, 0, 0))
 
@@ -371,6 +384,10 @@ class ClientEngine(Engine, Renderer):
 
     def __destroy_actor(self, data):
         self.__level.destroy_actor(data)
+
+
+    def __background(self, data):
+        self.current_background = data
 
 #?endif
 
@@ -650,6 +667,8 @@ class ServerEngine(Engine):
                 if x in level.chunks and y in level.chunks[x]:
                     for actor in level.chunks[x][y]:
                         self.network.send(id, "register_actor", level.actors[actor].get_for_full_net_sync())
+
+        self.network.send(id, "background", level.background)
 
 
     def __join_level(self, id, data):
