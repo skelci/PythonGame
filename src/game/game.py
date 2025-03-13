@@ -23,8 +23,8 @@ class Dirt(Actor):
         self.position = position
 
 class TestPlayer(Character):
-    def __init__(self, engine_ref, name):
-        super().__init__(engine_ref, name, position=Vector(3, 0), material = Material(Color(0, 0, 255)))
+    def __init__(self, engine_ref, name, position):
+        super().__init__(engine_ref, name, position=Vector(0, 3), material = Material(Color(0, 0, 255)))
 
 
 #?ifdef CLIENT
@@ -106,7 +106,7 @@ class TestLevel(Level):
             Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, .25),)),
         )
 
-        super().__init__("Test_Level", Character, actors, backgrounds)
+        super().__init__("Test_Level", TestPlayer, actors, backgrounds)
 
 
 

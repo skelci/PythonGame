@@ -17,7 +17,7 @@ class Material:
         #?ifdef CLIENT
         self.__load_texture()
         #?endif
-        
+
 
     @property
     def texture_str(self):
@@ -27,6 +27,8 @@ class Material:
     @texture_str.setter
     def texture_str(self, value):
         if isinstance(value, str) or isinstance(value, Color):
+            if isinstance(value, str) and not os.path.isfile(value) and not isinstance(value, Color):
+                raise FileNotFoundError("Texture file not found:", value)
             self.__texture_str = value
         else:
             raise TypeError("Texture_str must be a string or Color:", value)
@@ -46,7 +48,7 @@ class Material:
                 return
             
             if os.path.isfile(self.texture_str):
-                Material.__textures[self.texture_str] = pygame.image.load(self.texture_str).convert_alpha() # why the f does that shit of convert_alpha() make rendering 2x faster ?!?!?!
+                Material.__textures[self.texture_str] = pygame.image.load(self.texture_str).convert_alpha() # why the f does that shit of convert_alpha() makes rendering 2x faster ?!?!?!
             else:
                 print("Texture file not found:", self.texture_str)
     
