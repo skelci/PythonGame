@@ -355,7 +355,7 @@ class ClientEngine(Engine, Renderer):
 
     def __register_actor(self, data):
         if data["name"] not in self.__level.actors:
-            self.__level.register_actor(self.__actor_templates[data["type"]](self, data["name"], data["half_size"], data["position"], visible=data["visible"], material=Material(data["material"]) if data["material"] else None))
+            self.__level.register_actor(self.__actor_templates[data["type"]](self, data["name"], data["half_size"], data["position"], visible=data["visible"], material=Material(data["material"]) if "material" in data else None))
 
 
     def __update_actor(self, data):
