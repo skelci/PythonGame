@@ -106,4 +106,75 @@ class ServerGame(ServerGameBase):
 #?endif
 
 
+#Log, Rock, Coal, Iron, Gold, Diamond, Copper, Silver, Copper, Leaves
+class Log(Actor):
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref, "Log", position, material = Material(Color(139, 69, 19)))
 
+    def __del__(self):
+        print("Log has been destroyed")
+
+class Rock(Actor):
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref, "Rock", position, material = Material(Color(128, 128, 128)))
+
+    def __del__(self):
+        print("Rock has been destroyed")
+
+class Coal(Actor):
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref, "Coal", position, material = Material(Color(0, 0, 0)))  
+
+    def __del__(self):
+        print("Coal has been destroyed")
+
+class iron(Actor):
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref, "Iron", position, material = Material(Color(255, 0, 0)))  
+
+    def __del__(self):
+        print("Iron has been destroyed")
+
+class Gold(Actor):  
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref, "Gold", position, material = Material(Color(255, 215, 0)))  
+
+    def __del__(self):
+        print("Gold has been destroyed")   
+
+class diamond(Actor):
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref, "Diamond", position, material = Material(Color(0, 191, 255)))  
+
+    def __del__(self):
+        print("Diamond has been destroyed")
+
+class copper(Actor):
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref, "Copper", position, material = Material(Color(184, 115, 51)))  
+
+    def __del__(self):
+        print("Copper has been destroyed")
+
+class Silver(Actor):
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref, "Silver", position, material = Material(Color(192, 192, 192)))  
+
+    def __del__(self):
+        print("Silver has been destroyed")
+
+class copper(Actor):
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref, "Copper", position, material = Material(Color(184, 115, 51)))  
+
+    def __del__(self):
+        print("Copper has been destroyed")
+
+class leaves(Actor):
+    def __init__(self, engine_ref, position):
+        super().__init__(engine_ref, "Leaves", position, material = Material(Color(0, 255, 0)))  
+
+    def __del__(self):
+        print("Leaves has been destroyed")
+
+        
