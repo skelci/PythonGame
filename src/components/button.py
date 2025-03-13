@@ -89,7 +89,7 @@ class Button(Border):
             return
 
         if is_in_screen_rect(*self.screen_rect, mouse_pos):
-            if Key.MOUSE_LEFT in pressed_keys:
+            if Keys.MOUSE_LEFT in pressed_keys:
                 self.color = self.click_color
             else:
                 self.color = self.hover_color

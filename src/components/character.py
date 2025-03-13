@@ -74,7 +74,7 @@ class Character(Rigidbody):
 
     @move_direction.setter
     def move_direction(self, value):
-        if isinstance(value, int) and value in [-1, 0, 1]:
+        if isinstance(value, int) and value in (-1, 0, 1):
             self.__move_direction = value
         else:
             raise TypeError("Move direction must be -1, 0 or 1:", value)
@@ -109,10 +109,7 @@ class Character(Rigidbody):
                         self.velocity.x = direction * wa
 
 
-        if direction > 0:
-            self.material.mirror = False
-        elif direction < 0:
-            self.material.mirror = True
+        self.move_direction = 0
 
 
     def tick(self, delta_time):

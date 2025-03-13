@@ -259,7 +259,7 @@ class ClientEngine(Engine, Renderer):
             if widget.visible:
                 self.add_widget_to_draw(widget)
                 if issubclass(widget.__class__, Button):
-                    widget.tick(self.pressed_keys, Key.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
+                    widget.tick(self.pressed_keys, Keys.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
 
         self.__time("render_regs")
 
@@ -321,15 +321,15 @@ class ClientEngine(Engine, Renderer):
                         self.network.stop()
 
                 case pygame.MOUSEBUTTONDOWN:
-                    self.__pressed_keys.add(Key(event.button))
+                    self.__pressed_keys.add(Keys(event.button))
                     if self.network and self.network.id != -1:
-                        self.network.send("mouse_button_down", Key(event.button))
+                        self.network.send("key_down", Keys(event.button))
 
                 case pygame.MOUSEBUTTONUP:
-                    self.__pressed_keys.remove(Key(event.button))
-                    self.__released_keys.add(Key(event.button))
+                    self.__pressed_keys.remove(Keys(event.button))
+                    self.__released_keys.add(Keys(event.button))
                     if self.network and self.network.id != -1:
-                        self.network.send("mouse_button_up", Key(event.button))
+                        self.network.send("key_up", Keys(event.button))
 
                 case pygame.KEYDOWN:
                     self.__pressed_keys.add(event.key)
@@ -380,6 +380,9 @@ class Player:
         self.world_mouse_pos = Vector()
         self.update_distance = 0
         self.position = Vector()
+        self.triggered_keys = set()
+        self.pressed_keys = set()
+        self.released_keys = set()
 
 
 
@@ -410,6 +413,7 @@ class ServerEngine(Engine):
 
         self.__players = {}
         self.__levels = {}
+        self.__registered_keys = {}
 
         self.__console = Console()
         self.__cmd_thread = threading.Thread(target=self.console.run)
@@ -428,6 +432,8 @@ class ServerEngine(Engine):
             "join_level": self.__join_level,
             "world_mouse_pos": self.__world_mouse_pos,
             "update_distance": self.__update_distance,
+            "key_down": self.__key_down,
+            "key_up": self.__key_up,
         }
 
         self.__clock = TPS(self.max_tps)
@@ -465,6 +471,11 @@ class ServerEngine(Engine):
     @property
     def levels(self):
         return self.__levels
+    
+
+    @staticmethod
+    def get_player_actor(player_id):
+        return "__Player_" + str(player_id)
         
 
     def register_level(self, level):
@@ -478,6 +489,14 @@ class ServerEngine(Engine):
             self.__network_commands[cmd] = func
         else:
             raise TypeError("Command must be a string and function must be a function:", cmd, func)
+        
+
+    def register_key(self, key, press_type, func):
+        if key in self.__registered_keys:
+            raise Exception(f"Keys {key} is already registered")
+        if not key in Keys or press_type not in KeyPressType or not callable(func):
+            raise TypeError("Key must be a Keys, press_type must be a KeyPressType and func must be a function:", key, press_type, func)
+        self.__registered_keys[key] = (press_type, func)
         
 
     def start_network(self, address, port, max_connections):
@@ -504,7 +523,7 @@ class ServerEngine(Engine):
         for level in self.levels.values():
             for player_id, player in self.__players.items():
                 if player.level == level.name:
-                    self.__players[player_id].position = level.actors["__Player_" + str(player_id)].position
+                    self.__players[player_id].position = level.actors[self.get_player_actor(player_id)].position
 
             destroyed_actors = level.get_destroyed()
 
@@ -540,6 +559,28 @@ class ServerEngine(Engine):
                                 self.network.send(player_id, "register_actor", level.actors[actor].get_for_full_net_sync())
 
                 player.previous_chunk = c_chk
+
+        for player_id in self.__players:
+            for key in self.__players[player_id].triggered_keys:
+                if key in self.__registered_keys:
+                    press_type, func = self.__registered_keys[key]
+                    if press_type == KeyPressType.TRIGGER:
+                        func(self, player_id)
+
+            for key in self.__players[player_id].pressed_keys:
+                if key in self.__registered_keys:
+                    press_type, func = self.__registered_keys[key]
+                    if press_type == KeyPressType.HOLD:
+                        func(self, player_id)
+
+            for key in self.__players[player_id].released_keys:
+                if key in self.__registered_keys:
+                    press_type, func = self.__registered_keys[key]
+                    if press_type == KeyPressType.TRIGGER:
+                        func(self, player_id)
+
+            self.__players[player_id].released_keys.clear()
+            self.__players[player_id].triggered_keys.clear()
 
         self.__time("level_updates")
 
@@ -602,8 +643,8 @@ class ServerEngine(Engine):
         level_name = data
         if level_name in self.levels:
             self.__players[id].level = level_name
-            self.levels[level_name].register_actor(self.levels[level_name].default_character(self, "__Player_" + str(id))) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, everything else should be hardcoded
-            self.__players[id].previous_chunk = get_chunk_cords(self.levels[level_name].actors["__Player_" + str(id)].position)
+            self.levels[level_name].register_actor(self.levels[level_name].default_character(self, self.get_player_actor(id))) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, everything else should be hardcoded
+            self.__players[id].previous_chunk = get_chunk_cords(self.levels[level_name].actors[self.get_player_actor(id)].position)
             self.__full_player_sync(id)
         else:
             print(f"Level {level_name} not found")
@@ -616,6 +657,16 @@ class ServerEngine(Engine):
     def __update_distance(self, id, data):
         self.__players[id].update_distance = data
         self.__full_player_sync(id)
+
+
+    def __key_down(self, id, data):
+        self.__players[id].pressed_keys.add(data)
+        self.__players[id].triggered_keys.add(data)
+
+
+    def __key_up(self, id, data):
+        self.__players[id].pressed_keys.remove(data)
+        self.__players[id].released_keys.add(data)
 
 #?endif
 

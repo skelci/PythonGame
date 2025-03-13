@@ -278,7 +278,14 @@ class Alignment(IntEnum):
 
 
 
-class Key(IntEnum):
+class KeyPressType(IntEnum):
+    TRIGGER = 0
+    HOLD = 1
+    RELEASE = 2
+
+
+
+class Keys(IntEnum):
     MOUSE_LEFT =        1
     MOUSE_MIDDLE =      2
     MOUSE_RIGHT =       3
