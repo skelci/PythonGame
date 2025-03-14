@@ -164,7 +164,7 @@ class Renderer:
                 camera_ratio * -(a.position.y + a.half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
             )
 
-            surface = a.material.get_surface(a.half_size * camera_ratio * 2)
+            surface = a.material.get_surface(a.half_size * camera_ratio * 2 * 1.02) # 1.02 is a magic number to prevent gaps between the textures
             self.__draw_rectangle_texture(surface, top_left_position)
 
         time_actors = time.time()
