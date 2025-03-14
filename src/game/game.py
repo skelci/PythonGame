@@ -11,7 +11,7 @@ from components.text import Text
 from components.level import Level
 
 import random as r
-#TODO change every isubclass to isinstance
+
 class Grass(Actor):
     def __init__(self, engine_ref, name, position):
         super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(0, 255, 0)))

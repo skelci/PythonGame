@@ -276,7 +276,7 @@ class ClientEngine(Engine, Renderer):
         for widget in self.widgets.values():
             if widget.visible:
                 self.add_widget_to_draw(widget)
-                if issubclass(widget.__class__, Button):
+                if isinstance(widget, Button):
                     widget.tick(self.pressed_keys, Keys.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
 
         self.__time("render_regs")

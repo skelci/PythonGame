@@ -130,7 +130,7 @@ class Actor:
 
     @material.setter
     def material(self, value):
-        if issubclass(value.__class__, Material) or value == None:
+        if isinstance(value, Material) or value == None:
             self.__material = value
             self.__outdated["material"] = True
         else:

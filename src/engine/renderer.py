@@ -135,14 +135,14 @@ class Renderer:
 
 
     def add_actor_to_draw(self, actor):
-        if not issubclass(type(actor), Actor):
+        if not isinstance(actor, Actor):
             raise TypeError("Actor must be a subclass of Actor:", actor)
         
         self.__actors_to_draw.append(actor)
 
 
     def add_widget_to_draw(self, widget):
-        if not issubclass(widget.__class__, Widget):
+        if not isinstance(widget, Widget):
             raise TypeError("Widget must be a subclass of Widget:", widget)
         
         self.__widgets_to_draw.append(widget)
