@@ -44,9 +44,6 @@ class ClientGame(ClientGameBase):
 
         eng.show_all_stats()
 
-        eng.add_actor_template(TestPlayer)
-        eng.add_actor_template(Grass)
-
         eng.register_background(Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, 0.25), )))
 
         self.engine.add_actor_template(TestPlayer)

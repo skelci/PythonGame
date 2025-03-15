@@ -5,12 +5,6 @@ import math
 
 
 
-pi = math.pi
-gravity = -9.80665
-kinda_small_number = 0.001
-
-
-
 @dataclass
 class Vector:
     x: float = 0
@@ -354,4 +348,10 @@ class Keys(IntEnum):
     SHIFT =             304
     CTRL =              306
     ALT =               308
+
+
+
+pi = math.pi
+gravity = -9.80665
+kinda_small_number = 0.001
 

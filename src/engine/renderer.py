@@ -4,20 +4,22 @@ from components.datatypes import *
 from components.actor import Actor
 from components.widget import Widget
 from components.button import Button
+from engine.gl_wrapper import *
 
-import pygame # type: ignore
+import pygame
+from pygame.locals import *
 
 import time
 
 
 
 class Renderer:
-    def __init__(self, width, height, camera_width, title = "Pygame Window", fullscreen = False, windowed = True, camera_position = Vector()):
+    def __init__(self, resolution, camera_width, title = "Pygame Window", fullscreen = False, windowed = True, camera_position = Vector()):
         self.__screen = None
         self.__fullscreen = False
         self.__windowed = True
 
-        self.resolution = Vector(width, height)
+        self.resolution = resolution
         self.title = title
         self.camera_width = camera_width
         self.fullscreen = fullscreen
@@ -38,9 +40,9 @@ class Renderer:
         if isinstance(value, Vector) and value.x > 0 and value.y > 0:
             self.__resolution = value
             self.__screen = pygame.display.set_mode((value.x, value.y),
-                                                    pygame.FULLSCREEN if self.fullscreen else 0 |
-                                                    pygame.NOFRAME if not self.windowed else 0 |
-                                                    pygame.DOUBLEBUF | pygame.HWSURFACE)
+                                                    FULLSCREEN if self.fullscreen else 0 |
+                                                    NOFRAME if not self.windowed else 0 |
+                                                    DOUBLEBUF | HWSURFACE | OPENGL)
         else:
             raise TypeError("Width must be a positive integer:", value)
         
@@ -95,9 +97,9 @@ class Renderer:
         if isinstance(value, bool):
             self.__fullscreen = value
             self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y),
-                                                    pygame.FULLSCREEN if value else 0 |
-                                                    pygame.NOFRAME if not self.windowed else 0 |
-                                                    pygame.DOUBLEBUF | pygame.HWSURFACE)
+                                                    FULLSCREEN if value else 0 |
+                                                    NOFRAME if not self.windowed else 0 |
+                                                    DOUBLEBUF | HWSURFACE | OPENGL)
         else:
             raise TypeError("Fullscreen must be a bool:", value)
         
@@ -112,9 +114,9 @@ class Renderer:
         if isinstance(value, bool):
             self.__windowed = value
             self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y),
-                                                    pygame.FULLSCREEN if self.fullscreen else 0 |
-                                                    pygame.NOFRAME if not value else 0 |
-                                                    pygame.DOUBLEBUF | pygame.HWSURFACE)
+                                                    FULLSCREEN if self.fullscreen else 0 |
+                                                    NOFRAME if not value else 0 |
+                                                    DOUBLEBUF | HWSURFACE | OPENGL)
         else:
             raise TypeError("Windowed must be a bool:", value)
         
@@ -148,12 +150,16 @@ class Renderer:
         self.__widgets_to_draw.append(widget)
 
     
-    def clear(self):
+    def __clear(self):
         self.__actors_to_draw.clear()
         self.__widgets_to_draw.clear()
+        glClear(GL_COLOR_BUFFER_BIT)
+        glLoadIdentity()
 
 
     def render(self):
+        self.__clear()
+
         camera_ratio = self.resolution.x / self.camera_width
         
         time_start = time.time()
@@ -164,8 +170,8 @@ class Renderer:
                 camera_ratio * -(a.position.y + a.half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
             )
 
-            surface = a.material.get_surface(a.half_size * camera_ratio * 2 * 1.02) # 1.02 is a magic number to prevent gaps between the textures
-            self.__draw_rectangle_texture(surface, top_left_position)
+            tex_id = a.material.texture_id
+            draw_texture(tex_id, *top_left_position, *a.size)
 
         time_actors = time.time()
 
@@ -185,13 +191,9 @@ class Renderer:
         self.screen.blit(bg_surface, (0, 0))
 
 
-    def __draw_rectangle_texture(self, surface, top_left_position):        
-        self.screen.blit(surface, top_left_position)
-
-
     def __draw_widget(self, widget):
         camera_ratio = self.resolution / Vector(1600, 900)
-        
+
         top_left_position = camera_ratio * widget.position
 
         size = widget.size * camera_ratio.x
@@ -200,5 +202,5 @@ class Renderer:
 
         surface = pygame.transform.scale(widget.surface, size.tuple)
 
-        self.__draw_rectangle_texture(surface, top_left_position.tuple)
+        self.screen.blit(surface, top_left_position)
         

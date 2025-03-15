@@ -1,6 +1,6 @@
 from components.datatypes import *
 
-import pygame # type: ignore
+import pygame 
 
 
 

@@ -1,7 +1,9 @@
 from engine.renderer import Renderer
 from engine.console import Console
-from engine.builder import *
 from engine.network import *
+#?ifdef ENGINE
+from engine.builder import *
+#?endif
 
 from components.actor import Actor
 from components.rigidbody import Rigidbody
@@ -16,7 +18,11 @@ from components.datatypes import *
 from components.game_math import *
 
 #?ifdef CLIENT
-import pygame # type: ignore
+from engine.gl_wrapper import *
+#?endif
+
+#?ifdef CLIENT
+import pygame 
 #?endif
 
 import threading
@@ -74,7 +80,7 @@ class InfoText(Text):
 class ClientEngine(Engine, Renderer):
     def __init__(self):
         Engine.__init__(self)
-        Renderer.__init__(self, 1600, 900, 10, "Game", False, True, Vector())
+        Renderer.__init__(self, Vector(1600, 900), 10, "Game", False, True, Vector())
 
         self.fps = 120
         self.tps = 20
@@ -102,8 +108,10 @@ class ClientEngine(Engine, Renderer):
             "Rigidbody": Rigidbody,
             "Character": Character,
         }
-        
+
         pygame.init()
+
+        gl_init(self.resolution)
 
         self.__clock = pygame.time.Clock()
 
@@ -252,8 +260,6 @@ class ClientEngine(Engine, Renderer):
 
 
     def tick(self):
-        self.clear()
-
         delta_time = self.__clock.tick(self.fps) / 1000
 
         self.__stats["fps"].append(1 / delta_time / 1000)
@@ -432,8 +438,6 @@ class TPS:
 
 class ServerEngine(Engine):
     def __init__(self):
-        super().__init__()
-
         self.__max_tps = 30
 
         self.__network = None
@@ -445,7 +449,9 @@ class ServerEngine(Engine):
         self.__console = Console()
         self.__cmd_thread = threading.Thread(target=self.console.run)
         self.__cmd_thread.daemon = True
-        self.__cmd_thread.start()
+        self.__cmd_thread.start()        
+
+        super().__init__()
 
         self.__stats = {
             "tps":              [0] * 30,

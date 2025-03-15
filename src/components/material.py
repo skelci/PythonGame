@@ -1,6 +1,11 @@
-from components.datatypes import Color
+from components.datatypes import *
+#?ifdef CLIENT
+from engine.gl_wrapper import *
+#?endif
 
-import pygame # type: ignore
+#?ifdef CLIENT
+import pygame
+#?endif
 
 import os
 
@@ -9,14 +14,27 @@ import os
 class Material:
     #?ifdef CLIENT
     __textures = {}
-    __scaled_textures = {}
+    __pygame_textures = {}
     #?endif
 
 
     def __init__(self, texture_str):
         self.texture_str = texture_str
+
+
         #?ifdef CLIENT
-        self.__load_texture()
+        if texture_str not in Material.__pygame_textures:
+            if isinstance(texture_str, Color):
+                tex = pygame.Surface((1, 1))
+                tex.fill(texture_str.tuple)
+            
+            else:
+                if os.path.isfile(self.texture_str):
+                    tex = pygame.image.load(texture_str).convert_alpha() # why the f does that shit of convert_alpha() makes rendering 2x faster ?!?!?!
+                else:
+                    print("Texture file not found:", texture_str)
+
+            Material.__pygame_textures[texture_str] = tex
         #?endif
 
 
@@ -35,32 +53,17 @@ class Material:
             raise TypeError("Texture_str must be a string or Color:", value)
         
 
+    #?ifdef CLIENT
+    @property
+    def texture_id(self):
+        if self.texture_str not in Material.__textures:
+            Material.__textures[self.texture_str] = load_texture(Material.__pygame_textures[self.texture_str])
+        return self.__textures[self.texture_str]
+    
+
     @property
     def texture(self):
-        return Material.__textures[self.texture_str]
-
-
-    #?ifdef CLIENT
-    def __load_texture(self):
-        if self.texture_str not in Material.__textures:
-            if isinstance(self.texture_str, Color):
-                self.__textures[self.texture_str] = pygame.Surface((1, 1))
-                self.__textures[self.texture_str].fill(self.texture_str.tuple)
-                self.__scaled_textures[self.texture_str] = {}
-                return
-            
-            if os.path.isfile(self.texture_str):
-                self.__textures[self.texture_str] = pygame.image.load(self.texture_str).convert_alpha() # why the f does that shit of convert_alpha() makes rendering 2x faster ?!?!?!
-                self.__scaled_textures[self.texture_str] = {}
-            else:
-                print("Texture file not found:", self.texture_str)
-
-
-    def get_surface(self, size):
-        if size not in self.__scaled_textures[self.texture_str]:
-            self.__scaled_textures[self.texture_str][size] = pygame.transform.scale(self.texture, size.tuple)
-
-        return self.__scaled_textures[self.texture_str][size]
+        return Material.__pygame_textures[self.texture_str]
     
     #?endif
 

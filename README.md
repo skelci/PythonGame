@@ -3,6 +3,8 @@
 ## Dependencies
 
 - pygame
+- pyopengl
+- numpy
 
 ## TODO
 
