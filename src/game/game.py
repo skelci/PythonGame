@@ -69,8 +69,9 @@ class ClientGame(ClientGameBase):
             self.current_level = "Test_Level"
             self.engine.join_level(self.current_level)
             return
-        if f"__Player_{self.engine.network.id}" in self.engine.level.actors:
-            self.engine.camera_position = self.engine.level.actors[f"__Player_{self.engine.network.id}"].position
+        player = self.engine.get_player_actor(self.engine.network.id)
+        if  player in self.engine.level.actors:
+            self.engine.camera_position = self.engine.level.actors[player].position
 
 #?endif
 

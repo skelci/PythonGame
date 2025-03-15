@@ -190,13 +190,9 @@ class Renderer:
 
 
     def __draw_widget(self, widget):
-        camera_ratio = Vector()
-        camera_ratio.x = self.resolution.x / 1600
-        camera_ratio.y = self.resolution.y / 900
-        top_left_position = Vector(
-            camera_ratio.x * widget.position.x,
-            camera_ratio.y * widget.position.y
-        )
+        camera_ratio = self.resolution / Vector(1600, 900)
+        
+        top_left_position = camera_ratio * widget.position
 
         size = widget.size * camera_ratio.x
 
