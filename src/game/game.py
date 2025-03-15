@@ -19,7 +19,7 @@ class Grass(Actor):
 
 class Dirt(Actor):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(139, 69, 19)))
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/dirt.png"))
         self.position = position
 
 class TestPlayer(Character):
