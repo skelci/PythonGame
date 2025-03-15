@@ -23,7 +23,7 @@ class Dirt(Actor):
         self.position = position
 class Stone(Actor):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(100, 100, 100)))
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/stone.png"))
         self.position = position
 
 class TestPlayer(Character):
