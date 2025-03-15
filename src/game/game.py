@@ -14,12 +14,16 @@ import random as r
 
 class Grass(Actor):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(0, 255, 0)))
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass_block.png"))
         self.position = position
 
 class Dirt(Actor):
     def __init__(self, engine_ref, name, position):
         super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/dirt.png"))
+        self.position = position
+class Stone(Actor):
+    def __init__(self, engine_ref, name, position):
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(100, 100, 100)))
         self.position = position
 
 class TestPlayer(Character):
@@ -46,12 +50,15 @@ class ClientGame(ClientGameBase):
 
         eng.add_actor_template(TestPlayer)
         eng.add_actor_template(Grass)
+        eng.add_actor_template(Dirt)
+        eng.add_actor_template(Stone)
 
         eng.register_background(Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, 0.25), )))
 
         self.engine.add_actor_template(TestPlayer)
         self.engine.add_actor_template(Grass)
         self.engine.add_actor_template(Dirt)
+        self.engine.add_actor_template(Stone)
 
     def tick(self):
         delta_time = super().tick()
@@ -81,11 +88,12 @@ class TestLevel(Level):
     def __init__(self, engine_ref):
         actors = (
         )
-        # Grass and dirt
         for i in range(-24, 25):
-            actors += (Grass(engine_ref, "Grass_" + str(i), Vector(i, -1))),
-            for j in range(-2, -14, -1):
-                actors += (Dirt(engine_ref, "Dirt_" + str(i) + str(j), Vector(i, j))),
+            actors += (Grass(engine_ref, "Grass_" + str(i), Vector(i, -1))), #Grass
+            for j in range(-2, -5, -1):
+                actors += (Dirt(engine_ref, "Dirt_" + str(i) + str(j), Vector(i, j))),#Dirt
+            for g in range(-5, -14, -1):
+                actors += (Stone(engine_ref, "Stone_" + str(i) + str(g), Vector(i, g))),#Stone
         
        
         super().__init__("Test_Level", TestPlayer, actors, "sky")
