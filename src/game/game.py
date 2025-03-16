@@ -13,6 +13,12 @@ from components.level import Level
 import random as r
 import noise
 
+TILE_SIZE = 64
+CHUNK_SIZE = 16
+CAMERA_OFFSET_X = 152
+CAMERA_OFFSET_Y = 106
+
+
 class Grass(Actor):
     def __init__(self, engine_ref, name, position):
         super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass_block.png"))
@@ -40,6 +46,7 @@ class ClientGame(ClientGameBase):
 
         self.true_scroll = [0, 0]
         self.game_map = {}
+        self.loaded_chunks = set()
 
         eng = self.engine
 
@@ -65,6 +72,28 @@ class ClientGame(ClientGameBase):
         self.engine.add_actor_template(Dirt)
         self.engine.add_actor_template(Stone)
 
+            #CHUNK GENERATION
+
+
+    def generate_chunk(self, x, y):
+        chunk_data = []
+        for y_pos in range(CHUNK_SIZE):
+            for x_pos in range(CHUNK_SIZE):
+                global_x = x * CHUNK_SIZE + x_pos
+                global_y = y * CHUNK_SIZE + y_pos
+                tile_type = None
+                if global_y == -2:
+                    tile_type = "grass"
+                elif global_y < -2 and global_y >= -5:
+                    tile_type = "dirt"
+                elif global_y < -5:
+                    tile_type = "stone"
+                if tile_type is not None:
+                    chunk_data.append([(global_x, global_y), tile_type])
+        return chunk_data
+
+
+
     def tick(self):
         delta_time = super().tick()
 
@@ -81,14 +110,13 @@ class ClientGame(ClientGameBase):
             self.current_level = "Test_Level"
             self.engine.join_level(self.current_level)
             return
+        
         player_key = f"__Player_{self.engine.network.id}"
         if player_key in self.engine.level.actors:
             player = self.engine.level.actors[player_key]
             
-            # align camera position to player's position
+             # Align and smooth camera motion
             self.engine.camera_position = player.position
-
-            # Smooth camera movement
             self.engine.camera_position = Vector(
                 self.engine.camera_position.x + (player.position.x - self.engine.camera_position.x) / 10,
                 self.engine.camera_position.y + (player.position.y - self.engine.camera_position.y) / 10
@@ -96,64 +124,43 @@ class ClientGame(ClientGameBase):
         else:
             return
         
-        self.true_scroll[0] += (self.engine.camera_position.x - self.true_scroll[0] - 152) / 20
-        self.true_scroll[1] += (self.engine.camera_position.y - self.true_scroll[1] - 106) / 20
+        self.true_scroll[0] += (self.engine.camera_position.x - self.true_scroll[0] - CAMERA_OFFSET_X) /20
+        self.true_scroll[1] += (self.engine.camera_position.y - self.true_scroll[1] - CAMERA_OFFSET_Y) /20
         scroll = [int(self.true_scroll[0]), int(self.true_scroll[1])]
 
-        #CHUNK GENERATION
-        chunk_size = 16
-
-        game_map = self.game_map
-        def generate_chunk(x, y):
-            chunk_data = []
-            for y_pos in range(chunk_size):
-                for x_pos in range(chunk_size):
-                    global_x = x * chunk_size + x_pos
-                    global_y = y * chunk_size + y_pos
-                    tile_type = None
-                    if global_y == -2:
-                        tile_type = "grass"
-                    elif global_y <-2 and global_y >= -5:
-                        tile_type = "dirt"
-                    elif global_y < -5:
-                        tile_type = "stone"
-                    if tile_type is not None:
-                        chunk_data.append([(global_x, global_y),tile_type])
-            return chunk_data
-
-       
 
         actors = []
-
         existing_names = set(self.engine.level.actors.keys())
-        tile_size = 64
 
         for y in range(3):
             for x in range(4):
-                target_x = x - 1 + int(round(scroll[0] / (chunk_size * tile_size)))
-                target_y = y - 1 + int(round(scroll[1] / (chunk_size * tile_size)))
+                target_x = x - 1 + int(round(scroll[0] / (CHUNK_SIZE * TILE_SIZE)))
+                target_y = y - 1 + int(round(scroll[1] / (CHUNK_SIZE * TILE_SIZE)))
                 target_chunk = f"{target_x};{target_y}"
-                if target_chunk not in game_map:
-                    game_map[target_chunk] = generate_chunk(target_x, target_y)
-                for tile in game_map[target_chunk]:
-                    actor_name = ""
-                    new_actor = None
-                    if tile[1] == "grass":
-                        actor_name = "Grass_" + str(tile[0][0]) + "_" + str(tile[0][1])
-                        new_actor = Grass(self.engine, actor_name,
-                                    Vector(tile[0][0], tile[0][1]))
-                    elif tile[1] == "dirt":
-                        actor_name = "Dirt_" + str(tile[0][0]) + "_" + str(tile[0][1])
-                        new_actor = Dirt(self.engine, actor_name,
-                                    Vector(tile[0][0], tile[0][1]))
-                    elif tile[1] == "stone":
-                        actor_name = "Stone_" + str(tile[0][0]) + "_" + str(tile[0][1])
-                        new_actor = Stone(self.engine, actor_name,
-                                    Vector(tile[0][0], tile[0][1]))
-                    if new_actor is not None and actor_name not in existing_names:
-                        actors.append(new_actor)
-
-                        existing_names.add(actor_name)
+                if target_chunk not in self.game_map:
+                    # Cache chunk data once and reuse later
+                    self.game_map[target_chunk] = self.generate_chunk(target_x, target_y)
+                # Only add chunk actors once:
+                if target_chunk not in self.loaded_chunks:
+                    for tile in self.game_map[target_chunk]:
+                        actor_name = ""
+                        new_actor = None
+                        if tile[1] == "grass":
+                            actor_name = "Grass_" + str(tile[0][0]) + "_" + str(tile[0][1])
+                            new_actor = Grass(self.engine, actor_name,
+                                              Vector(tile[0][0], tile[0][1]))
+                        elif tile[1] == "dirt":
+                            actor_name = "Dirt_" + str(tile[0][0]) + "_" + str(tile[0][1])
+                            new_actor = Dirt(self.engine, actor_name,
+                                             Vector(tile[0][0], tile[0][1]))
+                        elif tile[1] == "stone":
+                            actor_name = "Stone_" + str(tile[0][0]) + "_" + str(tile[0][1])
+                            new_actor = Stone(self.engine, actor_name,
+                                              Vector(tile[0][0], tile[0][1]))
+                        if new_actor is not None and actor_name not in existing_names:
+                            actors.append(new_actor)
+                            existing_names.add(actor_name)
+                    self.loaded_chunks.add(target_chunk)
 
 
         for actor in actors:
