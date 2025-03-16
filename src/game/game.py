@@ -11,6 +11,7 @@ from components.text import Text
 from components.level import Level
 
 import random as r
+import noise
 
 class Grass(Actor):
     def __init__(self, engine_ref, name, position):
@@ -31,10 +32,13 @@ class TestPlayer(Character):
         super().__init__(engine_ref, name, position=Vector(0, 3), material = Material(Color(0, 0, 255)))
 
 
+
 #?ifdef CLIENT
 class ClientGame(ClientGameBase):
     def __init__(self):
         super().__init__()
+
+        self.true_scroll = [0, 0]
 
         eng = self.engine
 
@@ -76,8 +80,82 @@ class ClientGame(ClientGameBase):
             self.current_level = "Test_Level"
             self.engine.join_level(self.current_level)
             return
-        if f"__Player_{self.engine.network.id}" in self.engine.level.actors:
-            self.engine.camera_position = self.engine.level.actors[f"__Player_{self.engine.network.id}"].position
+        player_key = f"__Player_{self.engine.network.id}"
+        if player_key in self.engine.level.actors:
+            player = self.engine.level.actors[player_key]
+            
+            # align camera position to player's position
+            self.engine.camera_position = player.position
+
+            # Smooth camera movement
+            self.engine.camera_position = Vector(
+                self.engine.camera_position.x + (player.position.x - self.engine.camera_position.x) / 10,
+                self.engine.camera_position.y + (player.position.y - self.engine.camera_position.y) / 10
+            )
+        else:
+            return
+        
+        self.true_scroll[0] += (self.engine.camera_position.x - self.true_scroll[0] - 152) / 20
+        self.true_scroll[1] += (self.engine.camera_position.y - self.true_scroll[1] - 106) / 20
+        scroll = [int(self.true_scroll[0]), int(self.true_scroll[1])]
+
+        #CHUNK GENERATION
+        chunk_size = 16
+        game_map = {}
+        def generate_chunk(x, y):
+            chunk_data = []
+            for y_pos in range(chunk_size):
+                for x_pos in range(chunk_size):
+                    global_x = x * chunk_size + x_pos
+                    global_y = y * chunk_size + y_pos
+                    tile_type = None
+                    if global_y == -2:
+                        tile_type = "grass"
+                    elif global_y <-2 and global_y >= -5:
+                        tile_type = "dirt"
+                    elif global_y < -5:
+                        tile_type = "stone"
+                    if tile_type is not None:
+                        chunk_data.append([(global_x, global_y),tile_type])
+            return chunk_data
+
+       
+
+        actors = []
+
+        existing_names = set(self.engine.level.actors.keys())
+
+        for y in range(3):
+            for x in range(4):
+                target_x = x - 1 + int(round(scroll[0] / (chunk_size * 64)))
+                target_y = y - 1 + int(round(scroll[1] / (chunk_size * 64)))
+                target_chunk = f"{target_x};{target_y}"
+                if target_chunk not in game_map:
+                    game_map[target_chunk] = generate_chunk(target_x, target_y)
+                for tile in game_map[target_chunk]:
+                    actor_name = ""
+                    new_actor = None
+                    if tile[1] == "grass":
+                        actor_name = "Grass_" + str(tile[0][0]) + "_" + str(tile[0][1])
+                        new_actor = Grass(self.engine, actor_name,
+                                    Vector(tile[0][0], tile[0][1]))
+                    elif tile[1] == "dirt":
+                        actor_name = "Dirt_" + str(tile[0][0]) + "_" + str(tile[0][1])
+                        new_actor = Dirt(self.engine, actor_name,
+                                    Vector(tile[0][0], tile[0][1]))
+                    elif tile[1] == "stone":
+                        actor_name = "Stone_" + str(tile[0][0]) + "_" + str(tile[0][1])
+                        new_actor = Stone(self.engine, actor_name,
+                                    Vector(tile[0][0], tile[0][1]))
+                    if new_actor is not None and actor_name not in existing_names:
+                        actors.append(new_actor)
+
+                        existing_names.add(actor_name)
+
+
+        for actor in actors:
+            self.engine.level.actors[actor.name] = actor
+                                    
 
 #?endif
 
@@ -86,17 +164,10 @@ class ClientGame(ClientGameBase):
 #?ifdef SERVER
 class TestLevel(Level):
     def __init__(self, engine_ref):
-        actors = (
-        )
-        for i in range(-24, 25):
-            actors += (Grass(engine_ref, "Grass_" + str(i), Vector(i, -1))), #Grass
-            for j in range(-2, -5, -1):
-                actors += (Dirt(engine_ref, "Dirt_" + str(i) + str(j), Vector(i, j))),#Dirt
-            for g in range(-5, -14, -1):
-                actors += (Stone(engine_ref, "Stone_" + str(i) + str(g), Vector(i, g))),#Stone
-        
+
+
        
-        super().__init__("Test_Level", TestPlayer, actors, "sky")
+        super().__init__("Test_Level", TestPlayer, [], "sky")
 
 
 
