@@ -75,7 +75,7 @@ class ClientGame(ClientGameBase):
             #CHUNK GENERATION
 
 
-    def generate_chunk(self, x, y):
+        """def generate_chunk(self, x, y):
         chunk_data = []
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
@@ -90,6 +90,30 @@ class ClientGame(ClientGameBase):
                     tile_type = "stone"
                 if tile_type is not None:
                     chunk_data.append([(global_x, global_y), tile_type])
+        return chunk_data"""
+    
+    def generate_chunk(self, x, y):
+        chunk_data = []
+        for y_pos in range(CHUNK_SIZE):
+            for x_pos in range(CHUNK_SIZE):
+                global_x = x * CHUNK_SIZE + x_pos
+                global_y = y * CHUNK_SIZE + y_pos
+
+                # For debugging, generate a floor at global_y == 5
+                tile_type = None
+                if global_y == 5:
+                    tile_type = "grass"
+                # Uncomment below for the original conditions if needed:
+                # if global_y == -2:
+                #     tile_type = "grass"
+                # elif global_y < -2 and global_y >= -5:
+                #     tile_type = "dirt"
+                # elif global_y < -5:
+                #     tile_type = "stone"
+                
+                if tile_type is not None:
+                    chunk_data.append([(global_x, global_y), tile_type])
+        print(f"Generated chunk ({x};{y}) with {len(chunk_data)} tiles")  # Debug statement
         return chunk_data
 
 
