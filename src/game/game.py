@@ -75,7 +75,7 @@ class ClientGame(ClientGameBase):
             #CHUNK GENERATION
 
 
-        """def generate_chunk(self, x, y):
+    def generate_chunk(self, x, y):
         chunk_data = []
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
@@ -90,30 +90,6 @@ class ClientGame(ClientGameBase):
                     tile_type = "stone"
                 if tile_type is not None:
                     chunk_data.append([(global_x, global_y), tile_type])
-        return chunk_data"""
-    
-    def generate_chunk(self, x, y):
-        chunk_data = []
-        for y_pos in range(CHUNK_SIZE):
-            for x_pos in range(CHUNK_SIZE):
-                global_x = x * CHUNK_SIZE + x_pos
-                global_y = y * CHUNK_SIZE + y_pos
-
-                # For debugging, generate a floor at global_y == 5
-                tile_type = None
-                if global_y == 5:
-                    tile_type = "grass"
-                # Uncomment below for the original conditions if needed:
-                # if global_y == -2:
-                #     tile_type = "grass"
-                # elif global_y < -2 and global_y >= -5:
-                #     tile_type = "dirt"
-                # elif global_y < -5:
-                #     tile_type = "stone"
-                
-                if tile_type is not None:
-                    chunk_data.append([(global_x, global_y), tile_type])
-        print(f"Generated chunk ({x};{y}) with {len(chunk_data)} tiles")  # Debug statement
         return chunk_data
 
 
@@ -153,41 +129,42 @@ class ClientGame(ClientGameBase):
         scroll = [int(self.true_scroll[0]), int(self.true_scroll[1])]
 
 
-        actors = []
+         # Pre-compute divisor and calculate base chunk coordinates
+        chunk_divisor = CHUNK_SIZE * TILE_SIZE
+        base_chunk_x = int(round(scroll[0] / chunk_divisor))
+        base_chunk_y = int(round(scroll[1] / chunk_divisor))
+
+        actors_to_add = []
         existing_names = set(self.engine.level.actors.keys())
 
-        for y in range(3):
-            for x in range(4):
-                target_x = x - 1 + int(round(scroll[0] / (CHUNK_SIZE * TILE_SIZE)))
-                target_y = y - 1 + int(round(scroll[1] / (CHUNK_SIZE * TILE_SIZE)))
+        # Generate and load all chunks in a 3x4 grid around the player
+        for offset_y in range(-1, 2):
+            for offset_x in range(-1, 3):
+                target_x = base_chunk_x + offset_x
+                target_y = base_chunk_y + offset_y
                 target_chunk = f"{target_x};{target_y}"
                 if target_chunk not in self.game_map:
-                    # Cache chunk data once and reuse later
                     self.game_map[target_chunk] = self.generate_chunk(target_x, target_y)
-                # Only add chunk actors once:
                 if target_chunk not in self.loaded_chunks:
                     for tile in self.game_map[target_chunk]:
                         actor_name = ""
                         new_actor = None
                         if tile[1] == "grass":
-                            actor_name = "Grass_" + str(tile[0][0]) + "_" + str(tile[0][1])
-                            new_actor = Grass(self.engine, actor_name,
-                                              Vector(tile[0][0], tile[0][1]))
+                            actor_name = f"Grass_{tile[0][0]}_{tile[0][1]}"
+                            new_actor = Grass(self.engine, actor_name, Vector(tile[0][0], tile[0][1]))
                         elif tile[1] == "dirt":
-                            actor_name = "Dirt_" + str(tile[0][0]) + "_" + str(tile[0][1])
-                            new_actor = Dirt(self.engine, actor_name,
-                                             Vector(tile[0][0], tile[0][1]))
+                            actor_name = f"Dirt_{tile[0][0]}_{tile[0][1]}"
+                            new_actor = Dirt(self.engine, actor_name, Vector(tile[0][0], tile[0][1]))
                         elif tile[1] == "stone":
-                            actor_name = "Stone_" + str(tile[0][0]) + "_" + str(tile[0][1])
-                            new_actor = Stone(self.engine, actor_name,
-                                              Vector(tile[0][0], tile[0][1]))
+                            actor_name = f"Stone_{tile[0][0]}_{tile[0][1]}"
+                            new_actor = Stone(self.engine, actor_name, Vector(tile[0][0], tile[0][1]))
                         if new_actor is not None and actor_name not in existing_names:
-                            actors.append(new_actor)
+                            actors_to_add.append(new_actor)
                             existing_names.add(actor_name)
                     self.loaded_chunks.add(target_chunk)
 
-
-        for actor in actors:
+        # Add all newly created actors at once
+        for actor in actors_to_add:
             self.engine.level.actors[actor.name] = actor
                                     
 
