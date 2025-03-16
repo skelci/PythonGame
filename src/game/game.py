@@ -39,6 +39,7 @@ class ClientGame(ClientGameBase):
         super().__init__()
 
         self.true_scroll = [0, 0]
+        self.game_map = {}
 
         eng = self.engine
 
@@ -101,7 +102,8 @@ class ClientGame(ClientGameBase):
 
         #CHUNK GENERATION
         chunk_size = 16
-        game_map = {}
+
+        game_map = self.game_map
         def generate_chunk(x, y):
             chunk_data = []
             for y_pos in range(chunk_size):
@@ -124,11 +126,12 @@ class ClientGame(ClientGameBase):
         actors = []
 
         existing_names = set(self.engine.level.actors.keys())
+        tile_size = 64
 
         for y in range(3):
             for x in range(4):
-                target_x = x - 1 + int(round(scroll[0] / (chunk_size * 64)))
-                target_y = y - 1 + int(round(scroll[1] / (chunk_size * 64)))
+                target_x = x - 1 + int(round(scroll[0] / (chunk_size * tile_size)))
+                target_y = y - 1 + int(round(scroll[1] / (chunk_size * tile_size)))
                 target_chunk = f"{target_x};{target_y}"
                 if target_chunk not in game_map:
                     game_map[target_chunk] = generate_chunk(target_x, target_y)
