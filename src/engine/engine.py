@@ -290,9 +290,6 @@ class ClientEngine(Engine, Renderer):
 
         for name, stat in self.__stats.items():
             self.widgets[name].set_value(sum(stat) / len(stat) * 1000)
-        #     print(f"{name}: {stat[-1] * 1000:.2f} ms")
-        # print(f"Deltatime: {delta_time * 1000:.2f} ms")
-        # print()
 
         render_time = self.render()
 
