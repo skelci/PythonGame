@@ -111,8 +111,6 @@ class ClientEngine(Engine, Renderer):
 
         pygame.init()
 
-        gl_init(self.resolution)
-
         self.__clock = pygame.time.Clock()
 
         self.__stats = {

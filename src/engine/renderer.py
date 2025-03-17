@@ -4,7 +4,7 @@ from components.datatypes import *
 from components.actor import Actor
 from components.widget import Widget
 from components.button import Button
-from engine.gl_wrapper import *
+import engine.gl_wrapper as gl
 
 import pygame
 from pygame.locals import *
@@ -29,6 +29,8 @@ class Renderer:
         self.__actors_to_draw = []
         self.__widgets_to_draw = []
 
+        gl.init()
+
 
     @property
     def resolution(self):
@@ -43,6 +45,7 @@ class Renderer:
                                                     FULLSCREEN if self.fullscreen else 0 |
                                                     NOFRAME if not self.windowed else 0 |
                                                     DOUBLEBUF | HWSURFACE | OPENGL)
+            gl.update_resolution(value)
         else:
             raise TypeError("Width must be a positive integer:", value)
         
@@ -153,8 +156,7 @@ class Renderer:
     def __clear(self):
         self.__actors_to_draw.clear()
         self.__widgets_to_draw.clear()
-        glClear(GL_COLOR_BUFFER_BIT)
-        glLoadIdentity()
+        gl.clear()
 
 
     def render(self):
@@ -171,7 +173,7 @@ class Renderer:
             )
 
             tex_id = a.material.texture_id
-            draw_texture(tex_id, *top_left_position, *a.size)
+            gl.draw_texture(tex_id, *top_left_position, *a.size)
 
         time_actors = time.time()
 

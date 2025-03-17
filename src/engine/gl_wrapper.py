@@ -7,17 +7,21 @@ import pygame
 
 
 
-def gl_init(resolution):
-    width, height = resolution
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluOrtho2D(0, width, 0, height)  # left, right, bottom, top
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
-
+def init():
     glEnable(GL_TEXTURE_2D)
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+
+
+def update_resolution(resolution):
+    width, height = resolution
+    glViewport(0, 0, width, height)
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluOrtho2D(0, width, 0, height)
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
 
 
 
@@ -55,5 +59,11 @@ def draw_texture(tex_id, x, y, w, h):
     glVertex2f(x, y + h)
     
     glEnd()
+
+
+
+def clear():
+    glClear(GL_COLOR_BUFFER_BIT)
+    glLoadIdentity()
 
 
