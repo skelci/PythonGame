@@ -11,7 +11,7 @@ from components.text import Text
 from components.level import Level
 
 import random as r
-import noise
+
 
 TILE_SIZE = 64
 CHUNK_SIZE = 16
