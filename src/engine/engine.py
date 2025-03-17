@@ -18,10 +18,6 @@ from components.datatypes import *
 from components.game_math import *
 
 #?ifdef CLIENT
-from engine.gl_wrapper import *
-#?endif
-
-#?ifdef CLIENT
 import pygame 
 #?endif
 
@@ -285,15 +281,18 @@ class ClientEngine(Engine, Renderer):
 
         self.__time("render_regs")
 
+        bg = None
         if self.current_background:
-            self.draw_background(self.backgrounds[self.current_background])
-        else:
-            self.screen.fill((0, 0, 0))
+            bg = self.backgrounds[self.current_background]
+        self.draw_background(bg)
 
         self.__time("bg_render")
 
         for name, stat in self.__stats.items():
             self.widgets[name].set_value(sum(stat) / len(stat) * 1000)
+        #     print(f"{name}: {stat[-1] * 1000:.2f} ms")
+        # print(f"Deltatime: {delta_time * 1000:.2f} ms")
+        # print()
 
         render_time = self.render()
 
@@ -701,7 +700,8 @@ class ServerEngine(Engine):
 
 
     def __key_up(self, id, data):
-        self.__players[id].pressed_keys.remove(data)
+        if data in self.__players[id].pressed_keys:
+            self.__players[id].pressed_keys.remove(data)
         self.__players[id].released_keys.add(data)
 
 #?endif

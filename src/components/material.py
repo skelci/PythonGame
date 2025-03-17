@@ -1,9 +1,7 @@
 from components.datatypes import *
-#?ifdef CLIENT
-from engine.gl_wrapper import *
-#?endif
 
 #?ifdef CLIENT
+from OpenGL.GL import *
 import pygame
 #?endif
 
@@ -54,10 +52,23 @@ class Material:
         
 
     #?ifdef CLIENT
+    @staticmethod
+    def load_texture(surface):
+        texture_data = pygame.image.tostring(surface, "RGBA", True)
+        width, height = surface.get_size()
+
+        tex_id = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, tex_id)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+
+        return tex_id
+
+
     @property
     def texture_id(self):
         if self.texture_str not in Material.__textures:
-            Material.__textures[self.texture_str] = load_texture(Material.__pygame_textures[self.texture_str])
+            Material.__textures[self.texture_str] = Material.load_texture(Material.__pygame_textures[self.texture_str])
         return self.__textures[self.texture_str]
     
 
