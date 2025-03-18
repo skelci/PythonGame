@@ -60,7 +60,7 @@ class BackgroundLayer:
         
         draw_batch = QuadBatch()
 
-        bg_offset = (-camera_pos * self.scroll_speed * screen_res.x / camera_width) % scaled_material_res - scaled_material_res
+        bg_offset = -camera_pos * self.scroll_speed * screen_res.x / camera_width % scaled_material_res - scaled_material_res
         if bg_offset.abs.x > scaled_material_res.x:
             bg_offset.x += scaled_material_res.x
         if bg_offset.abs.y > scaled_material_res.y:

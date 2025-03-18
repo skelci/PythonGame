@@ -1,17 +1,22 @@
 from components.datatypes import *
+from engine.gl_wrapper import *
 
 import pygame
 
 
 
 class Widget:
-    def __init__(self, name, position, size, layer, color, visible = False):
+    def __init__(self, name, position, size, color, layer = 0, visible = False, load_texture = True):
         self.name = name
         self.position = position
         self.size = size
         self.layer = layer
         self.color = color
         self.visible = visible
+
+        self.__tex_id = None
+        if load_texture:
+            self.__tex_id = GLWrapper.load_texture(self.surface)
 
 
     @property
@@ -90,12 +95,22 @@ class Widget:
             self.__visible = value
         else:
             raise TypeError("Visible must be a bool:", value)
-        
+
+
+    @property
+    def tex_id(self):
+        return self.__tex_id
+
 
     @property
     def surface(self):
         surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
         surface.fill(self.color.tuple)
         return surface
+
+
+    def draw(self, bottom_left, size):
+        if self.visible and self.tex_id:
+            GLWrapper.draw_texture(self.tex_id, *bottom_left, *size)
         
     

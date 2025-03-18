@@ -29,7 +29,7 @@ class Border(Widget):
     @property
     def thickness(self):
         return self.__thickness
-    
+
 
     @thickness.setter
     def thickness(self, value):
