@@ -6,17 +6,19 @@ import pygame
 
 
 class Widget:
-    def __init__(self, name, position, size, color, layer = 0, visible = False, load_texture = True):
+    def __init__(self, name, position, size, color, layer = 0, visible = False, subwidget = None, subwidget_offset = Vector(), subwidget_alignment = Alignment.CENTER):
         self.name = name
         self.position = position
         self.size = size
         self.layer = layer
         self.color = color
         self.visible = visible
+        self.subwidget = subwidget
+        self.subwidget_offset = subwidget_offset
 
         self.__tex_id = None
-        if load_texture:
-            self.__tex_id = GLWrapper.load_texture(self.surface)
+        if subwidget:
+            subwidget.load_texture = False            
 
 
     @property
@@ -98,6 +100,32 @@ class Widget:
 
 
     @property
+    def subwidget(self):
+        return self.__subwidget
+    
+
+    @subwidget.setter
+    def subwidget(self, value):
+        if value is None or isinstance(value, Widget):
+            self.__subwidget = value
+        else:
+            raise TypeError("Subwidget must be a Widget:", value)
+        
+
+    @property
+    def subwidget_offset(self):
+        return self.__subwidget_offset
+
+
+    @subwidget_offset.setter
+    def subwidget_offset(self, value):
+        if isinstance(value, Vector):
+            self.__subwidget_offset = value
+        else:
+            raise TypeError("Subwidget offset must be a Vector:", value)
+
+
+    @property
     def tex_id(self):
         return self.__tex_id
 
@@ -106,11 +134,39 @@ class Widget:
     def surface(self):
         surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
         surface.fill(self.color.tuple)
+
+        if self.subwidget:
+            surface.blit(self.subwidget.surface, self.subwidget_pos.tuple)
+
         return surface
+    
+
+    @property
+    def subwidget_pos(self):
+        subwidget_offset = self.subwidget_offset
+
+        if not self.subwidget:
+            return subwidget_offset
+        
+        if self.subwidget_alignment in (Alignment.TOP_CENTER, Alignment.CENTER, Alignment.BOTTOM_CENTER):
+            subwidget_offset.x += (self.size.x - self.subwidget.size.x) / 2
+        
+        if self.subwidget_alignment in (Alignment.TOP_RIGHT, Alignment.CENTER_RIGHT, Alignment.BOTTOM_RIGHT):
+            subwidget_offset.x += self.size.x - self.subwidget.size.x
+
+        if self.subwidget_alignment in (Alignment.LEFT_CENTER, Alignment.CENTER, Alignment.RIGHT_CENTER):
+            subwidget_offset.y += (self.size.y - self.subwidget.size.y) / 2
+
+        if self.subwidget_alignment in (Alignment.BOTTOM_LEFT, Alignment.BOTTOM_CENTER, Alignment.BOTTOM_RIGHT):
+            subwidget_offset.y += self.size.y - self.subwidget.size.y
+
+        return subwidget_offset
 
 
     def draw(self, bottom_left, size):
         if self.visible and self.tex_id:
+            if self.load_texture and not self.__tex_id:
+                self.__tex_id = GLWrapper.load_texture(self.surface)
             GLWrapper.draw_texture(self.tex_id, *bottom_left, *size)
         
     

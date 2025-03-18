@@ -10,14 +10,11 @@ import pygame
 class Text(Widget):
     __fonts = {}
 
-    def __init__(self, name, position, size, layer, font, bg_color = Color(0, 0, 0, 0), visible = False, text = "", text_color = Color(255, 255, 255), font_size = 32, text_alignment = Alignment.CENTER):
-        super().__init__(name, position, size, layer, bg_color, visible)
+    def __init__(self, name, position, size, color, font, layer = 0, visible = False, subwidget = None, subwidget_offset = Vector(), subwidget_alignment = Alignment.CENTER, text = ""):
+        super().__init__(name, position, size, color, layer, visible, subwidget, subwidget_offset, subwidget_alignment)
 
         self.text = text
-        self.text_color = text_color
         self.font = font
-        self.font_size = font_size
-        self.text_alignment = text_alignment
 
 
     @property
@@ -32,18 +29,6 @@ class Text(Widget):
         else:
             raise TypeError("Text must be a string:", value)
         
-
-    @property
-    def text_color(self):
-        return self.__text_color
-    
-
-    @text_color.setter
-    def text_color(self, value):
-        if isinstance(value, Color):
-            self.__text_color = value
-        else:
-            raise TypeError("Text color must be a Color:", value)
         
 
     @property
@@ -57,20 +42,6 @@ class Text(Widget):
             self.__font = value
         else:
             raise TypeError("Font must be a string:", value)
-        
-
-    @property
-    def font_size(self):
-        return self.__font_size
-    
-
-    @font_size.setter
-    def font_size(self, value):
-        if isinstance(value, int) and value > 0:
-            self.__font_size = value
-            self.load_font()
-        else:
-            raise TypeError("Font size must be a positive integer:", value)
         
 
     @property
@@ -100,8 +71,6 @@ class Text(Widget):
 
         surface = super().surface
         surface.blit(text, text_rect)
-
-        return surface
     
 
     @property

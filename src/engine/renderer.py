@@ -201,12 +201,6 @@ class Renderer:
             return
         
         background.draw_bg_surface(self.camera_position, self.resolution, self.camera_width)
-        # if background is None:
-        #     self.screen.fill((0, 0, 0))
-        #     return
-        
-        # bg_surface = background.get_bg_surface(self.camera_position, self.resolution, self.camera_width)
-        # self.screen.blit(bg_surface, (0, 0))
 
 
     def __draw_widget(self, widget):
@@ -218,7 +212,7 @@ class Renderer:
 
         widget.screen_rect = (top_left_position, top_left_position + size)
 
-        surface = pygame.transform.scale(widget.surface, size.tuple)
+        # surface = pygame.transform.scale(widget.surface, size.tuple)
 
         # self.screen.blit(surface, top_left_position)
         
