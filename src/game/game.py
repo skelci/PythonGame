@@ -11,9 +11,9 @@ from components.text import Text
 from components.level import Level
 
 import random as r
+import math
 
 
-TILE_SIZE = 64
 CHUNK_SIZE = 16
 CAMERA_OFFSET_X = 152
 CAMERA_OFFSET_Y = 106
@@ -72,25 +72,6 @@ class ClientGame(ClientGameBase):
         self.engine.add_actor_template(Dirt)
         self.engine.add_actor_template(Stone)
 
-            #CHUNK GENERATION
-
-
-    def generate_chunk(self, x, y):
-        chunk_data = []
-        for y_pos in range(CHUNK_SIZE):
-            for x_pos in range(CHUNK_SIZE):
-                global_x = x * CHUNK_SIZE + x_pos
-                global_y = y * CHUNK_SIZE + y_pos
-                tile_type = None
-                if global_y == -2:
-                    tile_type = "grass"
-                elif global_y < -2 and global_y >= -5:
-                    tile_type = "dirt"
-                elif global_y < -5:
-                    tile_type = "stone"
-                if tile_type is not None:
-                    chunk_data.append([(global_x, global_y), tile_type])
-        return chunk_data
 
 
 
@@ -111,11 +92,12 @@ class ClientGame(ClientGameBase):
             self.engine.join_level(self.current_level)
             return
         
+        
+
         player_key = f"__Player_{self.engine.network.id}"
         if player_key in self.engine.level.actors:
             player = self.engine.level.actors[player_key]
             
-             # Align and smooth camera motion
             self.engine.camera_position = player.position
             self.engine.camera_position = Vector(
                 self.engine.camera_position.x + (player.position.x - self.engine.camera_position.x) / 10,
@@ -124,49 +106,10 @@ class ClientGame(ClientGameBase):
         else:
             return
         
-        self.true_scroll[0] += (self.engine.camera_position.x - self.true_scroll[0] - CAMERA_OFFSET_X) /20
-        self.true_scroll[1] += (self.engine.camera_position.y - self.true_scroll[1] - CAMERA_OFFSET_Y) /20
+        self.true_scroll[0] += (self.engine.camera_position.x - self.true_scroll[0]) / 20
+        self.true_scroll[1] += (self.engine.camera_position.y - self.true_scroll[1]) / 20
         scroll = [int(self.true_scroll[0]), int(self.true_scroll[1])]
-
-
-         # Pre-compute divisor and calculate base chunk coordinates
-        chunk_divisor = CHUNK_SIZE * TILE_SIZE
-        base_chunk_x = int(round(scroll[0] / chunk_divisor))
-        base_chunk_y = int(round(scroll[1] / chunk_divisor))
-
-        actors_to_add = []
-        existing_names = set(self.engine.level.actors.keys())
-
-        # Generate and load all chunks in a 3x4 grid around the player
-        for offset_y in range(-1, 2):
-            for offset_x in range(-1, 3):
-                target_x = base_chunk_x + offset_x
-                target_y = base_chunk_y + offset_y
-                target_chunk = f"{target_x};{target_y}"
-                if target_chunk not in self.game_map:
-                    self.game_map[target_chunk] = self.generate_chunk(target_x, target_y)
-                if target_chunk not in self.loaded_chunks:
-                    for tile in self.game_map[target_chunk]:
-                        actor_name = ""
-                        new_actor = None
-                        if tile[1] == "grass":
-                            actor_name = f"Grass_{tile[0][0]}_{tile[0][1]}"
-                            new_actor = Grass(self.engine, actor_name, Vector(tile[0][0], tile[0][1]))
-                        elif tile[1] == "dirt":
-                            actor_name = f"Dirt_{tile[0][0]}_{tile[0][1]}"
-                            new_actor = Dirt(self.engine, actor_name, Vector(tile[0][0], tile[0][1]))
-                        elif tile[1] == "stone":
-                            actor_name = f"Stone_{tile[0][0]}_{tile[0][1]}"
-                            new_actor = Stone(self.engine, actor_name, Vector(tile[0][0], tile[0][1]))
-                        if new_actor is not None and actor_name not in existing_names:
-                            actors_to_add.append(new_actor)
-                            existing_names.add(actor_name)
-                    self.loaded_chunks.add(target_chunk)
-
-        # Add all newly created actors at once
-        for actor in actors_to_add:
-            self.engine.level.actors[actor.name] = actor
-                                    
+                                        
 
 #?endif
 
@@ -214,4 +157,94 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
 
 
-#?endif
+        self.game_map = {}
+        self.loaded_chunks = set()
+
+    def generate_chunk(self, x, y):
+        chunk_data = []
+        chunk_origin = Vector(x * CHUNK_SIZE, y * CHUNK_SIZE)
+        for y_pos in range(CHUNK_SIZE):
+            for x_pos in range(CHUNK_SIZE):
+                pos = chunk_origin + Vector(x_pos, y_pos)
+                tile_type = None
+                if pos.y == 0:
+                    tile_type = "grass"
+                elif pos.y < 0 and pos.y >= -4:
+                    tile_type = "dirt"
+                elif pos.y < -4:
+                    tile_type = "stone"
+                if tile_type is not None:
+                    chunk_data.append([(pos.x, pos.y), tile_type])
+        return chunk_data
+    
+
+    def generate_and_load_chunks(self, base_chunk_x, base_chunk_y):
+        level = self.engine.levels.get("Test_Level")
+        if level is None:
+            return
+
+        actors_to_add = []
+        existing_names = set(level.actors.keys())
+
+        # Generate and load all chunks in 5x5 grid around the given base chunk
+        for offset_y in range(2, -2, -1):
+            for offset_x in range( -2, 2):
+                target_x = base_chunk_x + offset_x
+                target_y = base_chunk_y + offset_y
+                target_chunk = f"{target_x};{target_y}"
+                
+                # Generate the chunk if needed.
+                if target_chunk not in self.game_map:
+                    self.game_map[target_chunk] = self.generate_chunk(target_x, target_y)
+                    print(f"Generated chunk: {target_x}, {target_y}")
+                
+                # Load new tiles only if this chunk hasn't been processed before.
+                if target_chunk not in self.loaded_chunks:
+                    for tile in self.game_map[target_chunk]:
+                        pos, tile_type = tile
+                        actor_name = f"{tile_type}_{pos[0]}_{pos[1]}"
+                        new_actor = None
+
+                        if tile_type == "grass":
+                            new_actor = Grass(self.engine, actor_name, Vector(pos[0], pos[1]))
+                        elif tile_type == "dirt":
+                            new_actor = Dirt(self.engine, actor_name, Vector(pos[0], pos[1]))
+                        elif tile_type == "stone":
+                            new_actor = Stone(self.engine, actor_name, Vector(pos[0], pos[1]))
+
+                        if new_actor is not None and actor_name not in existing_names:
+                            actors_to_add.append(new_actor)
+                            existing_names.add(actor_name)
+                    
+                    self.loaded_chunks.add(target_chunk)
+        
+        for actor in actors_to_add:
+            level.register_actor(actor)
+
+
+    def tick(self):
+        super().tick()
+
+        current_level = self.engine.levels.get("Test_Level")
+        if not current_level:
+            return
+
+        chunks_to_load = []
+
+        for player_id, player_actor in current_level.actors.items():
+            if isinstance(player_actor, TestPlayer):
+                scroll_vector =  player_actor.position 
+
+
+                
+                offset = CHUNK_SIZE/2
+                base_chunk_vector = Vector(
+                    math.floor((scroll_vector.x + CHUNK_SIZE/2) / CHUNK_SIZE),
+                    math.floor((scroll_vector.y + CHUNK_SIZE/2) / CHUNK_SIZE)
+                )
+
+
+                chunks_to_load.append((base_chunk_vector.x, base_chunk_vector.y))
+
+        for base_chunk_x, base_chunk_y in chunks_to_load:
+            self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
