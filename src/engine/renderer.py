@@ -206,13 +206,14 @@ class Renderer:
     def __draw_widget(self, widget):
         camera_ratio = self.resolution / Vector(1600, 900)
 
-        top_left_position = camera_ratio * widget.position
+        top_left = camera_ratio * widget.position
 
         size = widget.size * camera_ratio.x
 
-        widget.screen_rect = (top_left_position, top_left_position + size)
+        bottom_left = top_left + Vector(0, size.y)
 
-        # surface = pygame.transform.scale(widget.surface, size.tuple)
+        widget.screen_rect = (top_left, top_left + size)
 
-        # self.screen.blit(surface, top_left_position)
-        
+        widget.draw(bottom_left, size)
+
+

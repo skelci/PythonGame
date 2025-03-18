@@ -15,10 +15,10 @@ class Widget:
         self.visible = visible
         self.subwidget = subwidget
         self.subwidget_offset = subwidget_offset
+        self.subwidget_alignment = subwidget_alignment
 
         self.__tex_id = None
-        if subwidget:
-            subwidget.load_texture = False            
+        self._should_update = False
 
 
     @property
@@ -108,6 +108,8 @@ class Widget:
     def subwidget(self, value):
         if value is None or isinstance(value, Widget):
             self.__subwidget = value
+            if value.__class__.__name__ == "Text":
+                self._should_update = True
         else:
             raise TypeError("Subwidget must be a Widget:", value)
         
@@ -123,6 +125,19 @@ class Widget:
             self.__subwidget_offset = value
         else:
             raise TypeError("Subwidget offset must be a Vector:", value)
+        
+
+    @property
+    def subwidget_alignment(self):
+        return self.__subwidget_alignment
+    
+
+    @subwidget_alignment.setter
+    def subwidget_alignment(self, value):
+        if isinstance(value, Alignment):
+            self.__subwidget_alignment = value
+        else:
+            raise TypeError("Subwidget alignment must be an Alignment:", value)
 
 
     @property
@@ -154,7 +169,7 @@ class Widget:
         if self.subwidget_alignment in (Alignment.TOP_RIGHT, Alignment.CENTER_RIGHT, Alignment.BOTTOM_RIGHT):
             subwidget_offset.x += self.size.x - self.subwidget.size.x
 
-        if self.subwidget_alignment in (Alignment.LEFT_CENTER, Alignment.CENTER, Alignment.RIGHT_CENTER):
+        if self.subwidget_alignment in (Alignment.CENTER_LEFT, Alignment.CENTER, Alignment.CENTER_RIGHT):
             subwidget_offset.y += (self.size.y - self.subwidget.size.y) / 2
 
         if self.subwidget_alignment in (Alignment.BOTTOM_LEFT, Alignment.BOTTOM_CENTER, Alignment.BOTTOM_RIGHT):
@@ -164,9 +179,15 @@ class Widget:
 
 
     def draw(self, bottom_left, size):
-        if self.visible and self.tex_id:
-            if self.load_texture and not self.__tex_id:
-                self.__tex_id = GLWrapper.load_texture(self.surface)
-            GLWrapper.draw_texture(self.tex_id, *bottom_left, *size)
+        if self._should_update:
+            if self.visible and self.tex_id:
+                if not self.__tex_id:
+                    self.__tex_id = GLWrapper.load_texture(self.surface)
+                GLWrapper.draw_texture(self.tex_id, *bottom_left, *size)
+        
+        else:
+            tex_id = GLWrapper.load_texture(self.surface)
+            GLWrapper.draw_texture(tex_id, *bottom_left, *size)
+            GLWrapper.delete_texture(tex_id)
         
     

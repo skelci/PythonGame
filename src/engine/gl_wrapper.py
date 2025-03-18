@@ -39,6 +39,11 @@ class GLWrapper:
     
 
     @staticmethod
+    def delete_texture(tex_id):
+        glDeleteTextures(int(tex_id))
+    
+
+    @staticmethod
     def draw_quad(x, y, w, h):
         glBegin(GL_QUADS)
         

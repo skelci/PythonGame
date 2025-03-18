@@ -2,6 +2,8 @@ from components.widget import Widget
 
 from components.datatypes import *
 
+from engine.gl_wrapper import *
+
 import os
 import pygame
 
@@ -15,6 +17,8 @@ class Text(Widget):
 
         self.text = text
         self.font = font
+
+        self.__load_font()
 
 
     @property
@@ -55,31 +59,29 @@ class Text(Widget):
             self.__text_alignment = value
         else:
             raise TypeError("Text alignment must be an Alignment:", value)
-        
+
 
     @property
     def surface(self):
-        text = self.__fonts[self.__font_code].render(self.text, True, self.text_color.tuple)
-        text_rect = None
-        match self.text_alignment:
-            case Alignment.LEFT:
-                text_rect = text.get_rect(topleft = (0, 0))
-            case Alignment.CENTER:
-                text_rect = text.get_rect(center = (self.size / 2).rounded.tuple)
-            case Alignment.RIGHT:
-                text_rect = text.get_rect(topright = (self.size.x, 0))
+        text = self.__fonts[self.__font_code].render(self.text, True, self.color.tuple)
 
-        surface = super().surface
-        surface.blit(text, text_rect)
+        text_rect = text.get_rect()
+        self.size.x = text_rect.size[0]
+        surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
+        
+        if self.subwidget:
+            surface.blit(self.subwidget.surface, self.subwidget_pos.tuple)
+
+        return surface
     
 
     @property
     def __font_code(self):
-        return str(self.font_size) + self.font
+        return str(self.size.y) + self.font
     
 
-    def load_font(self):
+    def __load_font(self):
         if self.__font_code not in self.__fonts:
-            self.__fonts[self.__font_code] = pygame.font.Font(self.font, self.font_size)
+            self.__fonts[self.__font_code] = pygame.font.Font(self.font, self.size.y)
 
 
