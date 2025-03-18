@@ -36,3 +36,7 @@ class Border(Widget):
 
         return surface
     
+
+    def draw(self, bottom_left, size):
+        super().draw(bottom_left, size)
+    

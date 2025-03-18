@@ -193,6 +193,11 @@ class Vector:
         return (self.x, self.y)
     
 
+    @property
+    def copy(self):
+        return Vector(*self)
+    
+
     def dot(self, other):
         if not isinstance(other, Vector):
             raise TypeError(f"other must be a Vector, got {other.__class__.__name__}")
@@ -252,6 +257,11 @@ class Color:
     @property
     def tuple(self):
         return (self.r, self.g, self.b, self.a)
+    
+
+    @property
+    def copy(self):
+        return Color(*self)
     
 
     @property

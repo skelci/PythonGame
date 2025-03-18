@@ -71,7 +71,7 @@ class InfoText(Widget):
 
 
     def set_value(self, value):
-        self.text = f" {self.pre_text}{value:.1f}{self.after_text}"
+        self.subwidget.text = f"{self.pre_text}{value:.1f}{self.after_text}"
 
 
 

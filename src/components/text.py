@@ -68,6 +68,7 @@ class Text(Widget):
         text_rect = text.get_rect()
         self.size.x = text_rect.size[0]
         surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
+        surface.blit(text, text_rect)
         
         if self.subwidget:
             surface.blit(self.subwidget.surface, self.subwidget_pos.tuple)
@@ -83,5 +84,9 @@ class Text(Widget):
     def __load_font(self):
         if self.__font_code not in self.__fonts:
             self.__fonts[self.__font_code] = pygame.font.Font(self.font, self.size.y)
+
+
+    def draw(self, bottom_left, size):
+        super().draw(bottom_left, size)
 
 

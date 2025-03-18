@@ -210,7 +210,7 @@ class Renderer:
 
         size = widget.size * camera_ratio.x
 
-        bottom_left = top_left + Vector(0, size.y)
+        bottom_left = Vector(top_left.x, self.resolution.y - top_left.y - size.y)
 
         widget.screen_rect = (top_left, top_left + size)
 

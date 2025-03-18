@@ -7,6 +7,9 @@ import pygame
 
 class Widget:
     def __init__(self, name, position, size, color, layer = 0, visible = False, subwidget = None, subwidget_offset = Vector(), subwidget_alignment = Alignment.CENTER):
+        self._should_update = False
+        self.__tex_id = None
+
         self.name = name
         self.position = position
         self.size = size
@@ -16,9 +19,6 @@ class Widget:
         self.subwidget = subwidget
         self.subwidget_offset = subwidget_offset
         self.subwidget_alignment = subwidget_alignment
-
-        self.__tex_id = None
-        self._should_update = False
 
 
     @property
@@ -108,7 +108,7 @@ class Widget:
     def subwidget(self, value):
         if value is None or isinstance(value, Widget):
             self.__subwidget = value
-            if value.__class__.__name__ == "Text":
+            if value is not None and hasattr(value, '__class__') and any(cls.__name__ == "Text" for cls in value.__class__.__mro__):
                 self._should_update = True
         else:
             raise TypeError("Subwidget must be a Widget:", value)
@@ -151,6 +151,7 @@ class Widget:
         surface.fill(self.color.tuple)
 
         if self.subwidget:
+            print(self.subwidget_pos.tuple)
             surface.blit(self.subwidget.surface, self.subwidget_pos.tuple)
 
         return surface
@@ -158,7 +159,7 @@ class Widget:
 
     @property
     def subwidget_pos(self):
-        subwidget_offset = self.subwidget_offset
+        subwidget_offset = self.subwidget_offset.copy
 
         if not self.subwidget:
             return subwidget_offset
@@ -179,7 +180,7 @@ class Widget:
 
 
     def draw(self, bottom_left, size):
-        if self._should_update:
+        if not self._should_update:
             if self.visible and self.tex_id:
                 if not self.__tex_id:
                     self.__tex_id = GLWrapper.load_texture(self.surface)
@@ -189,5 +190,4 @@ class Widget:
             tex_id = GLWrapper.load_texture(self.surface)
             GLWrapper.draw_texture(tex_id, *bottom_left, *size)
             GLWrapper.delete_texture(tex_id)
-        
-    
+
