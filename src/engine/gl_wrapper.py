@@ -8,12 +8,72 @@ import numpy as np
 
 
 
+class QuadBatch:
+    def __init__(self):
+        self.vbo_id = glGenBuffers(1)
+        self.vertex_data = []
+        self.count_quads = 0
+
+
+    def add_quad(self, x, y, w, h, u0=0.0, v0=0.0, u1=1.0, v1=1.0):
+        # bottom-left
+        self.vertex_data.extend([x,      y,      u0, v0])
+        # bottom-right
+        self.vertex_data.extend([x + w,  y,      u1, v0])
+        # top-right
+        self.vertex_data.extend([x + w,  y + h,  u1, v1])
+        # top-left
+        self.vertex_data.extend([x,      y + h,  u0, v1])
+
+        self.count_quads += 1
+
+
+    def upload(self):
+        # Convert list to numpy float32 array
+        arr = np.array(self.vertex_data, dtype=np.float32)
+
+        # Bind and upload data to our VBO
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
+        glBufferData(GL_ARRAY_BUFFER, arr.nbytes, arr, GL_STATIC_DRAW)
+
+
+    def draw_batch(self, texture_id):
+        glBindTexture(GL_TEXTURE_2D, texture_id)
+
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
+
+        # Enable vertex + texcoord pointers
+        glEnableClientState(GL_VERTEX_ARRAY)
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+
+        # Interleave: 2 floats for position, then 2 for UVs => stride is 4 * sizeof(float)
+        glVertexPointer(2, GL_FLOAT, 16, ctypes.c_void_p(0))
+        glTexCoordPointer(2, GL_FLOAT, 16, ctypes.c_void_p(8))  # offset by 2 floats
+
+        # Each quad has 4 vertices, so total vertices = count_quads * 4
+        glDrawArrays(GL_QUADS, 0, self.count_quads * 4)
+
+        glDisableClientState(GL_VERTEX_ARRAY)
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+
+
+    def clear(self):
+        self.vertex_data.clear()
+        self.count_quads = 0
+
+
+
 class GLWrapper:
+    draw_batch = None
+
     @staticmethod
     def init():
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        GLWrapper.draw_batch = QuadBatch()
 
 
     @staticmethod
@@ -109,7 +169,6 @@ class GLWrapper:
     @staticmethod
     def draw_text(text, atlas_tex, glyph_data, atlas_size, start_x, start_y, size_scale):
         x_cursor = start_x
-        draw_batch = QuadBatch()
 
         for ch in text:
             if ch in glyph_data:
@@ -118,12 +177,13 @@ class GLWrapper:
                 u0, v0 = x / atlas_size[0], y / atlas_size[1]
                 u1, v1 = (x + w) / atlas_size[0], (y + h) / atlas_size[1]
                 
-                draw_batch.add_quad(x_cursor, start_y, *(Vector(w, h) * size_scale), u0, v0, u1, v1)
+                GLWrapper.draw_batch.add_quad(x_cursor, start_y, *(Vector(w, h) * size_scale), u0, v0, u1, v1)
 
                 x_cursor += w
 
-        draw_batch.upload()
-        draw_batch.draw_batch(atlas_tex)
+        GLWrapper.draw_batch.upload()
+        GLWrapper.draw_batch.draw_batch(atlas_tex)
+        GLWrapper.draw_batch.clear()
 
 
     @staticmethod
@@ -132,53 +192,3 @@ class GLWrapper:
         glLoadIdentity()
 
 
-
-class QuadBatch:
-    def __init__(self):
-        self.vbo_id = glGenBuffers(1)
-        self.vertex_data = []
-        self.count_quads = 0
-
-
-    def add_quad(self, x, y, w, h, u0=0.0, v0=0.0, u1=1.0, v1=1.0):
-        # bottom-left
-        self.vertex_data.extend([x,      y,      u0, v0])
-        # bottom-right
-        self.vertex_data.extend([x + w,  y,      u1, v0])
-        # top-right
-        self.vertex_data.extend([x + w,  y + h,  u1, v1])
-        # top-left
-        self.vertex_data.extend([x,      y + h,  u0, v1])
-
-        self.count_quads += 1
-
-
-    def upload(self):
-        # Convert list to numpy float32 array
-        arr = np.array(self.vertex_data, dtype=np.float32)
-
-        # Bind and upload data to our VBO
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
-        glBufferData(GL_ARRAY_BUFFER, arr.nbytes, arr, GL_STATIC_DRAW)
-
-
-    def draw_batch(self, texture_id):
-        glBindTexture(GL_TEXTURE_2D, texture_id)
-
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
-
-        # Enable vertex + texcoord pointers
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-
-        # Interleave: 2 floats for position, then 2 for UVs => stride is 4 * sizeof(float)
-        glVertexPointer(2, GL_FLOAT, 16, ctypes.c_void_p(0))
-        glTexCoordPointer(2, GL_FLOAT, 16, ctypes.c_void_p(8))  # offset by 2 floats
-
-        # Each quad has 4 vertices, so total vertices = count_quads * 4
-        glDrawArrays(GL_QUADS, 0, self.count_quads * 4)
-
-        glDisableClientState(GL_VERTEX_ARRAY)
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
