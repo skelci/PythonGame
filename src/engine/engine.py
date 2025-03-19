@@ -62,7 +62,7 @@ class Engine(ABC):
 #?ifdef CLIENT
 class InfoText(Widget):
     def __init__(self, name, pos_y, pre_text, after_text = ""):
-        text = Text(name, Vector(), Vector(215, 22), Color(0, 255, 0), "res/fonts/arial.ttf", visible=True)
+        text = Text(name, Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf", visible=True)
         super().__init__(name, Vector(10, pos_y * 24 + 10), Vector(215, 24), Color(0, 0, 0, 100), 0, subwidget=text, subwidget_offset=Vector(1, 1), subwidget_alignment=Alignment.CENTER_LEFT)
 
         self.pre_text = pre_text

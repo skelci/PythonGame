@@ -186,8 +186,8 @@ class Widget:
                 GLWrapper.draw_texture(self.tex_id, *bottom_left, *size)
         
         else:
-            # if self.__tex_id:
-            #     GLWrapper.delete_texture(self.__tex_id)
             self.__tex_id = GLWrapper.load_texture(self.surface)
             GLWrapper.draw_texture(self.__tex_id, *bottom_left, *size)
+            GLWrapper.delete_texture(self.__tex_id)
+
 

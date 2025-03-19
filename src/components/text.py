@@ -47,19 +47,6 @@ class Text(Widget):
             self.__font = value
         else:
             raise TypeError("Font must be a string:", value)
-        
-
-    @property
-    def text_alignment(self):
-        return self.__text_alignment
-    
-
-    @text_alignment.setter
-    def text_alignment(self, value):
-        if isinstance(value, Alignment):
-            self.__text_alignment = value
-        else:
-            raise TypeError("Text alignment must be an Alignment:", value)
 
 
     @property

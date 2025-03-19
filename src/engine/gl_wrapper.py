@@ -34,6 +34,7 @@ class GLWrapper:
         glBindTexture(GL_TEXTURE_2D, tex_id)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
         return tex_id
     
@@ -46,17 +47,17 @@ class GLWrapper:
     @staticmethod
     def draw_quad(x, y, w, h):
         glBegin(GL_QUADS)
-        
-        # bottom-left
+
+        glTexCoord2f(0.0, 0.0)
         glVertex2f(x, y)
-        
-        # bottom-right
+
+        glTexCoord2f(1.0, 0.0)
         glVertex2f(x + w, y)
-        
-        # top-right
+
+        glTexCoord2f(1.0, 1.0)
         glVertex2f(x + w, y + h)
-        
-        # top-left
+
+        glTexCoord2f(0.0, 1.0)
         glVertex2f(x, y + h)
 
         glEnd()
@@ -65,7 +66,7 @@ class GLWrapper:
     @staticmethod
     def draw_texture(tex_id, x, y, w, h):
         glBindTexture(GL_TEXTURE_2D, tex_id)
-        
+
         GLWrapper.draw_quad(x, y, w, h)
 
 
