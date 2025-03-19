@@ -1,3 +1,4 @@
+#?attr CLIENT
 from components.widget import Widget
 
 from components.datatypes import *
@@ -12,8 +13,8 @@ import pygame
 class Text(Widget):
     __fonts = {}
 
-    def __init__(self, name, position, size, color, font, layer = 0, visible = False, subwidget = None, subwidget_offset = Vector(), subwidget_alignment = Alignment.CENTER, text = ""):
-        super().__init__(name, position, size, color, layer, visible, subwidget, subwidget_offset, subwidget_alignment)
+    def __init__(self, name, position, size, color, font, layer = 0, visible = False, text = ""):
+        super().__init__(name, position, size, color, layer, visible)
 
         self.text = text
         self.font = font
@@ -33,8 +34,7 @@ class Text(Widget):
             self.__text = value
         else:
             raise TypeError("Text must be a string:", value)
-        
-        
+          
 
     @property
     def font(self):
@@ -47,34 +47,19 @@ class Text(Widget):
             self.__font = value
         else:
             raise TypeError("Font must be a string:", value)
-
-
-    @property
-    def surface(self):
-        text = self.__fonts[self.__font_code].render(self.text, True, self.color.tuple)
-
-        text_rect = text.get_rect(topleft = (0, 0))
-        self.size = Vector(*text_rect.size)
-        surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
-        surface.blit(text, text_rect)
-        
-        if self.subwidget:
-            surface.blit(self.subwidget.surface, self.subwidget_pos.tuple)
-
-        return surface
     
 
     @property
     def __font_code(self):
-        return str(self.__font_size) + self.font
+        return str(self.__font_size) + str(self.color.tuple) + self.font
     
 
     def __load_font(self):
         if self.__font_code not in self.__fonts:
-            self.__fonts[self.__font_code] = pygame.font.Font(self.font, self.__font_size)
+            self.__fonts[self.__font_code] = GLWrapper.create_font_atlas(self.font, self.__font_size, self.color)
 
 
     def draw(self, bottom_left, size):
-        super().draw(bottom_left, size)
+        GLWrapper.draw_text(self.text, *self.__fonts[self.__font_code], *bottom_left, size)
 
 

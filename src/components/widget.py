@@ -1,3 +1,4 @@
+#?attr CLIENT
 from components.datatypes import *
 from engine.gl_wrapper import *
 
@@ -7,7 +8,7 @@ import pygame
 
 class Widget:
     def __init__(self, name, position, size, color, layer = 0, visible = False, subwidget = None, subwidget_offset = Vector(), subwidget_alignment = Alignment.CENTER):
-        self._should_update = False
+        self.__subwidget_is_text = False
         self.__tex_id = None
 
         self.name = name
@@ -109,7 +110,7 @@ class Widget:
         if value is None or isinstance(value, Widget):
             self.__subwidget = value
             if value is not None and hasattr(value, '__class__') and any(cls.__name__ == "Text" for cls in value.__class__.__mro__):
-                self._should_update = True
+                self.__subwidget_is_text = True
         else:
             raise TypeError("Subwidget must be a Widget:", value)
         
@@ -150,7 +151,7 @@ class Widget:
         surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
         surface.fill(self.color.tuple)
 
-        if self.subwidget:
+        if self.subwidget and not self.__subwidget_is_text:
             surface.blit(self.subwidget.surface, self.subwidget_pos.tuple)
 
         return surface
@@ -179,15 +180,12 @@ class Widget:
 
 
     def draw(self, bottom_left, size):
-        if not self._should_update:
-            if self.visible and self.tex_id:
-                if not self.__tex_id:
-                    self.__tex_id = GLWrapper.load_texture(self.surface)
-                GLWrapper.draw_texture(self.tex_id, *bottom_left, *size)
-        
-        else:
-            self.__tex_id = GLWrapper.load_texture(self.surface)
-            GLWrapper.draw_texture(self.__tex_id, *bottom_left, *size)
-            GLWrapper.delete_texture(self.__tex_id)
+        if self.visible:
+            if not self.__tex_id:
+                self.__tex_id = GLWrapper.load_texture(self.surface)
+            GLWrapper.draw_texture(self.tex_id, *bottom_left, *size)
+
+            if self.__subwidget_is_text:
+                self.subwidget.draw(bottom_left + self.subwidget_pos, size / self.size)
 
 

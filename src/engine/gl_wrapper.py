@@ -1,4 +1,6 @@
 #?attr CLIENT
+from components.datatypes import *
+
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import pygame
@@ -66,15 +68,62 @@ class GLWrapper:
     @staticmethod
     def draw_texture(tex_id, x, y, w, h):
         glBindTexture(GL_TEXTURE_2D, tex_id)
-
         GLWrapper.draw_quad(x, y, w, h)
 
 
     @staticmethod
     def draw_colored_quad(x, y, w, h, color):
         glColor4f(*color.normalized)
-        
         GLWrapper.draw_quad(x, y, w, h)
+
+
+    @staticmethod
+    def create_font_atlas(font_path, size, color):
+        glyphs = [chr(x) for x in range(32, 127)]
+        font = pygame.font.Font(font_path, size)
+        
+        glyph_surfaces = []
+        glyph_data = {}  # char -> (x, y, w, h) in atlas
+        x_offset = 0
+        max_h = 0
+        
+        for g in glyphs:
+            surf = font.render(g, True, color.tuple)
+            glyph_surfaces.append((g, surf))
+            if surf.get_height() > max_h:
+                max_h = surf.get_height()
+        
+        total_w = sum(s.get_width() for _, s in glyph_surfaces)
+        atlas_surf = pygame.Surface((total_w, max_h), pygame.SRCALPHA)
+        
+        for g, surf in glyph_surfaces:
+            atlas_surf.blit(surf, (x_offset, 0))
+            glyph_data[g] = (x_offset, 0, surf.get_width(), surf.get_height())
+            x_offset += surf.get_width()
+        
+        atlas_tex = GLWrapper.load_texture(atlas_surf)
+        
+        return atlas_tex, glyph_data, atlas_surf.get_size()
+
+
+    @staticmethod
+    def draw_text(text, atlas_tex, glyph_data, atlas_size, start_x, start_y, size_scale):
+        x_cursor = start_x
+        draw_batch = QuadBatch()
+
+        for ch in text:
+            if ch in glyph_data:
+                x, y, w, h = glyph_data[ch]
+
+                u0, v0 = x / atlas_size[0], y / atlas_size[1]
+                u1, v1 = (x + w) / atlas_size[0], (y + h) / atlas_size[1]
+                
+                draw_batch.add_quad(x_cursor, start_y, *(Vector(w, h) * size_scale), u0, v0, u1, v1)
+
+                x_cursor += w
+
+        draw_batch.upload()
+        draw_batch.draw_batch(atlas_tex)
 
 
     @staticmethod
