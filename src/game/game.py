@@ -211,6 +211,8 @@ class ServerGame(ServerGameBase):
 
         for actor in actors_to_add:
             level.register_actor(actor)
+            #print(f"Registered actor: {actor.name} at pos: ({actor.position.x}, {actor.position.y})")
+
 
     def tick(self):
         super().tick()
