@@ -27,14 +27,36 @@ class QuadBatch:
 
         self.count_quads += 1
 
+        return self.count_quads - 1
+
 
     def upload(self):
-        # Convert list to numpy float32 array
         arr = np.array(self.vertex_data, dtype=np.float32)
 
-        # Bind and upload data to our VBO
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
         glBufferData(GL_ARRAY_BUFFER, arr.nbytes, arr, GL_STATIC_DRAW)
+
+
+    def update_quad_position(self, quad_index, new_x, new_y):
+        vertex_offset = quad_index * 16
+
+        old_x, old_y, _, _, x2, y2, _, _, x3, y3, _, _, x4, y4, _, _ = self.vertex_data[vertex_offset:vertex_offset+16]
+
+        dx = new_x - old_x
+        dy = new_y - old_y
+
+        self.vertex_data[vertex_offset     ] += dx
+        self.vertex_data[vertex_offset +  1] += dy
+        self.vertex_data[vertex_offset +  4] += dx
+        self.vertex_data[vertex_offset +  5] += dy
+        self.vertex_data[vertex_offset +  8] += dx
+        self.vertex_data[vertex_offset +  9] += dy
+        self.vertex_data[vertex_offset + 12] += dx
+        self.vertex_data[vertex_offset + 13] += dy
+
+        arr = np.array(self.vertex_data[vertex_offset:vertex_offset+16], dtype=np.float32)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
+        glBufferSubData(GL_ARRAY_BUFFER, vertex_offset * 4, arr.nbytes, arr)
 
 
     def draw_batch(self, texture_id):
@@ -66,14 +88,11 @@ class QuadBatch:
 
 
 class GLWrapper:
-    draw_batch = None
-
     @staticmethod
     def init():
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        GLWrapper.draw_batch = QuadBatch()
 
 
     @staticmethod
@@ -135,55 +154,6 @@ class GLWrapper:
     def draw_colored_quad(x, y, w, h, color):
         glColor4f(*color.normalized)
         GLWrapper.draw_quad(x, y, w, h)
-
-
-    @staticmethod
-    def create_font_atlas(font_path, size, color):
-        glyphs = [chr(x) for x in range(32, 127)]
-        font = pygame.font.Font(font_path, size)
-        
-        glyph_surfaces = []
-        glyph_data = {}  # char -> (x, y, w, h) in atlas
-        x_offset = 0
-        max_h = 0
-        
-        for g in glyphs:
-            surf = font.render(g, True, color.tuple)
-            glyph_surfaces.append((g, surf))
-            if surf.get_height() > max_h:
-                max_h = surf.get_height()
-        
-        total_w = sum(s.get_width() for _, s in glyph_surfaces)
-        atlas_surf = pygame.Surface((total_w, max_h), pygame.SRCALPHA)
-        
-        for g, surf in glyph_surfaces:
-            atlas_surf.blit(surf, (x_offset, 0))
-            glyph_data[g] = (x_offset, 0, surf.get_width(), surf.get_height())
-            x_offset += surf.get_width()
-        
-        atlas_tex = GLWrapper.load_texture(atlas_surf)
-        
-        return atlas_tex, glyph_data, atlas_surf.get_size()
-
-
-    @staticmethod
-    def draw_text(text, atlas_tex, glyph_data, atlas_size, start_x, start_y, size_scale):
-        x_cursor = start_x
-
-        for ch in text:
-            if ch in glyph_data:
-                x, y, w, h = glyph_data[ch]
-
-                u0, v0 = x / atlas_size[0], y / atlas_size[1]
-                u1, v1 = (x + w) / atlas_size[0], (y + h) / atlas_size[1]
-                
-                GLWrapper.draw_batch.add_quad(x_cursor, start_y, *(Vector(w, h) * size_scale), u0, v0, u1, v1)
-
-                x_cursor += w
-
-        GLWrapper.draw_batch.upload()
-        GLWrapper.draw_batch.draw_batch(atlas_tex)
-        GLWrapper.draw_batch.clear()
 
 
     @staticmethod

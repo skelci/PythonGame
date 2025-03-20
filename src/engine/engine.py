@@ -8,7 +8,6 @@ from engine.builder import *
 from components.actor import Actor
 from components.rigidbody import Rigidbody
 from components.character import Character
-from components.material import Material
 from components.button import Button
 from components.background import Background
 from components.level import Level
@@ -61,16 +60,23 @@ class Engine(ABC):
 
 #?ifdef CLIENT
 class InfoText(Widget):
-    def __init__(self, name, pos_y, pre_text, after_text = ""):
-        text = Text(name, Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf", visible=True)
-        super().__init__(name, Vector(10, pos_y * 24 + 10), Vector(215, 24), Color(0, 0, 0, 100), 0, subwidget=text, subwidget_offset=Vector(1, 1), subwidget_alignment=Alignment.CENTER_LEFT)
-
-        self.pre_text = pre_text
-        self.after_text = after_text
+    def __init__(self, name, pos_y, pre_text_str):
+        pre_text = Text("pre_text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf", text=pre_text_str)
+        stat_text = Text("after_text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf", static=False)
+        super().__init__(
+            name,
+            Vector(10, pos_y * 24 + 10),
+            Vector(220, 24),
+            Color(0, 0, 0, 100),
+            0,
+            subwidgets={"pre_text": pre_text, "stat_text": stat_text},
+            subwidgets_offsets={"stat_text": Vector(0, 0), "pre_text": Vector(0, 0)},
+            subwidgets_alignments={"stat_text": Alignment.RIGHT, "pre_text": Alignment.LEFT},
+        )
 
 
     def set_value(self, value):
-        self.subwidget.text = f"{self.pre_text}{value:.1f}{self.after_text}"
+        self.subwidgets["stat_text"].text = str(value)
 
 
 

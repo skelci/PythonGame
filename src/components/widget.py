@@ -7,8 +7,8 @@ import pygame
 
 
 class Widget:
-    def __init__(self, name, position, size, color, layer = 0, visible = False, subwidget = None, subwidget_offset = Vector(), subwidget_alignment = Alignment.CENTER):
-        self.__subwidget_is_text = False
+    def __init__(self, name, position, size, color, subwidgets, subwidgets_offsets, subwidgets_alignments, layer = 0, visible = True):
+        self.__subwidget_is_text = {}
         self.__tex_id = None
 
         self.name = name
@@ -17,9 +17,9 @@ class Widget:
         self.layer = layer
         self.color = color
         self.visible = visible
-        self.subwidget = subwidget
-        self.subwidget_offset = subwidget_offset
-        self.subwidget_alignment = subwidget_alignment
+        self.subwidgets = subwidgets
+        self.subwidgets_offsets = subwidgets_offsets
+        self.subwidgets_alignments = subwidgets_alignments
 
 
     @property
@@ -101,44 +101,47 @@ class Widget:
 
 
     @property
-    def subwidget(self):
+    def subwidgets(self):
         return self.__subwidget
     
 
-    @subwidget.setter
-    def subwidget(self, value):
-        if value is None or isinstance(value, Widget):
+    @subwidgets.setter
+    def subwidgets(self, value):
+        if isinstance(value, dict):
             self.__subwidget = value
-            if value is not None and hasattr(value, '__class__') and any(cls.__name__ == "Text" for cls in value.__class__.__mro__):
-                self.__subwidget_is_text = True
+            for x in value:
+                if x is not None and hasattr(x, '__class__') and any(cls.__name__ == "Text" for cls in x.__class__.__mro__):
+                    self.__subwidget_is_text[x.name] = True
+                else:
+                    self.__subwidget_is_text[x.name] = False
         else:
-            raise TypeError("Subwidget must be a Widget:", value)
+            raise TypeError("Subwidget must be a dict of Widgets:", value)
         
 
     @property
-    def subwidget_offset(self):
+    def subwidgets_offsets(self):
         return self.__subwidget_offset
 
 
-    @subwidget_offset.setter
-    def subwidget_offset(self, value):
-        if isinstance(value, Vector):
+    @subwidgets_offsets.setter
+    def subwidgets_offsets(self, value):
+        if isinstance(value, dict):
             self.__subwidget_offset = value
         else:
-            raise TypeError("Subwidget offset must be a Vector:", value)
+            raise TypeError("Subwidget offset must be a dict of Vectors:", value)
         
 
     @property
-    def subwidget_alignment(self):
+    def subwidgets_alignments(self):
         return self.__subwidget_alignment
     
 
-    @subwidget_alignment.setter
-    def subwidget_alignment(self, value):
-        if isinstance(value, Alignment):
+    @subwidgets_alignments.setter
+    def subwidgets_alignments(self, value):
+        if isinstance(value, dict):
             self.__subwidget_alignment = value
         else:
-            raise TypeError("Subwidget alignment must be an Alignment:", value)
+            raise TypeError("Subwidget alignment must be a dict of Aligments:", value)
 
 
     @property
@@ -151,30 +154,32 @@ class Widget:
         surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
         surface.fill(self.color.tuple)
 
-        if self.subwidget and not self.__subwidget_is_text:
-            surface.blit(self.subwidget.surface, self.subwidget_pos.tuple)
+        if not self.subwidgets[0]:
+            return surface
+        
+        for widget in self.subwidgets.keys():
+            if self.__subwidget_is_text[widget]:
+                surface.blit(self.subwidgets[widget].surface, self.subwidget_pos(widget).tuple)
+            i += 1
 
         return surface
     
 
-    @property
-    def subwidget_pos(self):
-        subwidget_offset = self.subwidget_offset.copy
+    def subwidget_pos(self, widget):
+        offset, alignment = self.subwidgets_offsets[widget], self.subwidgets_alignments[widget]
+        subwidget_offset = offset.copy
 
-        if not self.subwidget:
-            return subwidget_offset
+        if alignment in (Alignment.TOP_CENTER, Alignment.CENTER, Alignment.BOTTOM_CENTER):
+            subwidget_offset.x += (self.size.x - self.subwidgets.size.x) / 2
         
-        if self.subwidget_alignment in (Alignment.TOP_CENTER, Alignment.CENTER, Alignment.BOTTOM_CENTER):
-            subwidget_offset.x += (self.size.x - self.subwidget.size.x) / 2
-        
-        if self.subwidget_alignment in (Alignment.TOP_RIGHT, Alignment.CENTER_RIGHT, Alignment.BOTTOM_RIGHT):
-            subwidget_offset.x += self.size.x - self.subwidget.size.x
+        if alignment in (Alignment.TOP_RIGHT, Alignment.CENTER_RIGHT, Alignment.BOTTOM_RIGHT):
+            subwidget_offset.x += self.size.x - self.subwidgets.size.x
 
-        if self.subwidget_alignment in (Alignment.CENTER_LEFT, Alignment.CENTER, Alignment.CENTER_RIGHT):
-            subwidget_offset.y += (self.size.y - self.subwidget.size.y) / 2
+        if alignment in (Alignment.CENTER_LEFT, Alignment.CENTER, Alignment.CENTER_RIGHT):
+            subwidget_offset.y += (self.size.y - self.subwidgets.size.y) / 2
 
-        if self.subwidget_alignment in (Alignment.BOTTOM_LEFT, Alignment.BOTTOM_CENTER, Alignment.BOTTOM_RIGHT):
-            subwidget_offset.y += self.size.y - self.subwidget.size.y
+        if alignment in (Alignment.BOTTOM_LEFT, Alignment.BOTTOM_CENTER, Alignment.BOTTOM_RIGHT):
+            subwidget_offset.y += self.size.y - self.subwidgets.size.y
 
         return subwidget_offset
 
@@ -185,7 +190,8 @@ class Widget:
                 self.__tex_id = GLWrapper.load_texture(self.surface)
             GLWrapper.draw_texture(self.tex_id, *bottom_left, *size)
 
-            if self.__subwidget_is_text:
-                self.subwidget.draw(bottom_left + self.subwidget_pos, size / self.size)
+            for widget in self.subwidgets:
+                if not self.__subwidget_is_text[widget]:
+                    self.subwidgets[widget].draw(bottom_left + self.subwidget_pos(widget), size / self.size)
 
 

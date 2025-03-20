@@ -179,7 +179,7 @@ class Renderer:
 
         for tex_id, batch in quad_batches.items():
             batch.upload()
-            batch.draw_batch(tex_id)
+            batch.draw(tex_id)
 
         time_actors = time.time()
 

@@ -72,7 +72,7 @@ class BackgroundLayer:
                 draw_batch.add_quad(*bottom_right, *scaled_material_res)
 
         draw_batch.upload()
-        draw_batch.draw_batch(self.__material.texture_id)
+        draw_batch.draw(self.__material.texture_id)
 
 
 
