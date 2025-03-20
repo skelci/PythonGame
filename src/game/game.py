@@ -33,6 +33,22 @@ class Stone(Actor):
         super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/stone.png"))
         self.position = position
 
+class Coal(Actor):
+    def __init__(self, engine_ref, name, position):
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(0, 0, 0)))
+        self.position = position
+
+class Iron(Actor):
+    def __init__(self, engine_ref, name, position):
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(255, 0, 0)))
+        self.position = position
+
+class Gold(Actor):
+    def __init__(self, engine_ref, name, position):
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(255, 255, 0)))
+        self.position = position
+
+
 class TestPlayer(Character):
     def __init__(self, engine_ref, name, position):
         super().__init__(engine_ref, name, position=Vector(0, 3), material = Material(Color(0, 0, 255)))
@@ -225,7 +241,6 @@ class ServerGame(ServerGameBase):
         positions = []
         for player_id, player_actor in current_level.actors.items():
             if isinstance(player_actor, TestPlayer):
-                print(f"Player {player_id} pos: {player_actor.position.x}, {player_actor.position.y}")
                 positions.append(player_actor.position)
 
         if not positions:
