@@ -80,6 +80,9 @@ class ClientGame(ClientGameBase):
         eng.add_actor_template(Grass)
         eng.add_actor_template(Dirt)
         eng.add_actor_template(Stone)
+        eng.add_actor_template(Coal)
+        eng.add_actor_template(Iron)
+        eng.add_actor_template(Gold)
 
         eng.register_background(Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, 0.25), )))
 
@@ -87,6 +90,9 @@ class ClientGame(ClientGameBase):
         self.engine.add_actor_template(Grass)
         self.engine.add_actor_template(Dirt)
         self.engine.add_actor_template(Stone)
+        self.engine.add_actor_template(Coal)
+        self.engine.add_actor_template(Iron)
+        self.engine.add_actor_template(Gold)
 
 
 
