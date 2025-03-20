@@ -46,6 +46,11 @@ class Engine(ABC):
         return self.__world_mouse_pos
 
 
+    @staticmethod
+    def get_player_actor(player_id):
+        return "__Player_" + str(player_id)
+
+
     def stop(self):
         self.__running = False
 
@@ -77,17 +82,19 @@ class ClientEngine(Engine, Renderer):
         self.__network = None
         self.__level = Level("Engine_Level", Character)
 
-        self.current_background = None
-        
         self.__widgets = {}
+        self.__backgrounds = {}
         self.__pressed_keys = set()
         self.__released_keys = set()
         self.__screen_mouse_pos = Vector()
+
+        self.current_background = None
 
         self.__network_commands = {
             "register_actor": self.__register_actor,
             "update_actor": self.__update_actor,
             "destroy_actor": self.__destroy_actor,
+            "background": self.__background,
         }
 
         self.__actor_templates = {
@@ -154,7 +161,7 @@ class ClientEngine(Engine, Renderer):
 
     @current_background.setter
     def current_background(self, value):
-        if value in self.level.backgrounds or value is None:
+        if value in self.backgrounds or value is None:
             self.__current_background = value
         else:
             raise Exception(f"Background {value} is not registered")
@@ -163,6 +170,11 @@ class ClientEngine(Engine, Renderer):
     @property
     def widgets(self):
         return self.__widgets
+
+
+    @property
+    def backgrounds(self):
+        return self.__backgrounds
 
 
     @property
@@ -200,16 +212,22 @@ class ClientEngine(Engine, Renderer):
             self.widgets[name].visible = False
 
 
-    def add_actor_template(self, name, actor):
-        if name in self.__actor_templates or not issubclass(actor, Actor):
-            raise Exception(f"Actor template {name} is already registered or wrong data type")
-        self.__actor_templates[name] = actor
+    def add_actor_template(self, actor):
+        if not issubclass(actor, Actor):
+            raise Exception(f"Actor template {actor.__name__} is already registered or wrong data type")
+        self.__actor_templates[actor.__name__] = actor
     
 
     def register_widget(self, widget):
         if widget.name in self.__widgets or not isinstance(widget, Widget):
             raise Exception(f"Widget {widget.name} is already registered or wrong data type")
-        self.__widgets[widget.name] = widget           
+        self.__widgets[widget.name] = widget
+
+
+    def register_background(self, background):
+        if background.name in self.__backgrounds or not isinstance(background, Background):
+            raise Exception(f"Background {background.name} is already registered or wrong data type")
+        self.__backgrounds[background.name] = background
     
 
     def regisrer_network_command(self, cmd, func):
@@ -258,13 +276,13 @@ class ClientEngine(Engine, Renderer):
         for widget in self.widgets.values():
             if widget.visible:
                 self.add_widget_to_draw(widget)
-                if issubclass(widget.__class__, Button):
+                if isinstance(widget, Button):
                     widget.tick(self.pressed_keys, Keys.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
 
         self.__time("render_regs")
 
         if self.current_background:
-            self.draw_background(self.level.backgrounds[self.current_background])
+            self.draw_background(self.backgrounds[self.current_background])
         else:
             self.screen.fill((0, 0, 0))
 
@@ -354,8 +372,13 @@ class ClientEngine(Engine, Renderer):
 
 
     def __register_actor(self, data):
-        if data["name"] not in self.__level.actors:
-            self.__level.register_actor(self.__actor_templates[data["type"]](self, data["name"], data["half_size"], data["position"], visible=data["visible"], material=Material(data["material"]) if data["material"] else None))
+        if data["name"] in self.__level.actors:
+            return
+        
+        if data["type"] not in self.__actor_templates:
+            raise Exception(f"Actor template {data['type']} is not registered")
+
+        self.__level.register_actor(self.__actor_templates[data["type"]](self, data["name"], data["position"])) # if it crashes in this line, it's because actor class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
 
 
     def __update_actor(self, data):
@@ -366,6 +389,10 @@ class ClientEngine(Engine, Renderer):
 
     def __destroy_actor(self, data):
         self.__level.destroy_actor(data)
+
+
+    def __background(self, data):
+        self.current_background = data
 
 #?endif
 
@@ -471,11 +498,6 @@ class ServerEngine(Engine):
     @property
     def levels(self):
         return self.__levels
-    
-
-    @staticmethod
-    def get_player_actor(player_id):
-        return "__Player_" + str(player_id)
         
 
     def register_level(self, level):
@@ -547,7 +569,12 @@ class ServerEngine(Engine):
                 c_chk = get_chunk_cords(player.position)
                 
                 for x in range(c_chk.rounded.x - player.update_distance, c_chk.rounded.x + player.update_distance + 1):
+                    if x not in level.chunks:
+                        continue
                     for y in range(c_chk.rounded.y - player.update_distance, c_chk.rounded.y + player.update_distance + 1):
+                        if y not in level.chunks[x]:
+                            continue
+
                         if max(p_chk.x, c_chk.x) - player.update_distance <= x <= min(p_chk.x, c_chk.x) + player.update_distance and max(p_chk.y, c_chk.y) - player.update_distance <= y <= min(p_chk.y, c_chk.y) + player.update_distance: #TODO fix if player distance changes
                             for actor_name, update in updates.items():
                                 sync_data, chunk_num = update
@@ -560,27 +587,30 @@ class ServerEngine(Engine):
 
                 player.previous_chunk = c_chk
 
-        for player_id in self.__players:
-            for key in self.__players[player_id].triggered_keys:
+        for id in self.__players:
+            if not self.__players[id].level:
+                continue
+
+            for key in self.__players[id].triggered_keys:
                 if key in self.__registered_keys:
                     press_type, func = self.__registered_keys[key]
                     if press_type == KeyPressType.TRIGGER:
-                        func(self, player_id)
+                        func(self, self.levels[self.players[id].level], id)
 
-            for key in self.__players[player_id].pressed_keys:
+            for key in self.__players[id].pressed_keys:
                 if key in self.__registered_keys:
                     press_type, func = self.__registered_keys[key]
                     if press_type == KeyPressType.HOLD:
-                        func(self, player_id)
+                        func(self, self.levels[self.players[id].level], id)
 
-            for key in self.__players[player_id].released_keys:
+            for key in self.__players[id].released_keys:
                 if key in self.__registered_keys:
                     press_type, func = self.__registered_keys[key]
                     if press_type == KeyPressType.TRIGGER:
-                        func(self, player_id)
+                        func(self, self.levels[self.players[id].level], id)
 
-            self.__players[player_id].released_keys.clear()
-            self.__players[player_id].triggered_keys.clear()
+            self.__players[id].released_keys.clear()
+            self.__players[id].triggered_keys.clear()
 
         self.__time("level_updates")
 
@@ -638,12 +668,14 @@ class ServerEngine(Engine):
                     for actor in level.chunks[x][y]:
                         self.network.send(id, "register_actor", level.actors[actor].get_for_full_net_sync())
 
+        self.network.send(id, "background", level.background)
+
 
     def __join_level(self, id, data):
         level_name = data
         if level_name in self.levels:
             self.__players[id].level = level_name
-            self.levels[level_name].register_actor(self.levels[level_name].default_character(self, self.get_player_actor(id))) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, everything else should be hardcoded
+            self.levels[level_name].register_actor(self.levels[level_name].default_character(self, self.get_player_actor(id), Vector())) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
             self.__players[id].previous_chunk = get_chunk_cords(self.levels[level_name].actors[self.get_player_actor(id)].position)
             self.__full_player_sync(id)
         else:

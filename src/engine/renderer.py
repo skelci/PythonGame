@@ -135,14 +135,14 @@ class Renderer:
 
 
     def add_actor_to_draw(self, actor):
-        if not issubclass(type(actor), Actor):
+        if not isinstance(actor, Actor):
             raise TypeError("Actor must be a subclass of Actor:", actor)
         
         self.__actors_to_draw.append(actor)
 
 
     def add_widget_to_draw(self, widget):
-        if not issubclass(widget.__class__, Widget):
+        if not isinstance(widget, Widget):
             raise TypeError("Widget must be a subclass of Widget:", widget)
         
         self.__widgets_to_draw.append(widget)
@@ -163,7 +163,9 @@ class Renderer:
                 camera_ratio * (a.position.x - a.half_size.x - self.camera_position.x) + self.resolution.x / 2,
                 camera_ratio * -(a.position.y + a.half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
             )
-            self.__draw_rectangle_texture(a.material.texture, a.half_size * 2 * camera_ratio, top_left_position)
+
+            surface = a.material.get_surface(a.half_size * camera_ratio * 2 * 1.02) # 1.02 is a magic number to prevent gaps between the textures
+            self.__draw_rectangle_texture(surface, top_left_position)
 
         time_actors = time.time()
 
@@ -183,10 +185,8 @@ class Renderer:
         self.screen.blit(bg_surface, (0, 0))
 
 
-    def __draw_rectangle_texture(self, surface, size, top_left_position):
-        scaled_texture = pygame.transform.scale(surface, size.rounded.tuple)
-        
-        self.screen.blit(scaled_texture, top_left_position)
+    def __draw_rectangle_texture(self, surface, top_left_position):        
+        self.screen.blit(surface, top_left_position)
 
 
     def __draw_widget(self, widget):
@@ -202,5 +202,7 @@ class Renderer:
 
         widget.screen_rect = (top_left_position, top_left_position + size)
 
-        self.__draw_rectangle_texture(widget.surface, size, top_left_position.tuple)
+        surface = pygame.transform.scale(widget.surface, size.tuple)
+
+        self.__draw_rectangle_texture(surface, top_left_position.tuple)
         

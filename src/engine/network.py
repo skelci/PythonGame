@@ -119,15 +119,21 @@ class ClientNetwork(Network):
         while self.running:
             if not self._output_queue.empty():
                 data = self._output_queue.get()
-                self.socket.send(data)
+                try:
+                    self.socket.send(data)
+                except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+                    break
 
 
     def __handle_connection(self):
         while self.running:
-            data = b""
+            data = None
             try:
                 data = self.socket.recv(1024)
-            except ConnectionResetError:
+            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+                break
+
+            if not data:
                 break
 
             parsed_data = self._parse_data(data)
@@ -201,7 +207,10 @@ class ServerNetwork(Network):
                 if not id in self.__id_to_conn:
                     continue
                 conn = self.__id_to_conn[id]
-                conn.send(data)
+                try:
+                    conn.send(data)
+                except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+                    break
         
 
     def __accept_connections(self):
@@ -232,7 +241,10 @@ class ServerNetwork(Network):
         while self.running:
             try:
                 data = conn.recv(1024)
-            except ConnectionResetError:
+            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+                break
+
+            if not data:
                 break
 
             parsed_data = self._parse_data(data)

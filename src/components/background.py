@@ -1,6 +1,6 @@
 from components.datatypes import *
 
-import pygame
+import pygame # type: ignore
 
 
 
@@ -77,15 +77,17 @@ class BackgroundLayer:
         self.__bg_surface = bg_surface
 
 
-    def get_bg_surface(self, camera_pos, screen_res, camera_width):
+    def get_bg_surface(self, _camera_pos, screen_res, camera_width):
         if not screen_res == self.__buffered_screen_res or not camera_width == self.__buffered_camera_width:
             self.__set_buffer(screen_res, camera_width)
             self.__create_bg_surface(screen_res, camera_width)
 
-        top_left = (camera_pos * self.scroll_speed) % self.__scaled_material_res
-        if top_left.x < 0:
+        camera_pos = Vector(-_camera_pos.x, _camera_pos.y)
+
+        top_left = (camera_pos * self.scroll_speed * screen_res.x / camera_width) % self.__scaled_material_res - self.__scaled_material_res
+        if top_left.abs.x > self.__scaled_material_res.x:
             top_left.x += self.__scaled_material_res.x
-        if top_left.y < 0:
+        if top_left.abs.y > self.__scaled_material_res.y:
             top_left.y += self.__scaled_material_res.y
 
         bg_surface = pygame.Surface(screen_res.tuple)

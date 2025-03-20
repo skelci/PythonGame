@@ -10,22 +10,19 @@ from components.game_math import *
 
 
 class Level:
-    def __init__(self, name, default_character, actors = [], backgrounds = [], simulation_speed = 1, gravity = 1):
+    def __init__(self, name, default_character, actors = [], background = None, simulation_speed = 1, gravity = 1):
         self.name = name
         self.default_character = default_character
-        self.__actors = {}
-        self.__backgrounds = {}
+        self.background = background
         self.simulation_speed = simulation_speed
         self.gravity = gravity
 
+        self.__actors = {}
         self.__actors_to_destroy = set()
         self.__chunks = {}
 
         for actor in actors:
             self.register_actor(actor)
-        for background in backgrounds:
-            self.register_background(background)
-
 
 
     @property
@@ -53,16 +50,24 @@ class Level:
         else:
             print(value.__class__)
             raise TypeError("Default character must be a subclass of Character:", value)
+
+
+    @property
+    def background(self):
+        return self.__background
+    
+
+    @background.setter
+    def background(self, value):
+        if isinstance(value, str) or value is None:
+            self.__background = value
+        else:
+            raise TypeError("Background must be a string or None:", value)
         
 
     @property
     def actors(self):
         return self.__actors
-    
-
-    @property
-    def backgrounds(self):
-        return self.__backgrounds
     
 
     @property
@@ -97,7 +102,11 @@ class Level:
         
 
     def register_actor(self, actor):
-        if issubclass(actor.__class__, Actor):
+        #?ifdef SERVER
+        if actor.name in self.actors:
+            raise ValueError("Actor with the same name already exists in level:", actor.name)
+        #?endif
+        if isinstance(actor, Actor):
             self.actors[actor.name] = actor
             self.__add_actor_to_chunk(actor)
         else:
@@ -109,13 +118,6 @@ class Level:
             self.__actors_to_destroy.add(actor)
         else:
             raise ValueError("Actor not found in level:", actor)
-        
-
-    def register_background(self, background):
-        if issubclass(background.__class__, Background):
-            self.backgrounds[background.name] = background
-        else:
-            raise TypeError("Background must be a subclass of Background:", background)
         
 
     #?ifdef SERVER
