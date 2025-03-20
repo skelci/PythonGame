@@ -215,8 +215,8 @@ class ServerGame(ServerGameBase):
 
 
     def tick(self):
-        super().tick()
-
+        delta_time = super().tick()
+        if delta_time > 0.2: print(f"Server tick took {delta_time} seconds.")
         current_level = self.engine.levels.get("Test_Level")
         if not current_level:
             return
@@ -225,6 +225,7 @@ class ServerGame(ServerGameBase):
         positions = []
         for player_id, player_actor in current_level.actors.items():
             if isinstance(player_actor, TestPlayer):
+                print(f"Player {player_id} pos: {player_actor.position.x}, {player_actor.position.y}")
                 positions.append(player_actor.position)
 
         if not positions:
@@ -234,6 +235,7 @@ class ServerGame(ServerGameBase):
         avg_x = sum(p.x for p in positions) / len(positions)
         avg_y = sum(p.y for p in positions) / len(positions)
         avg_pos = Vector(avg_x, avg_y)
+        print(f"Avg pos: {avg_pos.x}, {avg_pos.y}")
 
         new_base_chunk = Vector(
             math.floor((avg_pos.x + CHUNK_SIZE/2) / CHUNK_SIZE),
@@ -244,7 +246,7 @@ class ServerGame(ServerGameBase):
         if not hasattr(self, "current_base_chunk"):
             self.current_base_chunk = new_base_chunk
         else:
-            smoothing_factor = 0.1  # Adjust this factor to control smoothness.
+            smoothing_factor = 0.5 # Adjust this factor to control smoothness.
             self.current_base_chunk = Vector(
                 self.current_base_chunk.x + (new_base_chunk.x - self.current_base_chunk.x) * smoothing_factor,
                 self.current_base_chunk.y + (new_base_chunk.y - self.current_base_chunk.y) * smoothing_factor
