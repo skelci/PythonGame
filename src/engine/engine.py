@@ -535,6 +535,9 @@ class ServerEngine(Engine):
         self.__stats["tps"].append(1 / delta_time / 1000)
         self.__stats["tps"].pop(0)
 
+        if delta_time > 1 / 20:
+            delta_time = 1 / 20
+
         self.__time_now = time.time()
 
         if self.console.cmd_output:
