@@ -32,11 +32,13 @@ class ClientGame(ClientGameBase):
     def __init__(self):
         super().__init__()
 
+
         eng = self.engine
 
         eng.camera_width = 48
 
         eng.connect("localhost", 5555)
+        eng.fullscreen=True
 
         self.clock_1s = 0
 
