@@ -137,9 +137,6 @@ class ClientGame(ClientGameBase):
 #?ifdef SERVER
 class TestLevel(Level):
     def __init__(self, engine_ref):
-
-
-       
         super().__init__("Test_Level", TestPlayer, [], "sky")
 
 
