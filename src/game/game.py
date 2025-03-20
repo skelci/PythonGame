@@ -187,7 +187,7 @@ class ServerGame(ServerGameBase):
         # Generate the chunk if needed.
         if target_chunk not in self.game_map:
             self.game_map[target_chunk] = self.generate_chunk(chunk_x, chunk_y)
-            print(f"Generated chunk: {chunk_x}, {chunk_y}")
+
         
         # Load new tiles only if this chunk hasn't been processed before.
         if target_chunk not in self.loaded_chunks:
@@ -211,7 +211,7 @@ class ServerGame(ServerGameBase):
 
         for actor in actors_to_add:
             level.register_actor(actor)
-            #print(f"Registered actor: {actor.name} at pos: ({actor.position.x}, {actor.position.y})")
+
 
 
     def tick(self):
@@ -235,7 +235,6 @@ class ServerGame(ServerGameBase):
         avg_x = sum(p.x for p in positions) / len(positions)
         avg_y = sum(p.y for p in positions) / len(positions)
         avg_pos = Vector(avg_x, avg_y)
-        print(f"Avg pos: {avg_pos.x}, {avg_pos.y}")
 
         new_base_chunk = Vector(
             math.floor((avg_pos.x + CHUNK_SIZE/2) / CHUNK_SIZE),
