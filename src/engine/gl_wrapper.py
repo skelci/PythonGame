@@ -190,3 +190,5 @@ class QuadBatch:
         self.vertex_data.clear()
         self.index_data.clear()
         self.count_quads = 0
+
+
