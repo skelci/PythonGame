@@ -1,163 +1,110 @@
 #?attr CLIENT
 from components.datatypes import *
-
 from OpenGL.GL import *
 from OpenGL.GLU import *
+from OpenGL.GL import shaders
 import pygame
 import numpy as np
 
 
 
-class QuadBatch:
-    def __init__(self):
-        self.vbo_id = glGenBuffers(1)
-        self.vertex_data = []
-        self.count_quads = 0
-
-        # self.__create_vao_and_vbo()
-
-
-    def add_quad(self, x, y, w, h, u0=0.0, v0=0.0, u1=1.0, v1=1.0):
-        # bottom-left
-        self.vertex_data.extend([x,      y,      u0, v0])
-        # bottom-right
-        self.vertex_data.extend([x + w,  y,      u1, v0])
-        # top-right
-        self.vertex_data.extend([x + w,  y + h,  u1, v1])
-        # top-left
-        self.vertex_data.extend([x,      y + h,  u0, v1])
-
-        self.count_quads += 1
-
-        return self.count_quads - 1
+# ---- Shader sources ----
+VERTEX_SHADER_SRC = """
+#version 330 core
+layout (location = 0) in vec2 position;
+layout (location = 1) in vec2 texcoord;
+out vec2 Texcoord;
+uniform mat4 projection;
+void main(){
+    gl_Position = projection * vec4(position, 0.0, 1.0);
+    Texcoord = texcoord;
+}
+"""
 
 
-    def upload(self):
-        arr = np.array(self.vertex_data, dtype=np.float32)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
-        glBufferData(GL_ARRAY_BUFFER, arr.nbytes, arr, GL_STATIC_DRAW)
+FRAGMENT_SHADER_SRC = """
+#version 330 core
+in vec2 Texcoord;
+out vec4 outColor;
+uniform sampler2D tex;
+void main(){
+    outColor = texture(tex, Texcoord);
+}
+"""
 
-
-    def update_quad_position(self, quad_index, new_x, new_y):
-        vertex_offset = quad_index * 16
-
-        old_x, old_y, _, _, x2, y2, _, _, x3, y3, _, _, x4, y4, _, _ = self.vertex_data[vertex_offset:vertex_offset+16]
-
-        dx = new_x - old_x
-        dy = new_y - old_y
-
-        self.vertex_data[vertex_offset     ] += dx
-        self.vertex_data[vertex_offset +  1] += dy
-        self.vertex_data[vertex_offset +  4] += dx
-        self.vertex_data[vertex_offset +  5] += dy
-        self.vertex_data[vertex_offset +  8] += dx
-        self.vertex_data[vertex_offset +  9] += dy
-        self.vertex_data[vertex_offset + 12] += dx
-        self.vertex_data[vertex_offset + 13] += dy
-
-        arr = np.array(self.vertex_data[vertex_offset:vertex_offset+16], dtype=np.float32)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
-        glBufferSubData(GL_ARRAY_BUFFER, vertex_offset * 4, arr.nbytes, arr)
-
-
-    def __create_vao_and_vbo(self):
-        # Create VAO for modern usage
-        self.vao_id = glGenVertexArrays(1)
-        glBindVertexArray(self.vao_id)
-
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
-
-        # Position attribute
-        glEnableVertexAttribArray(0)
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(0))
-
-        # Texcoord attribute
-        glEnableVertexAttribArray(1)
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(8))
-
-        glBindVertexArray(0)
-
-
-    def draw(self, texture_id):
-        glBindTexture(GL_TEXTURE_2D, texture_id)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
-        
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-        
-        # Assuming each vertex has 4 floats (2 for position, 2 for texcoord),
-        # and data is tightly packed, the stride is 4 * sizeof(float) = 16 bytes.
-        glVertexPointer(2, GL_FLOAT, 16, ctypes.c_void_p(0))
-        glTexCoordPointer(2, GL_FLOAT, 16, ctypes.c_void_p(8))
-        
-        glDrawArrays(GL_QUADS, 0, self.count_quads * 4)
-        
-        glDisableClientState(GL_VERTEX_ARRAY)
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-        
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-
-    def clear(self):
-        self.vertex_data.clear()
-        self.count_quads = 0
 
 
 
 class GLWrapper:
+    shader_program = None  # Will be set in init_shaders()
+
+
     @staticmethod
     def init():
-        glEnable(GL_TEXTURE_2D)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
     @staticmethod
+    def init_shaders():
+        # Compile and link shader program
+        vertex_shader = shaders.compileShader(VERTEX_SHADER_SRC, GL_VERTEX_SHADER)
+        fragment_shader = shaders.compileShader(FRAGMENT_SHADER_SRC, GL_FRAGMENT_SHADER)
+        GLWrapper.shader_program = shaders.compileProgram(vertex_shader, fragment_shader)
+        glUseProgram(GLWrapper.shader_program)
+        # Set default sampler uniform to texture unit 0.
+        glUniform1i(glGetUniformLocation(GLWrapper.shader_program, "tex"), 0)
+        glUseProgram(0)
+
+
+    @staticmethod
     def update_resolution(resolution):
+        if not GLWrapper.shader_program:
+            GLWrapper.init_shaders()
+
         width, height = resolution
         glViewport(0, 0, width, height)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluOrtho2D(0, width, 0, height)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        # Build an orthographic projection matrix.
+        # Note: Here we use a simple orthographic projection.
+        proj = np.array([
+            [2/width, 0, 0, -1],
+            [0, 2/height, 0, -1],
+            [0, 0, -1, 0],
+            [0, 0, 0, 1],
+        ], dtype=np.float32)
+        glUseProgram(GLWrapper.shader_program)
+        loc = glGetUniformLocation(GLWrapper.shader_program, "projection")
+        glUniformMatrix4fv(loc, 1, GL_TRUE, proj)
+        glUseProgram(0)
 
 
     @staticmethod
     def load_texture(surface):
         texture_data = pygame.image.tostring(surface, "RGBA", True)
         width, height = surface.get_size()
-
         tex_id = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, tex_id)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
+        glBindTexture(GL_TEXTURE_2D, 0)
         return tex_id
-    
+
 
     @staticmethod
     def delete_texture(tex_id):
         glDeleteTextures(int(tex_id))
-    
+
 
     @staticmethod
     def draw_quad(x, y, w, h):
+        # Legacy quad drawing (unused in our shader method)
         glBegin(GL_QUADS)
-
-        glTexCoord2f(0.0, 0.0)
-        glVertex2f(x, y)
-
-        glTexCoord2f(1.0, 0.0)
-        glVertex2f(x + w, y)
-
-        glTexCoord2f(1.0, 1.0)
-        glVertex2f(x + w, y + h)
-
-        glTexCoord2f(0.0, 1.0)
-        glVertex2f(x, y + h)
-
+        glTexCoord2f(0.0, 0.0); glVertex2f(x, y)
+        glTexCoord2f(1.0, 0.0); glVertex2f(x + w, y)
+        glTexCoord2f(1.0, 1.0); glVertex2f(x + w, y + h)
+        glTexCoord2f(0.0, 1.0); glVertex2f(x, y + h)
         glEnd()
 
 
@@ -165,6 +112,7 @@ class GLWrapper:
     def draw_texture(tex_id, x, y, w, h):
         glBindTexture(GL_TEXTURE_2D, tex_id)
         GLWrapper.draw_quad(x, y, w, h)
+        glBindTexture(GL_TEXTURE_2D, 0)
 
 
     @staticmethod
@@ -179,3 +127,66 @@ class GLWrapper:
         glLoadIdentity()
 
 
+
+class QuadBatch:
+    def __init__(self):
+        self.vbo_id = glGenBuffers(1)
+        self.ebo_id = glGenBuffers(1)  # Create an Element Buffer Object
+        self.vertex_data = []
+        self.index_data = []
+        self.count_quads = 0
+        self.__create_vao_and_vbo()
+
+    def add_quad(self, x, y, w, h, u0=0.0, v0=0.0, u1=1.0, v1=1.0):
+        # Append 4 vertices for the quad.
+        base_index = self.count_quads * 4
+        self.vertex_data.extend([x,       y,      u0, v0,   # bottom-left
+                                 x + w,   y,      u1, v0,   # bottom-right
+                                 x + w,   y + h,  u1, v1,   # top-right
+                                 x,       y + h,  u0, v1])  # top-left
+        # Append indices to form two triangles: [0, 1, 2, 0, 2, 3]
+        self.index_data.extend([base_index, base_index+1, base_index+2,
+                                base_index, base_index+2, base_index+3])
+        self.count_quads += 1
+        return self.count_quads - 1
+
+    def upload(self):
+        # Upload vertex data
+        arr = np.array(self.vertex_data, dtype=np.float32)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
+        glBufferData(GL_ARRAY_BUFFER, arr.nbytes, arr, GL_STATIC_DRAW)
+        # Upload index data
+        idx_arr = np.array(self.index_data, dtype=np.uint32)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ebo_id)
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx_arr.nbytes, idx_arr, GL_STATIC_DRAW)
+
+    def __create_vao_and_vbo(self):
+        # Create and bind VAO
+        self.vao_id = glGenVertexArrays(1)
+        glBindVertexArray(self.vao_id)
+        # Bind VBO for vertex data
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
+        # Set up vertex attributes (stride = 16 bytes)
+        glEnableVertexAttribArray(0)  # position
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(0))
+        glEnableVertexAttribArray(1)  # texcoord
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(8))
+        # Bind EBO (this association with the VAO remains)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ebo_id)
+        glBindVertexArray(0)
+
+    def draw(self, texture_id):
+        glUseProgram(GLWrapper.shader_program)
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, texture_id)
+        glBindVertexArray(self.vao_id)
+        # Now use glDrawElements with count = total indices
+        glDrawElements(GL_TRIANGLES, len(self.index_data), GL_UNSIGNED_INT, None)
+        glBindVertexArray(0)
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glUseProgram(0)
+
+    def clear(self):
+        self.vertex_data.clear()
+        self.index_data.clear()
+        self.count_quads = 0

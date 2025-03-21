@@ -45,7 +45,8 @@ class Renderer:
             self.__screen = pygame.display.set_mode((value.x, value.y),
                                                     FULLSCREEN if self.fullscreen else 0 |
                                                     NOFRAME if not self.windowed else 0 |
-                                                    DOUBLEBUF | HWSURFACE | OPENGL)
+                                                    DOUBLEBUF | HWSURFACE | OPENGL,
+                                                    vsync = 0)
             GLWrapper().update_resolution(value)
         else:
             raise TypeError("Width must be a positive integer:", value)
@@ -103,7 +104,8 @@ class Renderer:
             self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y),
                                                     FULLSCREEN if value else 0 |
                                                     NOFRAME if not self.windowed else 0 |
-                                                    DOUBLEBUF | HWSURFACE | OPENGL)
+                                                    DOUBLEBUF | HWSURFACE | OPENGL,
+                                                    vsync = 0)
         else:
             raise TypeError("Fullscreen must be a bool:", value)
         
@@ -120,7 +122,8 @@ class Renderer:
             self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y),
                                                     FULLSCREEN if self.fullscreen else 0 |
                                                     NOFRAME if not value else 0 |
-                                                    DOUBLEBUF | HWSURFACE | OPENGL)
+                                                    DOUBLEBUF | HWSURFACE | OPENGL,
+                                                    vsync = 0)
         else:
             raise TypeError("Windowed must be a bool:", value)
         
