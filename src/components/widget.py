@@ -7,7 +7,7 @@ import pygame
 
 
 class Widget:
-    def __init__(self, name, position, size, color, subwidgets, subwidgets_offsets, subwidgets_alignments, layer = 0, visible = True):
+    def __init__(self, name, position, size, color, layer=0, visible = True, subwidgets={}, subwidgets_offsets={}, subwidgets_alignments={}):
         self.__subwidget_is_text = {}
         self.__tex_id = None
 
@@ -109,11 +109,11 @@ class Widget:
     def subwidgets(self, value):
         if isinstance(value, dict):
             self.__subwidget = value
-            for x in value:
+            for name, x in value.items():
                 if x is not None and hasattr(x, '__class__') and any(cls.__name__ == "Text" for cls in x.__class__.__mro__):
-                    self.__subwidget_is_text[x.name] = True
+                    self.__subwidget_is_text[name] = True
                 else:
-                    self.__subwidget_is_text[x.name] = False
+                    self.__subwidget_is_text[name] = False
         else:
             raise TypeError("Subwidget must be a dict of Widgets:", value)
         
@@ -154,32 +154,34 @@ class Widget:
         surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
         surface.fill(self.color.tuple)
 
-        if not self.subwidgets[0]:
+        if not self.subwidgets:
             return surface
         
         for widget in self.subwidgets.keys():
             if self.__subwidget_is_text[widget]:
-                surface.blit(self.subwidgets[widget].surface, self.subwidget_pos(widget).tuple)
-            i += 1
+                continue
+            surface.blit(self.subwidgets[widget].surface, self.subwidget_pos(widget).tuple)
+
 
         return surface
     
 
     def subwidget_pos(self, widget):
         offset, alignment = self.subwidgets_offsets[widget], self.subwidgets_alignments[widget]
+        subwidget = self.subwidgets[widget]
         subwidget_offset = offset.copy
 
         if alignment in (Alignment.TOP_CENTER, Alignment.CENTER, Alignment.BOTTOM_CENTER):
-            subwidget_offset.x += (self.size.x - self.subwidgets.size.x) / 2
+            subwidget_offset.x += (self.size.x - subwidget.size.x) / 2
         
         if alignment in (Alignment.TOP_RIGHT, Alignment.CENTER_RIGHT, Alignment.BOTTOM_RIGHT):
-            subwidget_offset.x += self.size.x - self.subwidgets.size.x
+            subwidget_offset.x += self.size.x - subwidget.size.x
 
         if alignment in (Alignment.CENTER_LEFT, Alignment.CENTER, Alignment.CENTER_RIGHT):
-            subwidget_offset.y += (self.size.y - self.subwidgets.size.y) / 2
+            subwidget_offset.y += (self.size.y - subwidget.size.y) / 2
 
         if alignment in (Alignment.BOTTOM_LEFT, Alignment.BOTTOM_CENTER, Alignment.BOTTOM_RIGHT):
-            subwidget_offset.y += self.size.y - self.subwidgets.size.y
+            subwidget_offset.y += self.size.y - subwidget.size.y
 
         return subwidget_offset
 
@@ -191,7 +193,8 @@ class Widget:
             GLWrapper.draw_texture(self.tex_id, *bottom_left, *size)
 
             for widget in self.subwidgets:
-                if not self.__subwidget_is_text[widget]:
+                if self.__subwidget_is_text[widget]:
+                    self.subwidgets[widget].update_size()
                     self.subwidgets[widget].draw(bottom_left + self.subwidget_pos(widget), size / self.size)
 
 

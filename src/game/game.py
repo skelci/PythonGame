@@ -55,6 +55,8 @@ class ClientGame(ClientGameBase):
 
         self.clock_1s += delta_time
 
+        print()
+
         if self.engine.network.id == -1:
             if self.clock_1s > 1:
                 self.clock_1s = 0

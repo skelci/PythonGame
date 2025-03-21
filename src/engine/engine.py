@@ -62,21 +62,22 @@ class Engine(ABC):
 class InfoText(Widget):
     def __init__(self, name, pos_y, pre_text_str):
         pre_text = Text("pre_text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf", text=pre_text_str)
-        stat_text = Text("after_text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf", static=False)
+        stat_text = Text("after_text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf")
         super().__init__(
             name,
             Vector(10, pos_y * 24 + 10),
             Vector(220, 24),
             Color(0, 0, 0, 100),
             0,
-            subwidgets={"pre_text": pre_text, "stat_text": stat_text},
-            subwidgets_offsets={"stat_text": Vector(0, 0), "pre_text": Vector(0, 0)},
-            subwidgets_alignments={"stat_text": Alignment.RIGHT, "pre_text": Alignment.LEFT},
+            True,
+            {"pre_text": pre_text, "stat_text": stat_text},
+            {"pre_text": Vector(2, 0), "stat_text": Vector(pre_text.size.x, 0)},
+            {"pre_text": Alignment.CENTER_LEFT, "stat_text": Alignment.CENTER_LEFT},
         )
 
 
     def set_value(self, value):
-        self.subwidgets["stat_text"].text = str(value)
+        self.subwidgets["stat_text"].text = f"{value:.1f}"
 
 
 
@@ -128,13 +129,13 @@ class ClientEngine(Engine, Renderer):
         }
 
         self.register_widget(InfoText("fps",            0, "fps: "))
-        self.register_widget(InfoText("events",         1, "events: ",        " ms"))
-        self.register_widget(InfoText("render_regs",    2, "render regs: ",   " ms"))
-        self.register_widget(InfoText("bg_render",      3, "bg render: ",     " ms"))
-        self.register_widget(InfoText("render",         4, "render: ",        " ms"))
-        self.register_widget(InfoText("actor_render",   5, "actor render: ",  " ms"))
-        self.register_widget(InfoText("widget_render",  6, "widget render: ", " ms"))
-        self.register_widget(InfoText("network",        7, "network: ",       " ms"))
+        self.register_widget(InfoText("events",         1, "events: "))
+        self.register_widget(InfoText("render_regs",    2, "render regs: "))
+        self.register_widget(InfoText("bg_render",      3, "bg render: "))
+        self.register_widget(InfoText("render",         4, "render: "))
+        self.register_widget(InfoText("actor_render",   5, "actor render: "))
+        self.register_widget(InfoText("widget_render",  6, "widget render: "))
+        self.register_widget(InfoText("network",        7, "network: "))
 
 
     @property

@@ -14,6 +14,8 @@ class QuadBatch:
         self.vertex_data = []
         self.count_quads = 0
 
+        # self.__create_vao_and_vbo()
+
 
     def add_quad(self, x, y, w, h, u0=0.0, v0=0.0, u1=1.0, v1=1.0):
         # bottom-left
@@ -32,7 +34,6 @@ class QuadBatch:
 
     def upload(self):
         arr = np.array(self.vertex_data, dtype=np.float32)
-
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
         glBufferData(GL_ARRAY_BUFFER, arr.nbytes, arr, GL_STATIC_DRAW)
 
@@ -59,25 +60,41 @@ class QuadBatch:
         glBufferSubData(GL_ARRAY_BUFFER, vertex_offset * 4, arr.nbytes, arr)
 
 
-    def draw_batch(self, texture_id):
-        glBindTexture(GL_TEXTURE_2D, texture_id)
+    def __create_vao_and_vbo(self):
+        # Create VAO for modern usage
+        self.vao_id = glGenVertexArrays(1)
+        glBindVertexArray(self.vao_id)
 
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
 
-        # Enable vertex + texcoord pointers
+        # Position attribute
+        glEnableVertexAttribArray(0)
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(0))
+
+        # Texcoord attribute
+        glEnableVertexAttribArray(1)
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(8))
+
+        glBindVertexArray(0)
+
+
+    def draw(self, texture_id):
+        glBindTexture(GL_TEXTURE_2D, texture_id)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
+        
         glEnableClientState(GL_VERTEX_ARRAY)
         glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-
-        # Interleave: 2 floats for position, then 2 for UVs => stride is 4 * sizeof(float)
+        
+        # Assuming each vertex has 4 floats (2 for position, 2 for texcoord),
+        # and data is tightly packed, the stride is 4 * sizeof(float) = 16 bytes.
         glVertexPointer(2, GL_FLOAT, 16, ctypes.c_void_p(0))
-        glTexCoordPointer(2, GL_FLOAT, 16, ctypes.c_void_p(8))  # offset by 2 floats
-
-        # Each quad has 4 vertices, so total vertices = count_quads * 4
+        glTexCoordPointer(2, GL_FLOAT, 16, ctypes.c_void_p(8))
+        
         glDrawArrays(GL_QUADS, 0, self.count_quads * 4)
-
+        
         glDisableClientState(GL_VERTEX_ARRAY)
         glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-
+        
         glBindBuffer(GL_ARRAY_BUFFER, 0)
 
 

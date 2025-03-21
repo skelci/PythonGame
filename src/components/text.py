@@ -6,26 +6,25 @@ from components.datatypes import *
 from engine.gl_wrapper import *
 
 import os
-import pygame
+import pygame, time
 
 
 
 class Text(Widget):
     __fonts = {}
 
-    def __init__(self, name, position, size, color, font, layer = 0, visible = False, text = "", static = True):
+    def __init__(self, name, position, size, color, font, layer = 0, visible = False, text = ""):
         super().__init__(name, position, size, color, layer, visible)
 
+        self.__text = ""
         self.text = text
         self.font = font
-        self.static = static
 
         self.__font_size = size.y
         self.__draw_batch = QuadBatch()
-        self.__updated = False
 
         self.__load_font()
-        self.__update_size()
+        self.update_size()
 
 
     @property
@@ -36,6 +35,8 @@ class Text(Widget):
     @text.setter
     def text(self, value):
         if isinstance(value, str):
+            if value != self.__text:
+                self.__updated = False
             self.__text = value
         else:
             raise TypeError("Text must be a string:", value)
@@ -52,19 +53,6 @@ class Text(Widget):
             self.__font = value
         else:
             raise TypeError("Font must be a string:", value)
-        
-
-    @property
-    def static(self):
-        return self.__static
-    
-
-    @static.setter
-    def static(self, value):
-        if isinstance(value, bool):
-            self.__static = value
-        else:
-            raise TypeError("static must be a boolean:", value)
     
 
     @property
@@ -74,10 +62,13 @@ class Text(Widget):
 
     def __load_font(self):
         if self.__font_code not in self.__fonts:
-            self.__fonts[self.__font_code] = self.__create_font_atlas(self.font, self.__font_size, self.color)
+            self.__fonts[self.__font_code] = self.__create_font_atlas()
 
 
-    def __create_font_atlas(self, font_path, size, color):
+    def __create_font_atlas(self):
+        font_path = self.font
+        size = self.__font_size
+        color = self.color
         glyphs = [chr(x) for x in range(32, 127)]
         font = pygame.font.Font(font_path, size)
         
@@ -105,7 +96,7 @@ class Text(Widget):
         return atlas_tex, glyph_data, atlas_surf.get_size()
     
 
-    def __update_size(self):
+    def update_size(self):
         width = 0
         for ch in self.text:
             if ch in self.__fonts[self.__font_code][1]:
@@ -114,10 +105,11 @@ class Text(Widget):
 
         self.size.x = width
 
-
     def __update_text(self, start_x, start_y, size_scale):
-        if self.static and self.__updated:
+        if self.__updated:
             return
+        
+        s = time.time()
         
         text = self.text
         glyph_data, atlas_size = *self.__fonts[self.__font_code][1:], 
@@ -140,14 +132,13 @@ class Text(Widget):
         self.__draw_batch.upload()
         self.__updated = True
 
+        return f"Text update time: {(time.time() - s) * 1000:.2f}ms"
+
 
     def draw(self, bottom_left, size):
-        self.__update_text(*bottom_left, size)
+        u = self.__update_text(*bottom_left, size)
+        s = time.time()
         self.__draw_batch.draw(self.__fonts[self.__font_code][0])
-
-
-    def __del__(self):
-        GLWrapper.delete_texture(self.__fonts[self.__font_code][0])
-        del self.__fonts[self.__font_code]
+        print(f"Draw time: {(time.time() - s) * 1000:.2f}ms; {u}")
 
 
