@@ -35,7 +35,7 @@ class Stone(Actor):
 
 class Coal(Actor):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(0, 0, 0)))
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/coal_ore.png"))
         self.position = position
 
 class Iron(Actor):
@@ -185,10 +185,12 @@ class ServerGame(ServerGameBase):
                 tile_type = None
                 if pos.y == 0:
                     tile_type = "grass"
-                elif pos.y < 0 and pos.y >= -4:
+                elif pos.y < 0 and pos.y >= -2:
                     tile_type = "dirt"
-                elif pos.y < -4:
+                elif pos.y < -2 and pos.y != -4:
                     tile_type = "stone"
+                elif pos.y == -4:
+                    tile_type = "coal"
                 if tile_type is not None:
                     chunk_data.append([(pos.x, pos.y), tile_type])
         return chunk_data
@@ -221,6 +223,8 @@ class ServerGame(ServerGameBase):
                     new_actor = Dirt(self.engine, actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "stone":
                     new_actor = Stone(self.engine, actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "coal":
+                    new_actor = Coal(self.engine, actor_name, Vector(pos[0], pos[1]))
 
                 if new_actor is not None and actor_name not in existing_names:
                     actors_to_add.append(new_actor)
