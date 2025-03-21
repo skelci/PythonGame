@@ -19,7 +19,7 @@ class Text(Widget):
         self.text = text
         self.font = font
 
-        self.surface(1)
+        self.surface # to update the size
 
 
     @property
@@ -51,13 +51,13 @@ class Text(Widget):
             raise TypeError("Font must be a string:", value)
         
 
-    def surface(self, ratio):
+    @property
+    def surface(self):
         if self._updated:
             return self.__surface
         
-        surface = self.__fonts[self.__font_code].render(self.text, True, self.color.tuple)
-        self.size.x = surface.get_width()
-        self.__surface = pygame.transform.scale(surface, (self.size * ratio).tuple)
+        self.__surface = self.__fonts[self.__font_code].render(self.text, True, self.color.tuple)
+        self.size.x = self.__surface.get_width()
         self._updated = True
 
         return self.__surface

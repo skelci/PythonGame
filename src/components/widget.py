@@ -101,7 +101,7 @@ class Widget:
 
     @property
     def subwidgets(self):
-        self._updated = False
+        self._subwidget_updated = False
         return self.__subwidget
     
 
@@ -115,7 +115,7 @@ class Widget:
 
     @property
     def subwidgets_offsets(self):
-        self._updated = False
+        self._subwidget_updated = False
         return self.__subwidget_offset
 
 
@@ -129,7 +129,7 @@ class Widget:
 
     @property
     def subwidgets_alignments(self):
-        self._updated = False
+        self._subwidget_updated = False
         return self.__subwidget_alignment
     
 
@@ -141,25 +141,30 @@ class Widget:
             raise TypeError("Subwidget alignment must be a dict of Aligments:", value)
 
 
-    def surface(self, ratio):
-        if self._updated:
-            return self.__surface
+    @property
+    def surface(self):
+        if self._updated and self._subwidget_updated:
+            return self.__combined_surface
         
-        surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
-        surface.fill(self.color.tuple)
+        if not self._updated:
+            surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
+            surface.fill(self.color.tuple)
+            self.__surface = surface
+            self._updated = True
 
+        self.__combined_surface = self.__surface.copy()
         if not self.subwidgets:
-            return surface
+            self._subwidget_updated = True
+            return self.__combined_surface
         
-        for widget in self.subwidgets.keys():
-            surface.blit(self.subwidgets[widget].surface(1), self.subwidget_pos(widget).tuple)
 
-        surface = pygame.transform.scale(surface, (self.size * ratio).tuple)
+        if not self._subwidget_updated:
+            for widget in self.subwidgets.keys():
+                self.__combined_surface.blit(self.subwidgets[widget].surface, self.subwidget_pos(widget).tuple)
 
-        self.__surface = surface
-        self._updated = True
+        self._subwidget_updated = True
 
-        return surface
+        return self.__combined_surface
     
 
     def subwidget_pos(self, widget):
