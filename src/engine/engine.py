@@ -58,16 +58,26 @@ class Engine(ABC):
 
 
 #?ifdef CLIENT
-class InfoText(Text):
-    def __init__(self, name, pos_y, pre_text, after_text = ""):
-        super().__init__(name, Vector(10, pos_y * 24 + 10), Vector(215, 24), 0, "res/fonts/arial.ttf", Color(0, 0, 0, 100), text_color=Color(0, 0, 255), font_size=20, text_alignment=Alignment.LEFT)
-
-        self.pre_text = pre_text
-        self.after_text = after_text
+class InfoText(Widget):
+    def __init__(self, name, pos_y, pre_text_str, after_text_str=""):
+        self.__pre_text_str = pre_text_str
+        self.__after_text_str = after_text_str
+        text = Text("text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf", text=pre_text_str)
+        super().__init__(
+            name,
+            Vector(10, pos_y * 24 + 10),
+            Vector(220, 24),
+            Color(0, 0, 0, 100),
+            0,
+            True,
+            {"text": text},
+            {"text": Vector(5, 0)},
+            {"text": Alignment.CENTER_LEFT}
+        )
 
 
     def set_value(self, value):
-        self.text = f" {self.pre_text}{value:.1f}{self.after_text}"
+        self.subwidgets["text"].text = f"{self.__pre_text_str}{value:.1f}{self.__after_text_str}"
 
 
 

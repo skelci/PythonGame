@@ -165,7 +165,7 @@ class Renderer:
             )
 
             surface = a.material.get_surface(a.half_size * camera_ratio * 2 * 1.02) # 1.02 is a magic number to prevent gaps between the textures
-            self.__draw_rectangle_texture(surface, top_left_position)
+            self.screen.blit(surface, top_left_position)
 
         time_actors = time.time()
 
@@ -185,24 +185,17 @@ class Renderer:
         self.screen.blit(bg_surface, (0, 0))
 
 
-    def __draw_rectangle_texture(self, surface, top_left_position):        
-        self.screen.blit(surface, top_left_position)
-
-
     def __draw_widget(self, widget):
         camera_ratio = Vector()
         camera_ratio.x = self.resolution.x / 1600
         camera_ratio.y = self.resolution.y / 900
-        top_left_position = Vector(
-            camera_ratio.x * widget.position.x,
-            camera_ratio.y * widget.position.y
-        )
+        top_left_position = camera_ratio * widget.position
 
         size = widget.size * camera_ratio.x
 
         widget.screen_rect = (top_left_position, top_left_position + size)
 
-        surface = pygame.transform.scale(widget.surface, size.tuple)
+        self.screen.blit(widget.surface(Vector(1, 1) * camera_ratio.x), top_left_position.tuple)
 
-        self.__draw_rectangle_texture(surface, top_left_position.tuple)
-        
+
+
