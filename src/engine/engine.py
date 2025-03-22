@@ -257,7 +257,7 @@ class ClientEngine(Engine, Renderer):
 
     def join_level(self, level_name):
         self.network.send("join_level", level_name)
-        self.network.send("update_distance", (self.camera_width // 16 + 1) // 2)
+        self.network.send("update_distance", (self.camera_width // 8 + 1) // 2)
 
 
     def tick(self):
@@ -591,6 +591,9 @@ class ServerEngine(Engine):
                             for actor_name, update in updates.items():
                                 sync_data, chunk_num = update
                                 if chunk_num == Vector(x, y):
+                                    # if len(sync_data) == 4: #* mybe add this later, if there is actualy bug without this
+                                    #     self.network.send(player_id, "register_actor", level.actors[actor_name].get_for_full_net_sync())
+                                    #     continue
                                     self.network.send(player_id, "update_actor", (actor_name, sync_data))
 
                         else:
@@ -599,6 +602,20 @@ class ServerEngine(Engine):
 
                 player.previous_chunk = c_chk
 
+        self.__time("level_updates")
+
+        self.__handle_network()
+
+        self.__time("network")
+
+        return delta_time
+    
+
+    def __on_player_connect(self, id):
+        self.__players[id] = Player()
+    
+
+    def __handle_network(self):
         for id in self.__players:
             if not self.__players[id].level:
                 continue
@@ -624,20 +641,6 @@ class ServerEngine(Engine):
             self.__players[id].released_keys.clear()
             self.__players[id].triggered_keys.clear()
 
-        self.__time("level_updates")
-
-        self.__handle_network()
-
-        self.__time("network")
-
-        return delta_time
-    
-
-    def __on_player_connect(self, id):
-        self.__players[id] = Player()
-    
-
-    def __handle_network(self):
         if not self.network:
             print("You forgot to call start_network")
             return

@@ -189,6 +189,16 @@ class Vector:
     
 
     @property
+    def max(self):
+        return max(self.x, self.y)
+    
+
+    @property
+    def min(self):
+        return min(self.x, self.y)
+    
+
+    @property
     def tuple(self):
         return (self.x, self.y)
     

@@ -22,5 +22,5 @@ def lerp(a, b, t):
 
 
 def get_chunk_cords(pos):
-        return pos // 16
+        return pos // 8
 
