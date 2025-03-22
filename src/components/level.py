@@ -148,6 +148,18 @@ class Level:
         
         self.__actors_to_destroy.clear()
         return destroyed
+    
+
+    def get_actors_in_chunks_3x3(self, chunk_pos):
+        actors = []
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                chunk_x, chunk_y = chunk_pos + Vector(x, y)
+                if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
+                    for actor_name in self.__chunks[chunk_x][chunk_y]:
+                        actors.append(self.actors[actor_name])
+
+        return actors
         
 
     def tick(self, delta_time):
@@ -176,8 +188,10 @@ class Level:
 
             for actor1 in self.actors.values():
                 if isinstance(actor1, Rigidbody) and actor1.simulate_physics:
-                    for actor2 in self.actors.values():
+                    for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                         if actor2 is not actor1 and actor2.collidable:
+                            if actor1.position.distance(actor2.position) > actor1.half_size.abs.max + actor2.half_size.abs.max:
+                                continue
                             direction = actor1.collision_response_direction(actor2)
                             if not direction == Vector(0, 0):
                                 collisions_not_resolved = True
@@ -207,7 +221,7 @@ class Level:
         collided_actors_directions = {}
         for actor1 in self.actors.values():
             if isinstance(actor1, Rigidbody):
-                for actor2 in self.actors.values():
+                for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                     if actor2 is not actor1:
                         actor1.half_size += kinda_small_number
                         direction = actor1.collision_response_direction(actor2)
@@ -231,7 +245,7 @@ class Level:
         for actor1 in self.actors.values():
             if actor1.generate_overlap_events:
                 actor1.half_size += kinda_small_number
-                for actor2 in self.actors.values():
+                for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                     if actor1 is not actor2:
                         if is_overlapping_rect(actor1, actor2):
                             if actor2.name not in overlaped_actors:

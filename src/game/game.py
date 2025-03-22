@@ -162,7 +162,7 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
 
-        self.engine.max_tps = 50
+        self.engine.max_tps = 90
 
         self.engine.start_network("0.0.0.0", 5555, 10)
 
