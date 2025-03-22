@@ -5,12 +5,6 @@ import math
 
 
 
-pi = math.pi
-gravity = -9.80665
-kinda_small_number = 0.001
-
-
-
 @dataclass
 class Vector:
     x: float = 0
@@ -19,9 +13,9 @@ class Vector:
 
     def __post_init__(self):
         if not isinstance(self.x, (int, float)):
-            raise TypeError(f"x must be an int or float, got {type(self.x).__name__}")
+            raise TypeError(f"x must be an int or float, got {self.x.__class__.__name__}")
         if not isinstance(self.y, (int, float)):
-            raise TypeError(f"y must be an int or float, got {type(self.y).__name__}")
+            raise TypeError(f"y must be an int or float, got {self.y.__class__.__name__}")
         
 
     def __iter__(self) -> Iterator[float]:
@@ -199,16 +193,21 @@ class Vector:
         return (self.x, self.y)
     
 
+    @property
+    def copy(self):
+        return Vector(*self)
+    
+
     def dot(self, other):
         if not isinstance(other, Vector):
-            raise TypeError(f"other must be a Vector, got {type(other).__name__}")
+            raise TypeError(f"other must be a Vector, got {other.__class__.__name__}")
         
         return self.x * other.x + self.y * other.y
     
 
     def squared_distance(self, other):
         if not isinstance(other, Vector):
-            raise TypeError(f"other must be a Vector, got {type(other).__name__}")
+            raise TypeError(f"other must be a Vector, got {other.__class__.__name__}")
         
         return (self.x - other.x) ** 2 + (self.y - other.y) ** 2
     
@@ -219,7 +218,7 @@ class Vector:
 
     def manhattan_distance(self, other):
         if not isinstance(other, Vector):
-            raise TypeError(f"other must be a Vector, got {type(other).__name__}")
+            raise TypeError(f"other must be a Vector, got {other.__class__.__name__}")
 
         return abs(self.x - other.x) + abs(self.y - other.y)
     
@@ -234,14 +233,14 @@ class Color:
 
 
     def __post_init__(self):
-        if not isinstance(self.r, int):
-            raise TypeError(f"r must be an int, got {type(self.r).__name__}")
-        if not isinstance(self.g, int):
-            raise TypeError(f"g must be an int, got {type(self.g).__name__}")
-        if not isinstance(self.b, int):
-            raise TypeError(f"b must be an int, got {type(self.b).__name__}")
-        if not isinstance(self.a, int):
-            raise TypeError(f"a must be an int, got {type(self.a).__name__}")
+        if not isinstance(self.r, (int, float)) and self.r < 0:
+            raise TypeError(f"r must be a positive float, got {self.r}")
+        if not isinstance(self.g, (int, float)) and self.g < 0:
+            raise TypeError(f"g must be a positive float, got {self.g}")
+        if not isinstance(self.b, (int, float)) and self.b < 0:
+            raise TypeError(f"b must be a positive float, got {self.b}")
+        if not isinstance(self.a, (int, float)) and self.a < 0:
+            raise TypeError(f"a must be a positive float, got {self.a}")
         
 
     def __iter__(self) -> Iterator[int]:
@@ -258,6 +257,21 @@ class Color:
     @property
     def tuple(self):
         return (self.r, self.g, self.b, self.a)
+    
+
+    @property
+    def copy(self):
+        return Color(*self)
+    
+
+    @property
+    def normalized(self):
+        return Color(
+            r=self.r / 255,
+            g=self.g / 255,
+            b=self.b / 255,
+            a=self.a / 255
+        )
 
 
 
@@ -272,9 +286,15 @@ class CollisionData:
 
 
 class Alignment(IntEnum):
-    LEFT = 0
-    CENTER = 1
-    RIGHT = 2
+    TOP_LEFT = 0
+    TOP_CENTER = 1
+    TOP_RIGHT = 2
+    CENTER_LEFT = 3
+    CENTER = 4
+    CENTER_RIGHT = 5
+    BOTTOM_LEFT = 6
+    BOTTOM_CENTER = 7
+    BOTTOM_RIGHT = 8
 
 
 
@@ -335,6 +355,7 @@ class Keys(IntEnum):
     X =                 120
     Y =                 121
     Z =                 122
+
     KEY_UP =            273
     KEY_DOWN =          274
     KEY_RIGHT =         275
@@ -351,7 +372,16 @@ class Keys(IntEnum):
     F10 =               291
     F11 =               292
     F12 =               293
-    SHIFT =             304
+    RIGHT_SHIFT =       303
+    LEFT_SHIFT =        304
     CTRL =              306
     ALT =               308
+
+
+
+pi = math.pi
+gravity = -9.80665
+kinda_small_number = 0.001
+
+
 
