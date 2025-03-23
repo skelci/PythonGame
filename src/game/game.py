@@ -297,13 +297,13 @@ class ServerGame(ServerGameBase):
             self.current_base_chunk = new_base_chunk
         else:
             smoothing_factor = 0.5 # Adjust this factor to control smoothness.
+            self.current_base_chunk += (new_base_chunk - self.current_base_chunk) * smoothing_factor
 
-        self.current_base_chunk += (new_base_chunk - self.current_base_chunk) * smoothing_factor
         base_chunk_vector = self.current_base_chunk.floored
         
         # Create a symmetric grid of chunks around the smoothed base chunk.
         chunks_to_load = []
-        for offset_y in range(-4, 5):
+        for offset_y in range(-3, 4):
             for offset_x in range(-4, 5):
                 chunks_to_load.append((base_chunk_vector.x + offset_x, base_chunk_vector.y + offset_y))
 
