@@ -189,19 +189,15 @@ class ServerGame(ServerGameBase):
 
     def generate_chunk(self, x, y):
         chunk_data = []
-        chunk_origin = Vector(x * CHUNK_SIZE, y * CHUNK_SIZE)
-
-        # You can adjust these factors to change tree distribution.
-        factor_x = 12.9898
-        factor_y = 78.233
-        tree_threshold = 0.105  # Lower value = fewer trees, higher = more trees
+        chunk_origin = Vector(x, y) * CHUNK_SIZE
+        tree_threshold = 0.1 # chance of a tree being generated on a grass tile
 
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
                 pos = chunk_origin + Vector(x_pos, y_pos)
                 # Noise-based height for a given x position.
-                height_noise = noise.pnoise1((x_pos + chunk_origin.x) * 0.09, repeat=999999, base=0)
-                height_val = math.floor(height_noise * 5)
+                height_noise = noise.pnoise1((x_pos + chunk_origin.x) * 0.035, repeat=9999999, base=0)
+                height_val = math.floor(height_noise * 10)
                 ground_level = 16 - height_val
                 tile_type = None
 
@@ -214,20 +210,20 @@ class ServerGame(ServerGameBase):
                             if trunk_pos.y >= chunk_origin.y:
                                 chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
 
-                elif pos.y < ground_level and pos.y > ground_level - 4:
+                if pos.y < ground_level and pos.y > ground_level - 5:
                     tile_type = "dirt"
-                if pos.y <= ground_level - 4:
+                if pos.y <= ground_level - 5:
                     tile_type = "stone"
                 if pos.y <= ground_level - 5:
-                    if r.random() < 0.125:
+                    if r.random() < 0.1:
                         tile_type = "coal" 
                 if pos.y <= ground_level - 10:
-                    if r.random() < 0.075:
+                    if r.random() < 0.07:
                         tile_type = "iron" 
                 if pos.y <= ground_level - 15:
-                    if r.random() < 0.05:
+                    if r.random() < 0.04:
                         tile_type = "gold"
-                        
+     
                 if tile_type is not None:
                     chunk_data.append([(pos.x, pos.y), tile_type])
 
@@ -244,12 +240,11 @@ class ServerGame(ServerGameBase):
         existing_names = set(level.actors.keys())
         target_chunk = f"{chunk_x};{chunk_y}"
                         
-        # Generate the chunk if needed.
+
         if target_chunk not in self.game_map:
             self.game_map[target_chunk] = self.generate_chunk(chunk_x, chunk_y)
 
-        
-        # Load new tiles only if this chunk hasn't been processed before.
+
         if target_chunk not in self.loaded_chunks:
             for tile in self.game_map[target_chunk]:
                 pos, tile_type = tile
