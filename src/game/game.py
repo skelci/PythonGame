@@ -12,6 +12,7 @@ from components.level import Level
 
 import random as r
 import math
+import noise
 
 
 CHUNK_SIZE = 16
