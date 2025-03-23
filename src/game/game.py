@@ -194,7 +194,7 @@ class ServerGame(ServerGameBase):
         # You can adjust these factors to change tree distribution.
         factor_x = 12.9898
         factor_y = 78.233
-        tree_threshold = 0.11  # Lower value = fewer trees, higher = more trees
+        tree_threshold = 0.105  # Lower value = fewer trees, higher = more trees
 
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
@@ -204,14 +204,16 @@ class ServerGame(ServerGameBase):
                 height_val = math.floor(height_noise * 5)
                 ground_level = 16 - height_val
                 tile_type = None
-                log_chance = abs(math.sin(pos.x * factor_x + pos.y * factor_y)) % 1.0
 
-                
-                if pos.y == ground_level + 1 and log_chance < tree_threshold:
-                    #tree_height = r.randint(4, 7)
-                    tile_type = "log"
-                elif pos.y == ground_level:
+                if pos.y == ground_level:
                     tile_type = "grass"
+                    if r.random() < tree_threshold:
+                        tree_height = r.randint(4, 7)
+                        for h in range(1, tree_height + 1):
+                            trunk_pos = pos + Vector(0, h)
+                            if trunk_pos.y >= chunk_origin.y:
+                                chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
+
                 elif pos.y < ground_level and pos.y > ground_level - 4:
                     tile_type = "dirt"
                 elif pos.y <= ground_level - 4:
