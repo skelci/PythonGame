@@ -173,12 +173,32 @@ class ServerGame(ServerGameBase):
 
         self.game_map = {}
         self.loaded_chunks = set()
-
+    @staticmethod
+    def ridged_multifractal(x, y, octaves=4, lacunarity=2.0, gain=0.5, offset=1.0):
+        frequency = 1.0
+        amplitude = 0.5
+        weight = 1.0
+        result = 0.0
+        for i in range(octaves):
+            n = noise.snoise2(x * frequency, y * frequency)  # noise in [-1,1]
+            n = abs(n)           # ridging: absolute value
+            n = offset - n       # invert so ridges show up
+            n = n * n            # square to accentuate
+            n *= weight
+            result += n * amplitude
+            weight = n * gain
+            weight = max(min(weight, 1.0), 0.0)  # clamp weight [0,1]
+            frequency *= lacunarity
+            amplitude *= gain
+        return result
 
     def generate_chunk(self, x, y):
         chunk_data = []
         chunk_origin = Vector(x, y) * CHUNK_SIZE
         tree_threshold = 0.1 # chance of a tree being generated on a grass tile
+        cave_scale_x = 0.02 #horizontal
+        cave_scale_y = 0.02 #vertical
+        cave_threshold = 0.5  # Higher values yield fewer caves
 
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
@@ -187,8 +207,18 @@ class ServerGame(ServerGameBase):
                 height_noise = noise.pnoise1((x_pos + chunk_origin.x) * 0.035, repeat=9999999, base=0)
                 height_val = math.floor(height_noise * 10)
                 ground_level = 16 - height_val
-                tile_type = None
 
+
+                # Use ridged multifractal noise to generate cave patterns.
+                cave_val = self.ridged_multifractal(
+                (x_pos + chunk_origin.x) * cave_scale_x,
+                (y_pos + chunk_origin.y) * cave_scale_y,
+                octaves=4, lacunarity=2.0, gain=0.5, offset=1.0
+                )
+
+                if cave_val > cave_threshold:
+                    continue
+                tile_type = None
                 if pos.y == ground_level:
                     tile_type = "grass"
                     if r.random() < tree_threshold:
@@ -202,14 +232,14 @@ class ServerGame(ServerGameBase):
                     tile_type = "dirt"
                 if pos.y <= ground_level - 5:
                     tile_type = "stone"
-                if pos.y <= ground_level - 5:
-                    if r.random() < 0.1:
-                        tile_type = "coal" 
                 if pos.y <= ground_level - 10:
-                    if r.random() < 0.07:
+                    if r.random() < 0.02:
+                        tile_type = "coal" 
+                if pos.y <= ground_level - 20:
+                    if r.random() < 0.01:
                         tile_type = "iron" 
-                if pos.y <= ground_level - 15:
-                    if r.random() < 0.04:
+                if pos.y <= ground_level - 35:
+                    if r.random() < 0.005:
                         tile_type = "gold"
      
                 if tile_type is not None:
