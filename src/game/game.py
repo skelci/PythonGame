@@ -20,6 +20,11 @@ CAMERA_OFFSET_X = 1
 CAMERA_OFFSET_Y = 1
 
 
+class Log(Actor):
+    def __init__(self, engine_ref, name, position):
+        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material(Color(139, 69, 19)))
+        self.position = position
+
 class Grass(Actor):
     def __init__(self, engine_ref, name, position):
         super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass_block.png"))
@@ -52,7 +57,7 @@ class Gold(Actor):
 
 class TestPlayer(Character):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position=Vector(0, 3), material = Material(Color(0, 0, 255)))
+        super().__init__(engine_ref, name, position=Vector(0, 22), material = Material(Color(0, 0, 255)))
 
 
 
@@ -75,19 +80,23 @@ class ClientGame(ClientGameBase):
 
         self.current_level = None
 
-        eng.show_all_stats()
+        #eng.show_all_stats()
+        eng.hide_all_stats()
 
         eng.add_actor_template(TestPlayer)
+        eng.add_actor_template(Log)
         eng.add_actor_template(Grass)
         eng.add_actor_template(Dirt)
         eng.add_actor_template(Stone)
         eng.add_actor_template(Coal)
         eng.add_actor_template(Iron)
         eng.add_actor_template(Gold)
+    
 
         eng.register_background(Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, 0.25), )))
 
         self.engine.add_actor_template(TestPlayer)
+        self.engine.add_actor_template(Log)
         self.engine.add_actor_template(Grass)
         self.engine.add_actor_template(Dirt)
         self.engine.add_actor_template(Stone)
@@ -177,29 +186,49 @@ class ServerGame(ServerGameBase):
         self.game_map = {}
         self.loaded_chunks = set()
 
+
     def generate_chunk(self, x, y):
         chunk_data = []
         chunk_origin = Vector(x * CHUNK_SIZE, y * CHUNK_SIZE)
+
+        # You can adjust these factors to change tree distribution.
+        factor_x = 12.9898
+        factor_y = 78.233
+        tree_threshold = 0.11  # Lower value = fewer trees, higher = more trees
+
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
                 pos = chunk_origin + Vector(x_pos, y_pos)
+                # Noise-based height for a given x position.
+                height_noise = noise.pnoise1((x_pos + chunk_origin.x) * 0.1, repeat=999999, base=0)
+                height_val = math.floor(height_noise * 5)
+                ground_level = 16 - height_val
                 tile_type = None
-                if pos.y == 0:
+                log_chance = abs(math.sin(pos.x * factor_x + pos.y * factor_y)) % 1.0
+
+                
+                if pos.y == ground_level + 1 and log_chance < tree_threshold:
+                    #tree_height = r.randint(4, 7)
+                    tile_type = "log"
+                elif pos.y == ground_level:
                     tile_type = "grass"
-                elif pos.y < 0 and pos.y >= -2:
+                elif pos.y < ground_level and pos.y > ground_level - 4:
                     tile_type = "dirt"
-                elif pos.y < -2 and pos.y != -4 and pos.y != -5 and pos.y != -6:
+                elif pos.y <= ground_level - 4:
                     tile_type = "stone"
-                elif pos.y == -4:
-                    tile_type = "coal"
-                elif pos.y == -5:    
-                    tile_type = "gold"
-                elif pos.y == -6:
-                    tile_type = "iron"
+                elif pos.y <= ground_level - 12:
+                    tile_type = "coal" if r.random() < 0.2 else "stone"
+                elif pos.y <= ground_level - 20:
+                    tile_type = "iron" if r.random() < 0.1 else "stone"
+                elif pos.y <= ground_level - 35:
+                    tile_type = "gold" if r.random() < 0.07 else "stone"
+                        
                 if tile_type is not None:
                     chunk_data.append([(pos.x, pos.y), tile_type])
+
         return chunk_data
     
+
 
     def generate_and_load_chunks(self, chunk_x, chunk_y):
         level = self.engine.levels.get("Test_Level")
@@ -224,6 +253,8 @@ class ServerGame(ServerGameBase):
 
                 if tile_type == "grass":
                     new_actor = Grass(self.engine, actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "log":
+                    new_actor = Log(self.engine, actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "dirt":
                     new_actor = Dirt(self.engine, actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "stone":
@@ -234,6 +265,7 @@ class ServerGame(ServerGameBase):
                     new_actor = Gold(self.engine, actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "iron":
                     new_actor = Iron(self.engine, actor_name, Vector(pos[0], pos[1]))
+                
 
                 if new_actor is not None and actor_name not in existing_names:
                     actors_to_add.append(new_actor)
