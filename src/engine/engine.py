@@ -85,6 +85,8 @@ class ClientEngine(Engine, Renderer):
         Engine.__init__(self)
         Renderer.__init__(self, 1600, 900, 10, "Game", False, True, Vector())
 
+        self.__update_distance = (math.ceil(self.camera_width + 1) // 8 + 1) // 2
+
         self.fps = 120
         self.tps = 20
 
@@ -244,11 +246,6 @@ class ClientEngine(Engine, Renderer):
             self.__network_commands[cmd] = func
         else:
             raise TypeError("Command must be a string and function must be a function:", cmd, func)
-
-
-    def destroy_actor(self, actor_name):
-        if actor_name in self.actors:
-            self.__actors_to_destroy.add(actor_name)
     
 
     def connect(self, address, port):
@@ -257,7 +254,14 @@ class ClientEngine(Engine, Renderer):
 
     def join_level(self, level_name):
         self.network.send("join_level", level_name)
-        self.network.send("update_distance", (math.ceil(self.camera_width + 1) // 8 + 1) // 2)
+        self.network.send("update_distance", self.__update_distance)
+
+
+    def set_camera_width(self, width):
+        self.camera_width = width
+        self.__update_distance = (math.ceil(self.camera_width + 1) // 8 + 1) // 2
+        if self.network:
+            self.network.send("update_distance", self.__update_distance)
 
 
     def tick(self):
@@ -278,7 +282,7 @@ class ClientEngine(Engine, Renderer):
             pygame.quit()
             return delta_time
 
-        for actor in self.__level.actors.values():
+        for actor in self.level.actors.values():
             if actor.visible and actor.material:
                 self.add_actor_to_draw(actor)
 
@@ -287,6 +291,16 @@ class ClientEngine(Engine, Renderer):
                 self.add_widget_to_draw(widget)
                 if isinstance(widget, Button):
                     widget.tick(self.pressed_keys, Keys.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
+
+        if self.get_player_actor(self.network.id) in self.level.actors:
+            player_actor = self.level.actors[self.get_player_actor(self.network.id)]
+            player_chunk = get_chunk_cords(player_actor.position)
+
+            for actor in self.level.actors.values():
+                bl_chk_pos = player_chunk - self.__update_distance - 2
+                tr_chk_pos = player_chunk + self.__update_distance + 1
+                if not is_in_rect(bl_chk_pos, tr_chk_pos, get_chunk_cords(actor.position)):
+                    self.level.destroy_actor(actor)
 
         self.__time("render_regs")
 
@@ -311,6 +325,7 @@ class ClientEngine(Engine, Renderer):
 
         self.__handle_network()
         self.level.get_new_actors()
+        self.level.get_destroyed()
 
         self.__time("network")
 
@@ -609,7 +624,7 @@ class ServerEngine(Engine):
                 bl_chk_pos = Vector(
                     min((get_chunk_cords(player.position).x - player.update_distance), pd_chk.x - player.update_distance),
                     min((get_chunk_cords(player.position).y - player.update_distance), pd_chk.y - player.update_distance)
-                ).rounded
+                ).rounded - 1
                 tr_chk_pos = Vector(
                     max((get_chunk_cords(player.position).x + player.update_distance), pd_chk.x + player.update_distance),
                     max((get_chunk_cords(player.position).y + player.update_distance), pd_chk.y + player.update_distance)

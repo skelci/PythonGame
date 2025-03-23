@@ -72,7 +72,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.camera_width = 48
+        eng.set_camera_width(48)
 
         eng.connect("localhost", 5555)
 
