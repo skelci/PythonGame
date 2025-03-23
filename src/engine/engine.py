@@ -257,7 +257,7 @@ class ClientEngine(Engine, Renderer):
 
     def join_level(self, level_name):
         self.network.send("join_level", level_name)
-        self.network.send("update_distance", (self.camera_width // 8 + 1) // 2)
+        self.network.send("update_distance", (math.ceil(self.camera_width + 1) // 8 + 1) // 2)
 
 
     def tick(self):
@@ -310,6 +310,7 @@ class ClientEngine(Engine, Renderer):
         self.__stats["widget_render"].pop(0)
 
         self.__handle_network()
+        self.level.get_new_actors()
 
         self.__time("network")
 
@@ -411,8 +412,10 @@ class ClientEngine(Engine, Renderer):
 #?ifdef SERVER
 class Player:
     def __init__(self):
-        self.level = None
-        self.previous_chunk = None
+        self.level = ""
+        self.previous_chunk = Vector()
+        self.previous_different_chunk = Vector()
+        self.synced_chuks = set()
         self.world_mouse_pos = Vector()
         self.update_distance = 0
         self.position = Vector()
@@ -537,6 +540,33 @@ class ServerEngine(Engine):
     def get_stat(self, stat_name):
         return f"{sum(self.__stats[stat_name]) / len(self.__stats[stat_name]) * 1000:.2f}" + (" ms" if not stat_name == "tps" else "")
     
+    
+    @staticmethod
+    def package_as_chunks(actors):
+        chunks = {}
+        for actor in actors:
+            chunk = get_chunk_cords(actor.position)
+            if chunk.x not in chunks:
+                chunks[chunk.x] = {}
+            if chunk.y not in chunks[chunk.x]:
+                chunks[chunk.x][chunk.y] = []
+            chunks[chunk.x][chunk.y].append(actor)
+        return chunks
+    
+
+    @staticmethod
+    def get_actors_from_chk_pkg(chk_pkd, bottom_left, top_right, add_method=lambda a, el: a.extend(el)):
+        actors = []
+        for x in range(bottom_left.x, top_right.x + 1):
+            if x not in chk_pkd:
+                continue
+            for y in range(bottom_left.y, top_right.y + 1):
+                if y not in chk_pkd[x]:
+                    continue
+                add_method(actors, chk_pkd[x][y])
+
+        return actors
+
 
     def tick(self):
         delta_time = self.__clock.tick()
@@ -555,52 +585,121 @@ class ServerEngine(Engine):
         self.__time("console_cmds")
 
         for level in self.levels.values():
-            for player_id, player in self.__players.items():
-                if player.level == level.name:
-                    self.__players[player_id].position = level.actors[self.get_player_actor(player_id)].position
-
+            new_actors = level.get_new_actors()
             destroyed_actors = level.get_destroyed()
+            updates_pkg = level.get_updates((player for player in self.__players.values() if player.level == level.name))
 
-            if destroyed_actors:
-                for player_id, player in self.__players.items():
-                    if player.level == level.name:
-                        for actor_name in destroyed_actors:
-                            self.network.send(player_id, "destroy_actor", actor_name)
+            new_actors_pkg = self.package_as_chunks(new_actors)
+            destroyed_actors_pkg = self.package_as_chunks(destroyed_actors)
 
             level.tick(delta_time)
-
-            updates = level.get_updates((player for player in self.__players.values() if player.level == level.name))
-            if not updates:
-                continue
 
             for player_id, player in self.__players.items():
                 if player.level != level.name:
                     continue
 
-                p_chk = player.previous_chunk
+                player.position = level.actors[self.get_player_actor(player_id)].position
                 c_chk = get_chunk_cords(player.position)
+                p_chk = player.previous_chunk.copy
+                pd_chk = player.previous_different_chunk.copy
+                if p_chk != c_chk:
+                    player.previously_loaded_chunk = p_chk
+                player.previous_chunk = c_chk
                 
+                bl_chk_pos = Vector(
+                    min((get_chunk_cords(player.position).x - player.update_distance), pd_chk.x - player.update_distance),
+                    min((get_chunk_cords(player.position).y - player.update_distance), pd_chk.y - player.update_distance)
+                ).rounded
+                tr_chk_pos = Vector(
+                    max((get_chunk_cords(player.position).x + player.update_distance), pd_chk.x + player.update_distance),
+                    max((get_chunk_cords(player.position).y + player.update_distance), pd_chk.y + player.update_distance)
+                ).rounded
+
+                for actor in self.get_actors_from_chk_pkg(new_actors_pkg, bl_chk_pos, tr_chk_pos):
+                    self.network.send(player_id, "register_actor", actor.get_for_full_net_sync())
+
+                for actor in self.get_actors_from_chk_pkg(destroyed_actors_pkg, bl_chk_pos, tr_chk_pos):
+                    self.network.send(player_id, "destroy_actor", actor.name)
+
+                for actor_dict in self.get_actors_from_chk_pkg(updates_pkg, bl_chk_pos, tr_chk_pos, lambda a, el: a.append(el)):
+                    for actor_name, sync_data in actor_dict.items():
+                        self.network.send(player_id, "update_actor", (actor_name, sync_data))
+
+                prev_synced_chunks = player.synced_chuks.copy()
+                player.synced_chuks.clear()
                 for x in range(c_chk.rounded.x - player.update_distance, c_chk.rounded.x + player.update_distance + 1):
-                    if x not in level.chunks:
-                        continue
                     for y in range(c_chk.rounded.y - player.update_distance, c_chk.rounded.y + player.update_distance + 1):
+                        player.synced_chuks.add(Vector(x, y))
+
+                        if x not in level.chunks:
+                            continue
                         if y not in level.chunks[x]:
                             continue
 
-                        if max(p_chk.x, c_chk.x) - player.update_distance <= x <= min(p_chk.x, c_chk.x) + player.update_distance and max(p_chk.y, c_chk.y) - player.update_distance <= y <= min(p_chk.y, c_chk.y) + player.update_distance: #TODO fix if player distance changes
-                            for actor_name, update in updates.items():
-                                sync_data, chunk_num = update
-                                if chunk_num == Vector(x, y):
-                                    # if len(sync_data) == 4: #* mybe add this later, if there is actualy bug without this
-                                    #     self.network.send(player_id, "register_actor", level.actors[actor_name].get_for_full_net_sync())
-                                    #     continue
-                                    self.network.send(player_id, "update_actor", (actor_name, sync_data))
+                        # if max(p_chk.x, c_chk.x) - player.update_distance <= x <= min(p_chk.x, c_chk.x) + player.update_distance and max(p_chk.y, c_chk.y) - player.update_distance <= y <= min(p_chk.y, c_chk.y) + player.update_distance: #TODO fix if player distance changes
+                        #     pass
 
-                        else:
-                            for actor in level.chunks[x][y]:
-                                self.network.send(player_id, "register_actor", level.actors[actor].get_for_full_net_sync())
+                        if Vector(x, y) in prev_synced_chunks:
+                            continue
+                        for actor in level.chunks[x][y]:
+                            self.network.send(player_id, "register_actor", level.actors[actor].get_for_full_net_sync())
 
-                player.previous_chunk = c_chk
+            # new_actors = level.get_new_actors()
+            # if new_actors:
+            #     for player_id, player in self.__players.items():
+            #         if player.level == level.name:
+            #             for actor_name, actor in new_actors.items():
+            #                 if is_player_loading_pos(player, actor.position):
+            #                     self.network.send(player_id, "register_actor", actor.get_for_full_net_sync())
+
+            # for player_id, player in self.__players.items():
+            #     if player.level == level.name:
+            #         self.__players[player_id].position = level.actors[self.get_player_actor(player_id)].position
+
+            # destroyed_actors = level.get_destroyed()
+            # if destroyed_actors:
+            #     for player_id, player in self.__players.items():
+            #         if player.level == level.name:
+            #             for actor_name in destroyed_actors:
+            #                 self.network.send(player_id, "destroy_actor", actor_name)
+
+            # level.tick(delta_time)
+
+            # updates = level.get_updates((player for player in self.__players.values() if player.level == level.name))
+            # if not updates:
+            #     continue
+
+            # for player_id, player in self.__players.items():
+            #     if player.level != level.name:
+            #         continue
+
+            #     p_chk = player.previous_chunk
+            #     c_chk = get_chunk_cords(player.position)
+                
+            #     for x in range(c_chk.rounded.x - player.update_distance, c_chk.rounded.x + player.update_distance + 1):
+            #         if x not in level.chunks:
+            #             continue
+            #         for y in range(c_chk.rounded.y - player.update_distance, c_chk.rounded.y + player.update_distance + 1):
+            #             if y not in level.chunks[x]:
+            #                 continue
+
+            #             if max(p_chk.x, c_chk.x) - player.update_distance <= x <= min(p_chk.x, c_chk.x) + player.update_distance and max(p_chk.y, c_chk.y) - player.update_distance <= y <= min(p_chk.y, c_chk.y) + player.update_distance: #TODO fix if player distance changes
+            #                 for actor_name, update in updates.items():
+            #                     sync_data, chunk_num = update
+            #                     if chunk_num == Vector(x, y):
+            #                         # if len(sync_data) == 4: #* mybe add this later, if there is actualy bug without this
+            #                         #     self.network.send(player_id, "register_actor", level.actors[actor_name].get_for_full_net_sync())
+            #                         #     continue
+            #                         self.network.send(player_id, "update_actor", (actor_name, sync_data))
+
+            #             else:
+            #                 for actor in level.chunks[x][y]:
+            #                     self.network.send(player_id, "register_actor", level.actors[actor].get_for_full_net_sync())
+
+            #     if p_chk != c_chk:
+            #         player.previously_loaded_chunk = p_chk
+            #     player.previous_chunk = c_chk
+
 
         self.__time("level_updates")
 
@@ -673,16 +772,8 @@ class ServerEngine(Engine):
         self.__time_now = time_after
 
 
-    def __full_player_sync(self, id):
-        player = self.__players[id]
-        level = self.levels[player.level]
-        player_chunk = get_chunk_cords(player.position)
-        for x in range(player_chunk.rounded.x - player.update_distance, player_chunk.rounded.x + player.update_distance + 1):
-            for y in range(player_chunk.rounded.y - player.update_distance, player_chunk.rounded.y + player.update_distance + 1):
-                if x in level.chunks and y in level.chunks[x]:
-                    for actor in level.chunks[x][y]:
-                        self.network.send(id, "register_actor", level.actors[actor].get_for_full_net_sync())
-
+    def on_connect(self, id):
+        level = self.levels[self.players[id].level]
         self.network.send(id, "background", level.background)
 
 
@@ -690,9 +781,11 @@ class ServerEngine(Engine):
         level_name = data
         if level_name in self.levels:
             self.__players[id].level = level_name
-            self.levels[level_name].register_actor(self.levels[level_name].default_character(self, self.get_player_actor(id), Vector())) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
-            self.__players[id].previous_chunk = get_chunk_cords(self.levels[level_name].actors[self.get_player_actor(id)].position)
-            self.__full_player_sync(id)
+            player_actor = self.levels[level_name].default_character(self, self.get_player_actor(id), Vector()) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
+            self.levels[level_name].register_actor(player_actor)
+            self.__players[id].previous_chunk = get_chunk_cords(player_actor.position)
+            self.__players[id].previous_different_chunk = self.__players[id].previous_chunk
+            self.on_connect(id)
         else:
             print(f"Level {level_name} not found")
 
@@ -703,7 +796,6 @@ class ServerEngine(Engine):
 
     def __update_distance(self, id, data):
         self.__players[id].update_distance = data
-        self.__full_player_sync(id)
 
 
     def __key_down(self, id, data):
@@ -712,7 +804,8 @@ class ServerEngine(Engine):
 
 
     def __key_up(self, id, data):
-        self.__players[id].pressed_keys.remove(data)
+        if data in self.__players[id].pressed_keys:
+            self.__players[id].pressed_keys.remove(data)
         self.__players[id].released_keys.add(data)
 
 #?endif
