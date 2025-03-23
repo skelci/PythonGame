@@ -1,8 +1,14 @@
+from components.datatypes import Vector
 
 
 
 def is_in_screen_rect(top_left, bottom_right, point):
     return top_left.x < point.x < bottom_right.x and top_left.y < point.y < bottom_right.y
+
+
+
+def is_in_rect(bottom_left, top_right, point):
+    return bottom_left.x < point.x < top_right.x and bottom_left.y < point.y < top_right.y
 
 
 
