@@ -95,18 +95,6 @@ class ClientGame(ClientGameBase):
 
         eng.register_background(Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, 0.25), )))
 
-        self.engine.add_actor_template(TestPlayer)
-        self.engine.add_actor_template(Log)
-        self.engine.add_actor_template(Grass)
-        self.engine.add_actor_template(Dirt)
-        self.engine.add_actor_template(Stone)
-        self.engine.add_actor_template(Coal)
-        self.engine.add_actor_template(Iron)
-        self.engine.add_actor_template(Gold)
-
-
-
-
     def tick(self):
         delta_time = super().tick()
 
@@ -309,16 +297,10 @@ class ServerGame(ServerGameBase):
             self.current_base_chunk = new_base_chunk
         else:
             smoothing_factor = 0.5 # Adjust this factor to control smoothness.
-            self.current_base_chunk = Vector(
-                self.current_base_chunk.x + (new_base_chunk.x - self.current_base_chunk.x) * smoothing_factor,
-                self.current_base_chunk.y + (new_base_chunk.y - self.current_base_chunk.y) * smoothing_factor
-            )
 
-        base_chunk_vector = Vector(
-            math.floor(self.current_base_chunk.x),
-            math.floor(self.current_base_chunk.y)
-        )
-
+        self.current_base_chunk += (new_base_chunk - self.current_base_chunk) * smoothing_factor
+        base_chunk_vector = self.current_base_chunk.floored
+        
         # Create a symmetric grid of chunks around the smoothed base chunk.
         chunks_to_load = []
         for offset_y in range(-4, 5):
