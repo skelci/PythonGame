@@ -15,7 +15,7 @@ import math
 import noise
 
 
-CHUNK_SIZE = 16
+CHUNK_SIZE = 8
 CAMERA_OFFSET_X = 1
 CAMERA_OFFSET_Y = 1
 
@@ -57,7 +57,7 @@ class Gold(Actor):
 
 class TestPlayer(Character):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position=Vector(0, 22), material = Material(Color(0, 0, 255)))
+        super().__init__(engine_ref, name, position=Vector(-1, 22), material = Material(Color(0, 0, 255)))
 
 
 
@@ -80,8 +80,8 @@ class ClientGame(ClientGameBase):
 
         self.current_level = None
 
-        #eng.show_all_stats()
-        eng.hide_all_stats()
+        eng.show_all_stats()
+        #eng.hide_all_stats()
 
         eng.add_actor_template(TestPlayer)
         eng.add_actor_template(Log)
@@ -200,7 +200,7 @@ class ServerGame(ServerGameBase):
             for x_pos in range(CHUNK_SIZE):
                 pos = chunk_origin + Vector(x_pos, y_pos)
                 # Noise-based height for a given x position.
-                height_noise = noise.pnoise1((x_pos + chunk_origin.x) * 0.1, repeat=999999, base=0)
+                height_noise = noise.pnoise1((x_pos + chunk_origin.x) * 0.09, repeat=999999, base=0)
                 height_val = math.floor(height_noise * 5)
                 ground_level = 16 - height_val
                 tile_type = None
@@ -216,14 +216,17 @@ class ServerGame(ServerGameBase):
 
                 elif pos.y < ground_level and pos.y > ground_level - 4:
                     tile_type = "dirt"
-                elif pos.y <= ground_level - 4:
+                if pos.y <= ground_level - 4:
                     tile_type = "stone"
-                elif pos.y <= ground_level - 12:
-                    tile_type = "coal" if r.random() < 0.2 else "stone"
-                elif pos.y <= ground_level - 20:
-                    tile_type = "iron" if r.random() < 0.1 else "stone"
-                elif pos.y <= ground_level - 35:
-                    tile_type = "gold" if r.random() < 0.07 else "stone"
+                if pos.y <= ground_level - 5:
+                    if r.random() < 0.125:
+                        tile_type = "coal" 
+                if pos.y <= ground_level - 10:
+                    if r.random() < 0.075:
+                        tile_type = "iron" 
+                if pos.y <= ground_level - 15:
+                    if r.random() < 0.05:
+                        tile_type = "gold"
                         
                 if tile_type is not None:
                     chunk_data.append([(pos.x, pos.y), tile_type])
@@ -323,8 +326,8 @@ class ServerGame(ServerGameBase):
 
         # Create a symmetric grid of chunks around the smoothed base chunk.
         chunks_to_load = []
-        for offset_y in range(-2, 3):
-            for offset_x in range(-2, 3):
+        for offset_y in range(-4, 5):
+            for offset_x in range(-4, 5):
                 chunks_to_load.append((base_chunk_vector.x + offset_x, base_chunk_vector.y + offset_y))
 
         for base_chunk_x, base_chunk_y in chunks_to_load:
