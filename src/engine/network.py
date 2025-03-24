@@ -57,13 +57,9 @@ class Network(ABC):
     @staticmethod
     def _parse_data(data):
         try:
-            decoded = data.decode("ascii").strip(chr(23))
-            parts = decoded.split(chr(23))
-            results = []
-            for p in parts:
-                results.append(eval(p))
-                
-            return results
+            decoded = data.decode("ascii")
+            result = eval(decoded)
+            return result
         except Exception as e:
             print(f"Error parsing data {data}: {e}")
             return ("", "")
@@ -73,7 +69,7 @@ class Network(ABC):
     def _parse_for_send(cmd, data):
         if isinstance(data, str):
             data = f"'{data}'"
-        return f"('{cmd}',{data}){chr(23)}".encode("ascii")
+        return f"('{cmd}',{data})".encode("ascii")
     
 
     @abstractmethod
@@ -136,14 +132,13 @@ class ClientNetwork(Network):
                 break
 
             parsed_data = self._parse_data(data)
-            for d in parsed_data:
-                if self.id == -1:
-                    cmd, id = d
-                    if cmd == "register_outcome":
-                        self.__id = id
-                        continue
+            if self.id == -1:
+                cmd, id = parsed_data
+                if cmd == "register_outcome":
+                    self.__id = id
+                    continue
 
-                self._input_queue.put(d)
+            self._input_queue.put(parsed_data)
 
         self.__id = -1
         self.socket.close()
@@ -256,11 +251,10 @@ class ServerNetwork(Network):
             parsed_data = self._parse_data(login_data)
             logged_in = False
 
-            for d in parsed_data:
-                result = self.__handle_login(d, conn)
-                if result:
-                    logged_in = True
-                    break
+            result = self.__handle_login(parsed_data, conn)
+            if result != -1:
+                logged_in = True
+                break
 
             if logged_in:
                 break
@@ -277,8 +271,7 @@ class ServerNetwork(Network):
                 break
 
             parsed_data = self._parse_data(data)
-            for d in parsed_data:
-                self._input_queue.put((self.__conn_to_id[conn], d))
+            self._input_queue.put((self.__conn_to_id[conn], parsed_data))
 
         self.__id_to_conn.pop(self.__conn_to_id[conn])
         self.__conn_to_id.pop(conn)

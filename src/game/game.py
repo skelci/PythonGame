@@ -57,7 +57,7 @@ class Gold(Actor):
 
 class TestPlayer(Character):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position=Vector(-1, 22), material = Material(Color(0, 0, 255)))
+        super().__init__(engine_ref, name, position=Vector(-1, 22), material = Material(Color(0, 0, 255)), jump_velocity=7)
 
 
 
