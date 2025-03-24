@@ -57,7 +57,7 @@ class Gold(Actor):
 
 class TestPlayer(Character):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position=Vector(-1, 22), material = Material(Color(0, 0, 255)), jump_velocity=7)
+        super().__init__(engine_ref, name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7)
 
 
 
@@ -174,6 +174,8 @@ class ServerGame(ServerGameBase):
 
         self.game_map = {}
         self.loaded_chunks = set()
+
+
     @staticmethod
     def ridged_multifractal(x, y, octaves=4, lacunarity=2.0, gain=0.5, offset=1.0):
         frequency = 1.0
@@ -196,10 +198,11 @@ class ServerGame(ServerGameBase):
     def generate_chunk(self, x, y):
         chunk_data = []
         chunk_origin = Vector(x, y) * CHUNK_SIZE
-        tree_threshold = 0.1 # chance of a tree being generated on a grass tile
-        cave_scale_x = 0.02 #horizontal
-        cave_scale_y = 0.02 #vertical
-        cave_threshold = 0.5  # Higher values yield fewer caves
+        tree_threshold = 0.1  # chance of a tree being generated on a grass tile
+        cave_scale_x = 0.035  # Slightly larger spread horizontally
+        cave_scale_y = 0.03   # Vertical spread for caves (smaller)
+        cave_threshold_surface = 0.45  # Higher threshold to prevent big openings at surface
+        cave_threshold_deep = 0.3  # Higher threshold, fewer caves
 
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
@@ -209,16 +212,25 @@ class ServerGame(ServerGameBase):
                 height_val = math.floor(height_noise * 10)
                 ground_level = 16 - height_val
 
-
-                # Use ridged multifractal noise to generate cave patterns.
+                # Use ridged multifractal noise to generate cave patterns (narrower caves)
                 cave_val = self.ridged_multifractal(
-                (x_pos + chunk_origin.x) * cave_scale_x,
-                (y_pos + chunk_origin.y) * cave_scale_y,
-                octaves=4, lacunarity=2.0, gain=0.5, offset=1.0
+                    (x_pos + chunk_origin.x) * cave_scale_x,
+                    (y_pos + chunk_origin.y) * cave_scale_y,
+                    octaves=4, lacunarity=2.5, gain=0.4, offset=1.0
                 )
 
-                if cave_val > cave_threshold:
-                    continue
+                # Only allow caves below ground level, but avoid massive caves
+                if pos.y > ground_level - 4:  # Surface caves
+                    if cave_val > cave_threshold_surface:
+                        continue  # Make surface caves smaller
+                elif pos.y > ground_level - 10:  # Transition zone
+                    if cave_val > (cave_threshold_surface + cave_threshold_deep) / 2:
+                        continue
+                else:  # Deep caves
+                    if cave_val > cave_threshold_deep:
+                        continue  # Allow deeper, but not too open
+
+                # Determine tile type based on height level
                 tile_type = None
                 if pos.y == ground_level:
                     tile_type = "grass"
@@ -235,21 +247,21 @@ class ServerGame(ServerGameBase):
                     tile_type = "stone"
                 if pos.y <= ground_level - 10:
                     if r.random() < 0.02:
-                        tile_type = "coal" 
+                        tile_type = "coal"
                 if pos.y <= ground_level - 20:
                     if r.random() < 0.01:
-                        tile_type = "iron" 
+                        tile_type = "iron"
                 if pos.y <= ground_level - 35:
                     if r.random() < 0.005:
                         tile_type = "gold"
-     
+
+                # Add tile to chunk data
                 if tile_type is not None:
                     chunk_data.append([(pos.x, pos.y), tile_type])
 
         return chunk_data
+
     
-
-
     def generate_and_load_chunks(self, chunk_x, chunk_y):
         level = self.engine.levels.get("Test_Level")
         if level is None:
@@ -294,7 +306,6 @@ class ServerGame(ServerGameBase):
 
         for actor in actors_to_add:
             level.register_actor(actor)
-
 
 
     def tick(self):
