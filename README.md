@@ -9,6 +9,18 @@
 
 ![image](docs/images/image.png)
 
+## Credits
+
+### Art
+
+- [Matevž](https://github.com/BERZI-1234)
+
+### Code
+
+- [Matevž](https://github.com/BERZI-1234)
+- [Jure](https://github.com/Gamer1234-gif)
+- [Niko](https://github.com/skelci)
+
 ## TODO
 
 ### Matevž
