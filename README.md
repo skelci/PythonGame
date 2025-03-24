@@ -3,35 +3,24 @@
 ## Dependencies
 
 - pygame
+- noise
 
 ## TODO
 
 ### Matevž
 
-- [ ] terrain generation
+- terrain generation
 
 ### Jure
 
-#### actors
-
-- [ ] player
-- [ ] grass
-- [ ] log
-- [ ] rock
-- [ ] coal
-- [ ] iron
-- [ ] gold
-- [ ] diamond
-- [ ] copper
-- [ ] leaves
+- actor destruction
 
 ### Niko
 
 - engine
 
-
-
 ## crafting recepies:
+
 -tree (bark, wood, sticks) --> drop
 -stone(rock) --> drop
 -random cobwebs za string --> drop
@@ -65,6 +54,4 @@
 
 -belt (cooked leather) --> recepie
 
--armor (belt+ore) --> recepie 
-
-
+-armor (belt+ore) --> recepie
