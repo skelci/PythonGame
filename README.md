@@ -5,6 +5,10 @@
 - pygame
 - noise
 
+## Latest Pics
+
+![image](docs/images/image.png)
+
 ## TODO
 
 ### Matevž
@@ -19,7 +23,7 @@
 
 - engine
 
-## crafting recepies:
+## crafting recepies
 
 -tree (bark, wood, sticks) --> drop
 -stone(rock) --> drop
