@@ -249,14 +249,9 @@ class ServerNetwork(Network):
         while True:
             login_data = conn.recv(1024)
             parsed_data = self._parse_data(login_data)
-            logged_in = False
 
             result = self.__handle_login(parsed_data, conn)
-            if result != -1:
-                logged_in = True
-                break
-
-            if logged_in:
+            if result:
                 break
 
         self.__on_connect(self.__conn_to_id[conn])
