@@ -175,17 +175,19 @@ class Actor:
                     self.visible = data[key]
                 case "material":
                     self.material = self.engine_ref.get_material(data[key])
+    #?endif
         
+
 
     #?ifdef SERVER
     def get_for_full_net_sync(self):
         for key in self.__outdated:
             self.__outdated[key] = False
-        return {
-            "type": self.__class__.__name__,
-            "name": self.name,
-            "position": self.position,
-        }
+        return [
+            self.__class__.__name__,
+            self.name,
+            self.position,
+        ]
     
 
     def get_for_net_sync(self):

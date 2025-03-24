@@ -113,7 +113,7 @@ class Level:
         
 
     def destroy_actor(self, actor):
-        if actor in self.actors:
+        if actor.name in self.actors:
             self.__actors_to_destroy.add(actor)
         else:
             raise ValueError("Actor not found in level:", actor)
@@ -121,7 +121,8 @@ class Level:
 
     def get_new_actors(self):
         new_actors = []
-        for actor in self.__actors_to_create:
+        actors_to_create = self.__actors_to_create.copy()
+        for actor in actors_to_create:
             # if actor.name in self.actors:
             #     raise ValueError("Actor with the same name already exists in level: " + actor.name)
             self.actors[actor.name] = actor
@@ -129,6 +130,16 @@ class Level:
 
         self.__actors_to_create.clear()
         return new_actors
+    
+
+    def get_destroyed(self):
+        destroyed = []
+        actors_to_destroy = self.__actors_to_destroy.copy()
+        for actor in actors_to_destroy:
+            destroyed.append(self.actors.pop(actor.name))
+        
+        self.__actors_to_destroy.clear()
+        return destroyed
         
 
     #?ifdef SERVER
@@ -162,15 +173,6 @@ class Level:
                     chunk_updates[chunk_x][chunk_y][actor_name] = sync_data
 
         return chunk_updates
-    
-
-    def get_destroyed(self):
-        destroyed = []
-        for actor in self.__actors_to_destroy:
-            destroyed.append(self.actors.pop(actor.name))
-        
-        self.__actors_to_destroy.clear()
-        return destroyed
     
 
     def get_actors_in_chunks_3x3(self, chunk_pos):

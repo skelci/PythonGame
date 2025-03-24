@@ -57,7 +57,7 @@ class Gold(Actor):
 
 class TestPlayer(Character):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position=Vector(-1, 22), material = Material(Color(0, 0, 255)))
+        super().__init__(engine_ref, name, position=Vector(-1, 22), material = Material(Color(0, 0, 255)), jump_velocity=7)
 
 
 
@@ -72,9 +72,10 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.camera_width = 48
+        eng.set_camera_width(48)
 
         eng.connect("localhost", 5555)
+        # eng.fullscreen=True
 
         self.clock_1s = 0
 
