@@ -397,13 +397,13 @@ class ClientEngine(Engine, Renderer):
 
 
     def __register_actor(self, data):
-        if data["name"] in self.__level.actors:
+        if data[1] in self.__level.actors:
             return
         
-        if data["type"] not in self.__actor_templates:
-            raise Exception(f"Actor template {data['type']} is not registered")
+        if data[0] not in self.__actor_templates:
+            raise Exception(f"Actor template {data[0]} is not registered")
 
-        self.__level.register_actor(self.__actor_templates[data["type"]](self, data["name"], data["position"])) # if it crashes in this line, it's because actor class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
+        self.__level.register_actor(self.__actor_templates[data[0]](self, data[1], data[2])) # if it crashes in this line, it's because actor class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
 
 
     def __update_actor(self, data):
@@ -651,70 +651,10 @@ class ServerEngine(Engine):
                         if y not in level.chunks[x]:
                             continue
 
-                        # if max(p_chk.x, c_chk.x) - player.update_distance <= x <= min(p_chk.x, c_chk.x) + player.update_distance and max(p_chk.y, c_chk.y) - player.update_distance <= y <= min(p_chk.y, c_chk.y) + player.update_distance: #TODO fix if player distance changes
-                        #     pass
-
                         if Vector(x, y) in prev_synced_chunks:
                             continue
                         for actor in level.chunks[x][y]:
                             self.network.send(player_id, "register_actor", level.actors[actor].get_for_full_net_sync())
-
-            # new_actors = level.get_new_actors()
-            # if new_actors:
-            #     for player_id, player in self.__players.items():
-            #         if player.level == level.name:
-            #             for actor_name, actor in new_actors.items():
-            #                 if is_player_loading_pos(player, actor.position):
-            #                     self.network.send(player_id, "register_actor", actor.get_for_full_net_sync())
-
-            # for player_id, player in self.__players.items():
-            #     if player.level == level.name:
-            #         self.__players[player_id].position = level.actors[self.get_player_actor(player_id)].position
-
-            # destroyed_actors = level.get_destroyed()
-            # if destroyed_actors:
-            #     for player_id, player in self.__players.items():
-            #         if player.level == level.name:
-            #             for actor_name in destroyed_actors:
-            #                 self.network.send(player_id, "destroy_actor", actor_name)
-
-            # level.tick(delta_time)
-
-            # updates = level.get_updates((player for player in self.__players.values() if player.level == level.name))
-            # if not updates:
-            #     continue
-
-            # for player_id, player in self.__players.items():
-            #     if player.level != level.name:
-            #         continue
-
-            #     p_chk = player.previous_chunk
-            #     c_chk = get_chunk_cords(player.position)
-                
-            #     for x in range(c_chk.rounded.x - player.update_distance, c_chk.rounded.x + player.update_distance + 1):
-            #         if x not in level.chunks:
-            #             continue
-            #         for y in range(c_chk.rounded.y - player.update_distance, c_chk.rounded.y + player.update_distance + 1):
-            #             if y not in level.chunks[x]:
-            #                 continue
-
-            #             if max(p_chk.x, c_chk.x) - player.update_distance <= x <= min(p_chk.x, c_chk.x) + player.update_distance and max(p_chk.y, c_chk.y) - player.update_distance <= y <= min(p_chk.y, c_chk.y) + player.update_distance: #TODO fix if player distance changes
-            #                 for actor_name, update in updates.items():
-            #                     sync_data, chunk_num = update
-            #                     if chunk_num == Vector(x, y):
-            #                         # if len(sync_data) == 4: #* mybe add this later, if there is actualy bug without this
-            #                         #     self.network.send(player_id, "register_actor", level.actors[actor_name].get_for_full_net_sync())
-            #                         #     continue
-            #                         self.network.send(player_id, "update_actor", (actor_name, sync_data))
-
-            #             else:
-            #                 for actor in level.chunks[x][y]:
-            #                     self.network.send(player_id, "register_actor", level.actors[actor].get_for_full_net_sync())
-
-            #     if p_chk != c_chk:
-            #         player.previously_loaded_chunk = p_chk
-            #     player.previous_chunk = c_chk
-
 
         self.__time("level_updates")
 
