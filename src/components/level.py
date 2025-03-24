@@ -18,8 +18,9 @@ class Level:
         self.gravity = gravity
 
         self.__actors = {}
-        self.__actors_to_destroy = set()
         self.__chunks = {}
+        self.__actors_to_destroy = set()
+        self.__actors_to_create = set()
 
         for actor in actors:
             self.register_actor(actor)
@@ -102,57 +103,91 @@ class Level:
         
 
     def register_actor(self, actor):
-        #?ifdef SERVER
         if actor.name in self.actors:
             raise ValueError("Actor with the same name already exists in level:", actor.name)
-        #?endif
+        
         if isinstance(actor, Actor):
-            self.actors[actor.name] = actor
-            self.__add_actor_to_chunk(actor)
+            self.__actors_to_create.add(actor)
         else:
             raise TypeError("Actor must be a subclass of Actor:", actor)
         
 
     def destroy_actor(self, actor):
-        if actor in self.actors:
+        if actor.name in self.actors:
             self.__actors_to_destroy.add(actor)
         else:
             raise ValueError("Actor not found in level:", actor)
-        
 
-    #?ifdef SERVER
-    def get_updates(self, players):
-        actor_updates = {}
-        positions = set()
-        for pos in players:
-            for x in range(-pos.update_distance, pos.update_distance + 1):
-                for y in range(-pos.update_distance, pos.update_distance + 1):
-                    chunk_pos = get_chunk_cords(pos.position) + Vector(x, y)
-                    positions.add(chunk_pos)
 
-        for pos in positions:
-            chunk_x, chunk_y = pos.tuple
-            if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
-                for actor_name in self.__chunks[chunk_x][chunk_y]:
-                    sync_data = self.actors[actor_name].get_for_net_sync()
-                    if sync_data:
-                        actor_updates[actor_name] = (sync_data, pos)
+    def get_new_actors(self):
+        new_actors = []
+        for actor in self.__actors_to_create:
+            # if actor.name in self.actors:
+            #     raise ValueError("Actor with the same name already exists in level: " + actor.name)
+            self.actors[actor.name] = actor
+            new_actors.append(actor)
 
-        return actor_updates
+        self.__actors_to_create.clear()
+        return new_actors
     
 
     def get_destroyed(self):
         destroyed = []
         for actor in self.__actors_to_destroy:
-            destroyed.append(self.actors.pop(actor.name).name)
+            destroyed.append(self.actors.pop(actor.name))
         
         self.__actors_to_destroy.clear()
         return destroyed
         
 
+    #?ifdef SERVER
+    def get_loaded_chunks(self, players):
+        chunks = set()
+        for player in players:
+            for x in range(-player.update_distance, player.update_distance + 1):
+                for y in range(-player.update_distance, player.update_distance + 1):
+                    chunk_pos = get_chunk_cords(player.position) + Vector(x, y)
+                    previous_chunk_pos = player.previous_different_chunk + Vector(x, y)
+                    chunks.add(chunk_pos)
+                    chunks.add(previous_chunk_pos)
+
+        return chunks
+
+
+    def get_updates(self, players):
+        chunk_updates = {}
+
+        for chunk in self.get_loaded_chunks(players):
+            chunk_x, chunk_y = chunk
+            if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
+                for actor_name in self.__chunks[chunk_x][chunk_y]:
+                    sync_data = self.actors[actor_name].get_for_net_sync()
+                    if not sync_data:
+                        continue
+                    if chunk_x not in chunk_updates:
+                        chunk_updates[chunk_x] = {}
+                    if chunk_y not in chunk_updates[chunk_x]:
+                        chunk_updates[chunk_x][chunk_y] = {}
+                    chunk_updates[chunk_x][chunk_y][actor_name] = sync_data
+
+        return chunk_updates
+    
+
+    def get_actors_in_chunks_3x3(self, chunk_pos):
+        actors = []
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                chunk_x, chunk_y = chunk_pos + Vector(x, y)
+                if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
+                    for actor_name in self.__chunks[chunk_x][chunk_y]:
+                        actors.append(self.actors[actor_name])
+
+        return actors
+        
+
     def tick(self, delta_time):
         self.__chunks.clear() 
-        for actor in self.actors.values(): #* not optimal, but it will do for now
+        for actor in self.actors.values():
             self.__add_actor_to_chunk(actor)
 
         self.__physics_step(delta_time * self.simulation_speed)
@@ -176,8 +211,10 @@ class Level:
 
             for actor1 in self.actors.values():
                 if isinstance(actor1, Rigidbody) and actor1.simulate_physics:
-                    for actor2 in self.actors.values():
+                    for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                         if actor2 is not actor1 and actor2.collidable:
+                            if actor1.position.distance(actor2.position) > actor1.half_size.abs.max + actor2.half_size.abs.max:
+                                continue
                             direction = actor1.collision_response_direction(actor2)
                             if not direction == Vector(0, 0):
                                 collisions_not_resolved = True
@@ -207,7 +244,7 @@ class Level:
         collided_actors_directions = {}
         for actor1 in self.actors.values():
             if isinstance(actor1, Rigidbody):
-                for actor2 in self.actors.values():
+                for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                     if actor2 is not actor1:
                         actor1.half_size += kinda_small_number
                         direction = actor1.collision_response_direction(actor2)
@@ -231,7 +268,7 @@ class Level:
         for actor1 in self.actors.values():
             if actor1.generate_overlap_events:
                 actor1.half_size += kinda_small_number
-                for actor2 in self.actors.values():
+                for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                     if actor1 is not actor2:
                         if is_overlapping_rect(actor1, actor2):
                             if actor2.name not in overlaped_actors:

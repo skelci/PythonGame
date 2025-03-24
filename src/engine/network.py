@@ -14,8 +14,7 @@ class Network(ABC):
         self.address = address
         self.__running = True
         
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._output_queue = queue.Queue()
         self._input_queue = queue.Queue()
 
@@ -154,6 +153,29 @@ class ClientNetwork(Network):
 
 
 #?ifdef SERVER
+class FakeConnection:
+    def __init__(self, sock, address):
+        self.sock = sock
+        self.address = address
+        self.queue = queue.Queue()
+        self.open = True
+
+
+    def send(self, data):
+        self.sock.sendto(data, self.address)
+
+
+    def recv(self, size):
+        if not self.open:
+            return b""
+        return self.queue.get()
+
+
+    def close(self):
+        self.open = False
+
+
+
 class ServerNetwork(Network):
     def __init__(self, address, port, max_connections, on_connect):
         super().__init__(address, port)
@@ -173,7 +195,6 @@ class ServerNetwork(Network):
         self.__db_conn.commit()
 
         self.socket.bind((self.address, self.port))
-        self.socket.listen(self.max_connections)
 
         accept_thread = threading.Thread(target=self.__accept_connections)
         accept_thread.daemon = True
@@ -181,6 +202,7 @@ class ServerNetwork(Network):
 
         self.__id_to_conn = {}
         self.__conn_to_id = {}
+        self.__address_to_conn = {}
         
 
     @property
@@ -215,10 +237,17 @@ class ServerNetwork(Network):
 
     def __accept_connections(self):
         while self.running:
-            conn, _ = self.socket.accept()
-            client_thread = threading.Thread(target=self.__handle_client, args=(conn,))
-            client_thread.daemon = True
-            client_thread.start()
+            try:
+                data, address = self.socket.recvfrom(1024)
+            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+                break
+            if address not in self.__address_to_conn:
+                conn = FakeConnection(self.socket, address)
+                self.__address_to_conn[address] = conn
+                client_thread = threading.Thread(target=self.__handle_client, args=(conn,))
+                client_thread.daemon = True
+                client_thread.start()
+            self.__address_to_conn[address].queue.put(data)
 
 
     def __handle_client(self, conn):

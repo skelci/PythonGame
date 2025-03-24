@@ -132,9 +132,9 @@ class Background:
 
 
     def get_bg_surface(self, camera_pos, screen_res, camera_width):
-        bg_surface = pygame.Surface(screen_res.tuple)
+        bg_surface = self.__layers[0].get_bg_surface(camera_pos, screen_res, camera_width)
 
-        for layer in self.__layers:
+        for layer in self.__layers[1:]:
             bg_surface.blit(layer.get_bg_surface(camera_pos, screen_res, camera_width), (0, 0))
 
         return bg_surface
