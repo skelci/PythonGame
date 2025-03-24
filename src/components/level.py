@@ -121,7 +121,8 @@ class Level:
 
     def get_new_actors(self):
         new_actors = []
-        for actor in self.__actors_to_create:
+        actors_to_create = self.__actors_to_create.copy()
+        for actor in actors_to_create:
             # if actor.name in self.actors:
             #     raise ValueError("Actor with the same name already exists in level: " + actor.name)
             self.actors[actor.name] = actor
@@ -133,7 +134,8 @@ class Level:
 
     def get_destroyed(self):
         destroyed = []
-        for actor in self.__actors_to_destroy:
+        actors_to_destroy = self.__actors_to_destroy.copy()
+        for actor in actors_to_destroy:
             destroyed.append(self.actors.pop(actor.name))
         
         self.__actors_to_destroy.clear()
