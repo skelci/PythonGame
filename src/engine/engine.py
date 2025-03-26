@@ -85,7 +85,7 @@ class ClientEngine(Engine, Renderer):
         Engine.__init__(self)
         Renderer.__init__(self, 1600, 900, 10, "Game", False, True, Vector())
 
-        self.__update_distance = (math.ceil(self.camera_width + 1) // 8 + 1) // 2
+        self.__update_distance = self.camera_width // 16 
 
         self.fps = 120
         self.tps = 20
@@ -259,7 +259,7 @@ class ClientEngine(Engine, Renderer):
 
     def set_camera_width(self, width):
         self.camera_width = width
-        self.__update_distance = (math.ceil(self.camera_width + 1) // 8 + 1) // 2
+        self.__update_distance = self.camera_width // 16 + 1
         if self.network:
             self.network.send("update_distance", self.__update_distance)
 
