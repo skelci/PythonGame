@@ -392,6 +392,7 @@ class Keys(IntEnum):
 pi = math.pi
 gravity = -9.80665
 kinda_small_number = 0.001
+chunk_size = 8
 
 
 

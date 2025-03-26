@@ -1,3 +1,4 @@
+from components.datatypes import *
 
 
 
@@ -27,5 +28,5 @@ def lerp(a, b, t):
 
 
 def get_chunk_cords(pos):
-        return pos // 8
+        return pos // chunk_size
 
