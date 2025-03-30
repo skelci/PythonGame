@@ -5,6 +5,7 @@ import threading
 import queue
 import sqlite3 as sql
 from abc import ABC, abstractmethod
+import json
 
 
 
@@ -58,8 +59,20 @@ class Network(ABC):
     def _parse_data(data):
         try:
             decoded = data.decode("ascii")
-            result = eval(decoded)
-            return result
+            parsed = json.loads(decoded)
+
+            def convert(obj):
+                if isinstance(obj, dict):
+                    if obj.get("_type") == "Vector":
+                        return Vector(obj["x"], obj["y"])
+                    return {k: convert(v) for k, v in obj.items()}
+
+                if isinstance(obj, (list, tuple)):
+                    return [convert(item) for item in obj]
+
+                return obj
+
+            return convert(parsed)
         except Exception as e:
             print(f"Error parsing data {data}: {e}")
             return ("", "")
@@ -67,9 +80,15 @@ class Network(ABC):
 
     @staticmethod
     def _parse_for_send(cmd, data):
-        if isinstance(data, str):
-            data = f"'{data}'"
-        return f"('{cmd}',{data})".encode("ascii")
+        class VectorEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, Vector):
+                    return {"_type": "Vector", "x": obj.x, "y": obj.y}
+                return super().default(obj)
+
+        payload = (cmd, data)
+        encoded = json.dumps(payload, cls=VectorEncoder)
+        return encoded.encode("ascii")
     
 
     @abstractmethod

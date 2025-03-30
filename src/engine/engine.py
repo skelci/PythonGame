@@ -16,7 +16,7 @@ from components.datatypes import *
 from components.game_math import *
 
 #?ifdef CLIENT
-import pygame # type: ignore
+import pygame
 #?endif
 
 import threading
@@ -297,7 +297,7 @@ class ClientEngine(Engine, Renderer):
             player_chunk = get_chunk_cords(player_actor.position)
 
             for actor in self.level.actors.values():
-                bl_chk_pos = player_chunk - self.__update_distance - 2
+                bl_chk_pos = player_chunk - self.__update_distance - 1
                 tr_chk_pos = player_chunk + self.__update_distance + 1
                 if not is_in_rect(bl_chk_pos, tr_chk_pos, get_chunk_cords(actor.position)):
                     self.level.destroy_actor(actor)
