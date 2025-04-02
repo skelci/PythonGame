@@ -72,7 +72,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16)
+        eng.set_camera_width(16 * 32)
         eng.resolution = Vector(1600, 900)
 
         eng.connect("localhost", 5555)
@@ -95,7 +95,7 @@ class ClientGame(ClientGameBase):
         eng.add_actor_template(Gold)
     
 
-        eng.register_background(Background("sky", (BackgroundLayer(Material("res/textures/sky.png"), 20, 0.25), )))
+        eng.register_background(Background("sky", (BackgroundLayer(Material(Color(100, 175, 255)), 20, 0.25), )))
 
         self.engine.add_actor_template(TestPlayer)
         self.engine.add_actor_template(Log)
@@ -174,7 +174,7 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
 
-        self.engine.max_tps = 90
+        self.engine.max_tps = 60
 
         self.engine.start_network("0.0.0.0", 5555, 10)
 
@@ -328,8 +328,13 @@ class ServerGame(ServerGameBase):
 
         # Create a symmetric grid of chunks around the smoothed base chunk.
         chunks_to_load = []
-        for offset_y in range(-4, 5):
-            for offset_x in range(-4, 5):
+        ud = 0
+        if self.engine.players:
+            for player in self.engine.players.values():
+                ud += player.update_distance
+        ud //= len(self.engine.players)
+        for offset_y in range(-ud, ud + 1):
+            for offset_x in range(-ud, ud + 1):
                 chunks_to_load.append((base_chunk_vector.x + offset_x, base_chunk_vector.y + offset_y))
 
         for base_chunk_x, base_chunk_y in chunks_to_load:

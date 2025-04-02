@@ -108,6 +108,10 @@ class ClientEngine(Engine, Renderer):
             "background": self.__background,
         }
 
+        network_thread = threading.Thread(target=self.__handle_network)
+        network_thread.daemon = True
+        network_thread.start()
+
         self.__actor_templates = {
             "Actor": Actor,
             "Rigidbody": Rigidbody,
@@ -213,6 +217,11 @@ class ClientEngine(Engine, Renderer):
         return self.__screen_mouse_pos
     
 
+    @property
+    def update_distance(self):
+        return self.__update_distance
+    
+
     def show_all_stats(self):
         for name, _ in self.__stats.items():
             self.widgets[name].visible = True
@@ -297,8 +306,8 @@ class ClientEngine(Engine, Renderer):
             player_chunk = get_chunk_cords(player_actor.position)
 
             for actor in self.level.actors.values():
-                bl_chk_pos = player_chunk - self.__update_distance - 1
-                tr_chk_pos = player_chunk + self.__update_distance + 1
+                bl_chk_pos = player_chunk - self.__update_distance - 2
+                tr_chk_pos = player_chunk + self.__update_distance + 2
                 if not is_in_rect(bl_chk_pos, tr_chk_pos, get_chunk_cords(actor.position)):
                     self.level.destroy_actor(actor)
 
@@ -323,7 +332,7 @@ class ClientEngine(Engine, Renderer):
         self.__stats["actor_render"].pop(0)
         self.__stats["widget_render"].pop(0)
 
-        self.__handle_network()
+        self.handle_network()
         self.level.get_new_actors()
         self.level.get_destroyed()
 
@@ -332,19 +341,27 @@ class ClientEngine(Engine, Renderer):
         return delta_time
 
 
-    def __handle_network(self):
+    def handle_network(self):
         if not self.network:
             return
-        while True:
-            data = self.network.get_data()
-            if not data:
-                break
-            cmd, data = data
+        
+        self.network.tick()
 
-            if cmd in self.__network_commands:
-                self.__network_commands[cmd](data)
-            else:
-                print(f"[Client] Unknown network request: {cmd}")
+
+    def __handle_network(self):
+        while not self.network:
+            time.sleep(0.1)
+
+        while True:
+            buffer = self.network.get_data(10)
+            if not buffer:
+                time.sleep(0.1)
+
+            for cmd, data in buffer:
+                if cmd in self.__network_commands:
+                    self.__network_commands[cmd](data)
+                else:
+                    print(f"[Client] Unknown network request: {cmd}")
     
 
     def __update_mouse_pos(self, screen_pos):
@@ -670,6 +687,8 @@ class ServerEngine(Engine):
     
 
     def __handle_network(self):
+        self.network.tick()
+
         for id in self.__players:
             if not self.__players[id].level:
                 continue
@@ -698,14 +717,10 @@ class ServerEngine(Engine):
         if not self.network:
             print("You forgot to call start_network")
             return
-        
-        while True:
-            data = self.network.get_data()
-            if not data:
-                break
 
-            id, data = data
-            cmd, data = data
+        data_buffer = self.network.get_data(100)
+        for id, packed_data in data_buffer:
+            cmd, data = packed_data
 
             if cmd in self.__network_commands:
                 self.__network_commands[cmd](id, data)

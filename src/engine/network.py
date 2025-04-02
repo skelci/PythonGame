@@ -2,26 +2,25 @@ from components.datatypes import *
 
 import socket
 import threading
-import queue
 import sqlite3 as sql
 from abc import ABC, abstractmethod
 import json
+import queue
+import time
 
 
 
 class Network(ABC):
     def __init__(self, address, port):
+        self._packet_size = 65504
+
         self.port = port
         self.address = address
         self.__running = True
         
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._output_queue = queue.Queue()
-        self._input_queue = queue.Queue()
-
-        sending_thread = threading.Thread(target=self._send_data)
-        sending_thread.daemon = True
-        sending_thread.start()
+        self._output_buffer = DoubleBuffer()
+        self._input_buffer = DoubleBuffer()
 
 
     @property
@@ -59,7 +58,8 @@ class Network(ABC):
     def _parse_data(data):
         try:
             decoded = data.decode("ascii")
-            parsed = json.loads(decoded)
+            sep = chr(30)
+            data_stream = decoded.split(sep)
 
             def convert(obj):
                 if isinstance(obj, dict):
@@ -71,8 +71,9 @@ class Network(ABC):
                     return [convert(item) for item in obj]
 
                 return obj
-
-            return convert(parsed)
+            
+            return [convert(json.loads(data)) for data in data_stream]
+            
         except Exception as e:
             print(f"Error parsing data {data}: {e}")
             return ("", "")
@@ -88,17 +89,16 @@ class Network(ABC):
 
         payload = (cmd, data)
         encoded = json.dumps(payload, cls=VectorEncoder)
-        return encoded.encode("ascii")
+        return encoded
     
 
     @abstractmethod
-    def _send_data(self):
+    def tick(self):
         pass
 
 
-    def get_data(self):
-        if not self._input_queue.empty():
-            return self._input_queue.get()
+    def get_data(self, size = 1):
+        return self._input_buffer.get_data(size)
     
 
     def stop(self):
@@ -126,25 +126,36 @@ class ClientNetwork(Network):
 
 
     def send(self, cmd, data):
-        self._output_queue.put(self._parse_for_send(cmd, data))
+        self._output_buffer.add_data_back(self._parse_for_send(cmd, data))
 
 
-    def _send_data(self):
-        while self.running:
-            if not self._output_queue.empty():
-                data = self._output_queue.get()
-                try:
-                    self.socket.send(data)
-                except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
-                    break
+    def tick(self):
+        if not self.running:
+            return
+        
+        data_buffer = self._output_buffer.get_all_data()
+        if not data_buffer:
+            return
+
+        data = (chr(30).join(data_buffer) + chr(31)).encode("ascii")
+        try:
+            for i in range(0, len(data_buffer), self._packet_size):
+                self.socket.send(data[i:i+self._packet_size])
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
 
 
     def __handle_connection(self):
         while self.running:
-            data = None
+            data = b""
             try:
-                data = self.socket.recv(1024)
-            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+                while True:
+                    data += self.socket.recv(self._packet_size + 28)
+                    if data.endswith(chr(31).encode("ascii")):
+                        data = data[:-1]
+                        break
+            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError) as e:
+                print(f"Connection closed; {e}")
                 break
 
             if not data:
@@ -152,12 +163,16 @@ class ClientNetwork(Network):
 
             parsed_data = self._parse_data(data)
             if self.id == -1:
-                cmd, id = parsed_data
-                if cmd == "register_outcome":
-                    self.__id = id
+                for data in parsed_data:
+                    cmd, id = data
+                    if cmd == "register_outcome":
+                        self.__id = id
+                        continue
+                
+                if self.__id != -1:
                     continue
 
-            self._input_queue.put(parsed_data)
+            self._input_buffer.add_data_back_multiple(parsed_data)
 
         self.__id = -1
         self.socket.close()
@@ -179,7 +194,7 @@ class FakeConnection:
         self.sock.sendto(data, self.address)
 
 
-    def recv(self, size):
+    def recv(self):
         if not self.open:
             return b""
         return self.queue.get()
@@ -233,20 +248,43 @@ class ServerNetwork(Network):
 
 
     def send(self, id, cmd, data):
-        self._output_queue.put((id, self._parse_for_send(cmd, data)))
+        self._output_buffer.add_data_back((id, self._parse_for_send(cmd, data)))
 
 
-    def _send_data(self):
-        while self.running:
-            if not self._output_queue.empty():
-                id, data = self._output_queue.get()
-                if not id in self.__id_to_conn:
-                    continue
-                conn = self.__id_to_conn[id]
-                try:
-                    conn.send(data)
-                except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
-                    break
+    def tick(self):
+        if not self.running:
+            return
+        
+        data_buffer = self._output_buffer.get_all_data()
+        if not data_buffer:
+            return
+        
+        data_buffer_by_id = {}
+        for id, data in data_buffer:
+            if id not in self.__id_to_conn:
+                continue
+            if id not in data_buffer_by_id:
+                data_buffer_by_id[id] = []
+            data_buffer_by_id[id].append(data)
+
+        sep = chr(30)
+        end_sep = chr(31)
+        for id, data_list in data_buffer_by_id.items():
+            data = (sep.join(data_list) + end_sep).encode("ascii")
+            conn = self.__id_to_conn[id]
+
+            try:
+                for i in range(0, len(data), self._packet_size):
+                    conn.send(data[i:i+self._packet_size])
+                    if i > 0:
+                        time.sleep(0.01)
+            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError) as e:
+                self.__id_to_conn.pop(id)
+                self.__conn_to_id.pop(conn)
+                self.__address_to_conn.pop(conn.address)
+                conn.close()
+                print(f"Connection closed for id {id}")
+                continue
         
 
     def __accept_connections(self):
@@ -266,26 +304,42 @@ class ServerNetwork(Network):
 
     def __handle_client(self, conn):
         while True:
-            login_data = conn.recv(1024)
+            login_data = b""
+            while True:
+                login_data += conn.recv()
+                if login_data.endswith(chr(31).encode("ascii")):
+                    login_data = login_data[:-1]
+                    break
+
             parsed_data = self._parse_data(login_data)
 
-            result = self.__handle_login(parsed_data, conn)
+            for data in parsed_data:
+                result = self.__handle_login(data, conn)
+                if result:
+                    break
+
             if result:
                 break
 
         self.__on_connect(self.__conn_to_id[conn])
 
         while self.running:
+            data = b""
             try:
-                data = conn.recv(1024)
+                while True:
+                    data += conn.recv()
+                    if data.endswith(chr(31).encode("ascii")):
+                        data = data[:-1]
+                        break
             except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
                 break
 
             if not data:
-                break
+                continue
 
             parsed_data = self._parse_data(data)
-            self._input_queue.put((self.__conn_to_id[conn], parsed_data))
+            tagged_data = [(self.__conn_to_id[conn], data) for data in parsed_data]
+            self._input_buffer.add_data_back_multiple(tagged_data)
 
         self.__id_to_conn.pop(self.__conn_to_id[conn])
         self.__conn_to_id.pop(conn)

@@ -158,13 +158,14 @@ class Renderer:
         
         time_start = time.time()
 
+        magic_scale = camera_ratio * 2 * (1.0005 ** self.camera_width)
         for a in self.actors_to_draw:
             top_left_position = (
                 camera_ratio * (a.position.x - a.half_size.x - self.camera_position.x) + self.resolution.x / 2,
                 camera_ratio * -(a.position.y + a.half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
             )
 
-            surface = a.material.get_surface(a.half_size * camera_ratio * 2 * 1.02) # 1.02 is a magic number to prevent gaps between the textures
+            surface = a.material.get_surface(a.half_size * magic_scale)
             self.screen.blit(surface, top_left_position)
 
         time_actors = time.time()

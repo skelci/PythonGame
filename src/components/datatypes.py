@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import Iterator
 import math
+from collections import deque
+import threading
 
 
 
@@ -292,6 +294,65 @@ class CollisionData:
     restitution: float
     mass: float
     collided_actor: str
+
+
+
+"""
+A double buffer implementation that allows adding data to the front and back of the buffer.
+It has also a fast way to get all data from the buffer.
+"""
+class DoubleBuffer:
+    def __init__(self):
+        self.__front_buffer = deque()
+        self.__back_buffer = deque()
+        self.lock = threading.Lock()
+
+
+    def __swap_buffers(self):
+        with self.lock:
+            self.__front_buffer, self.__back_buffer = self.__back_buffer, self.__front_buffer
+
+
+    def add_data_front(self, data):
+        with self.lock:
+            self.__back_buffer.appendleft(data)
+
+
+    def add_data_back(self, data):
+        with self.lock:
+            self.__back_buffer.append(data)
+
+
+    def get_data(self, size = 1):
+        self.__swap_buffers()
+        buffer_size = len(self.__front_buffer)
+        data = []
+        for _ in range(min(size, buffer_size)):
+            data.append(self.__front_buffer.popleft())
+
+        self.__swap_buffers()
+        self.add_data_back_multiple(self.__front_buffer)
+        self.__front_buffer.clear()
+
+        return data
+
+
+    def get_all_data(self):
+        self.__swap_buffers()
+        data = list(self.__front_buffer)
+        self.__front_buffer.clear()
+        return data
+
+
+    def add_data_front_multiple(self, data_list):
+        with self.lock:
+            for data in reversed(data_list):
+                self.__back_buffer.appendleft(data)
+
+
+    def add_data_back_multiple(self, data_list):
+        with self.lock:
+            self.__back_buffer.extend(data_list)
 
 
 
