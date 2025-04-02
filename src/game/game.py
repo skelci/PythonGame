@@ -57,7 +57,7 @@ class Gold(Actor):
 
 class TestPlayer(Character):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position=Vector(-1, 22), material = Material(Color(0, 0, 255)), jump_velocity=7)
+        super().__init__(engine_ref, name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7)
 
 
 
@@ -94,17 +94,7 @@ class ClientGame(ClientGameBase):
         eng.add_actor_template(Iron)
         eng.add_actor_template(Gold)
     
-
         eng.register_background(Background("sky", (BackgroundLayer(Material(Color(100, 175, 255)), 20, 0.25), )))
-
-        self.engine.add_actor_template(TestPlayer)
-        self.engine.add_actor_template(Log)
-        self.engine.add_actor_template(Grass)
-        self.engine.add_actor_template(Dirt)
-        self.engine.add_actor_template(Stone)
-        self.engine.add_actor_template(Coal)
-        self.engine.add_actor_template(Iron)
-        self.engine.add_actor_template(Gold)
 
 
 
@@ -189,24 +179,62 @@ class ServerGame(ServerGameBase):
         self.loaded_chunks = set()
 
 
+    @staticmethod
+    def ridged_multifractal(x, y, octaves=4, lacunarity=2.0, gain=0.5, offset=1.0):
+        frequency = 1.0
+        amplitude = 0.5
+        weight = 1.0
+        result = 0.0
+        for i in range(octaves):
+            n = noise.snoise2(x * frequency, y * frequency)  # noise in [-1,1]
+            n = abs(n)           # ridging: absolute value
+            n = offset - n       # invert so ridges show up
+            n = n * n            # square to accentuate
+            n *= weight
+            result += n * amplitude
+            weight = n * gain
+            weight = max(min(weight, 1.0), 0.0)  # clamp weight [0,1]
+            frequency *= lacunarity
+            amplitude *= gain
+        return result
+
     def generate_chunk(self, x, y):
         chunk_data = []
-        chunk_origin = Vector(x * CHUNK_SIZE, y * CHUNK_SIZE)
-
-        # You can adjust these factors to change tree distribution.
-        factor_x = 12.9898
-        factor_y = 78.233
-        tree_threshold = 0.105  # Lower value = fewer trees, higher = more trees
+        chunk_origin = Vector(x, y) * CHUNK_SIZE
+        tree_threshold = 0.1  # chance of a tree being generated on a grass tile
+        cave_scale_x = 0.035  # Slightly larger spread horizontally
+        cave_scale_y = 0.03   # Vertical spread for caves (smaller)
+        cave_threshold_surface = 0.45  # Higher threshold to prevent big openings at surface
+        cave_threshold_deep = 0.3  # Higher threshold, fewer caves
 
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
                 pos = chunk_origin + Vector(x_pos, y_pos)
                 # Noise-based height for a given x position.
-                height_noise = noise.pnoise1((x_pos + chunk_origin.x) * 0.09, repeat=999999, base=0)
-                height_val = math.floor(height_noise * 5)
+                height_noise = noise.pnoise1((x_pos + chunk_origin.x) * 0.035, repeat=9999999, base=0)
+                height_val = math.floor(height_noise * 10)
                 ground_level = 16 - height_val
-                tile_type = None
 
+                # Use ridged multifractal noise to generate cave patterns (narrower caves)
+                cave_val = self.ridged_multifractal(
+                    (x_pos + chunk_origin.x) * cave_scale_x,
+                    (y_pos + chunk_origin.y) * cave_scale_y,
+                    octaves=4, lacunarity=2.5, gain=0.4, offset=1.0
+                )
+
+                # Only allow caves below ground level, but avoid massive caves
+                if pos.y > ground_level - 4:  # Surface caves
+                    if cave_val > cave_threshold_surface:
+                        continue  # Make surface caves smaller
+                elif pos.y > ground_level - 10:  # Transition zone
+                    if cave_val > (cave_threshold_surface + cave_threshold_deep) / 2:
+                        continue
+                else:  # Deep caves
+                    if cave_val > cave_threshold_deep:
+                        continue  # Allow deeper, but not too open
+
+                # Determine tile type based on height level
+                tile_type = None
                 if pos.y == ground_level:
                     tile_type = "grass"
                     if r.random() < tree_threshold:
@@ -216,27 +244,27 @@ class ServerGame(ServerGameBase):
                             if trunk_pos.y >= chunk_origin.y:
                                 chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
 
-                elif pos.y < ground_level and pos.y > ground_level - 4:
+                if pos.y < ground_level and pos.y > ground_level - 5:
                     tile_type = "dirt"
-                if pos.y <= ground_level - 4:
-                    tile_type = "stone"
                 if pos.y <= ground_level - 5:
-                    if r.random() < 0.125:
-                        tile_type = "coal" 
+                    tile_type = "stone"
                 if pos.y <= ground_level - 10:
-                    if r.random() < 0.075:
-                        tile_type = "iron" 
-                if pos.y <= ground_level - 15:
-                    if r.random() < 0.05:
+                    if r.random() < 0.02:
+                        tile_type = "coal"
+                if pos.y <= ground_level - 20:
+                    if r.random() < 0.01:
+                        tile_type = "iron"
+                if pos.y <= ground_level - 35:
+                    if r.random() < 0.005:
                         tile_type = "gold"
-                        
+
+                # Add tile to chunk data
                 if tile_type is not None:
                     chunk_data.append([(pos.x, pos.y), tile_type])
 
         return chunk_data
+
     
-
-
     def generate_and_load_chunks(self, chunk_x, chunk_y):
         level = self.engine.levels.get("Test_Level")
         if level is None:
@@ -246,12 +274,11 @@ class ServerGame(ServerGameBase):
         existing_names = set(level.actors.keys())
         target_chunk = f"{chunk_x};{chunk_y}"
                         
-        # Generate the chunk if needed.
+
         if target_chunk not in self.game_map:
             self.game_map[target_chunk] = self.generate_chunk(chunk_x, chunk_y)
 
-        
-        # Load new tiles only if this chunk hasn't been processed before.
+
         if target_chunk not in self.loaded_chunks:
             for tile in self.game_map[target_chunk]:
                 pos, tile_type = tile
@@ -282,7 +309,6 @@ class ServerGame(ServerGameBase):
 
         for actor in actors_to_add:
             level.register_actor(actor)
-
 
 
     def tick(self):
@@ -316,16 +342,10 @@ class ServerGame(ServerGameBase):
             self.current_base_chunk = new_base_chunk
         else:
             smoothing_factor = 0.5 # Adjust this factor to control smoothness.
-            self.current_base_chunk = Vector(
-                self.current_base_chunk.x + (new_base_chunk.x - self.current_base_chunk.x) * smoothing_factor,
-                self.current_base_chunk.y + (new_base_chunk.y - self.current_base_chunk.y) * smoothing_factor
-            )
+            self.current_base_chunk += (new_base_chunk - self.current_base_chunk) * smoothing_factor
 
-        base_chunk_vector = Vector(
-            math.floor(self.current_base_chunk.x),
-            math.floor(self.current_base_chunk.y)
-        )
-
+        base_chunk_vector = self.current_base_chunk.floored
+        
         # Create a symmetric grid of chunks around the smoothed base chunk.
         chunks_to_load = []
         ud = 0
