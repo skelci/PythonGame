@@ -202,10 +202,14 @@ class ServerGame(ServerGameBase):
         chunk_data = []
         chunk_origin = Vector(x, y) * CHUNK_SIZE
         tree_threshold = 0.1  # chance of a tree being generated on a grass tile
-        cave_scale_x = 0.025  # Slightly larger spread horizontally
-        cave_scale_y = 0.042 # Vertical spread for caves
+        """
+        Cave scale (cave_scale_x and cave_scale_y) acts as a multiplier for the noise coordinates
+        when generating cave patterns. Lower values result in larger, smoother cave features, 
+        while higher values create more detailed and smaller variations in the caves."""
+        cave_scale_x = 0.044
+        cave_scale_y = 0.044
         cave_threshold_surface = 0.4# Higher threshold to prevent big openings at surface
-        cave_threshold_deep = 0.37  # Higher threshold, fewer caves
+        cave_threshold_deep = 0.3  # Higher threshold, fewer caves
 
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
@@ -219,7 +223,7 @@ class ServerGame(ServerGameBase):
                 cave_val = self.ridged_multifractal(
                     (x_pos + chunk_origin.x) * cave_scale_x,
                     (y_pos + chunk_origin.y) * cave_scale_y,
-                    octaves=4, lacunarity=2.5, gain=0.6, offset=1.0
+                    octaves=4, lacunarity=1.8, gain=0.5, offset=1.0
                 )
 
                 # Only allow caves below ground level, but avoid massive caves
