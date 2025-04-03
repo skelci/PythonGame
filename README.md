@@ -7,6 +7,12 @@
 
 ## Latest Pics
 
+## How to run
+
+```bash
+python ./src/main.py
+```
+
 ![image](docs/images/image.png)
 ![image2](docs/images/image2.png)
 
