@@ -72,22 +72,30 @@ class Network(ABC):
 
                 return obj
             
-            return [convert(json.loads(data)) for data in data_stream]
+            parsed_unordered = [convert(json.loads(data)) for data in data_stream]
+            parsed_priority, parsed_not_priority = [], []
+            for data_packet in parsed_unordered:
+                has_priority, data = data_packet
+                if has_priority:
+                    parsed_priority.append(data)
+                else:
+                    parsed_not_priority.append(data)
+            return parsed_priority, parsed_not_priority
             
-        except Exception as e:
+        except json.JSONDecodeError as e:
             print(f"Error parsing data {data}: {e}")
             return ("", "")
     
 
     @staticmethod
-    def _parse_for_send(cmd, data):
+    def _parse_for_send(has_priotity, cmd, data):
         class VectorEncoder(json.JSONEncoder):
             def default(self, obj):
                 if isinstance(obj, Vector):
                     return {"_type": "Vector", "x": obj.x, "y": obj.y}
                 return super().default(obj)
 
-        payload = (cmd, data)
+        payload = (has_priotity, (cmd, data))
         encoded = json.dumps(payload, cls=VectorEncoder)
         return encoded
     
@@ -125,8 +133,12 @@ class ClientNetwork(Network):
         return self.__id
 
 
-    def send(self, cmd, data):
-        self._output_buffer.add_data_back(self._parse_for_send(cmd, data))
+    def send(self, cmd, data, has_priority = False):
+        if has_priority:
+            self._output_buffer.add_data_front(self._parse_for_send(has_priority, cmd, data))
+            return
+        
+        self._output_buffer.add_data_back(self._parse_for_send(has_priority, cmd, data))
 
 
     def tick(self):
@@ -161,9 +173,9 @@ class ClientNetwork(Network):
             if not data:
                 break
 
-            parsed_data = self._parse_data(data)
+            priority_data, unpriority_data = self._parse_data(data)
             if self.id == -1:
-                for data in parsed_data:
+                for data in unpriority_data:
                     cmd, id = data
                     if cmd == "register_outcome":
                         self.__id = id
@@ -172,7 +184,8 @@ class ClientNetwork(Network):
                 if self.__id != -1:
                     continue
 
-            self._input_buffer.add_data_back_multiple(parsed_data)
+            self._input_buffer.add_data_back_multiple(unpriority_data)
+            self._input_buffer.add_data_front_multiple(priority_data)
 
         self.__id = -1
         self.socket.close()
@@ -247,8 +260,12 @@ class ServerNetwork(Network):
             raise TypeError("Max connections must be a positive integer:", value)
 
 
-    def send(self, id, cmd, data):
-        self._output_buffer.add_data_back((id, self._parse_for_send(cmd, data)))
+    def send(self, id, cmd, data, has_priority = False):
+        if has_priority:
+            self._output_buffer.add_data_front((id, self._parse_for_send(has_priority, cmd, data)))
+            return
+        
+        self._output_buffer.add_data_back((id, self._parse_for_send(has_priority, cmd, data)))
 
 
     def tick(self):
@@ -311,9 +328,9 @@ class ServerNetwork(Network):
                     login_data = login_data[:-1]
                     break
 
-            parsed_data = self._parse_data(login_data)
+            _, unporiority_data = self._parse_data(login_data)
 
-            for data in parsed_data:
+            for data in unporiority_data:
                 result = self.__handle_login(data, conn)
                 if result:
                     break
@@ -337,9 +354,11 @@ class ServerNetwork(Network):
             if not data:
                 continue
 
-            parsed_data = self._parse_data(data)
-            tagged_data = [(self.__conn_to_id[conn], data) for data in parsed_data]
-            self._input_buffer.add_data_back_multiple(tagged_data)
+            priority_data, unporiority_data = self._parse_data(data)
+            tagged_priority_data = [(self.__conn_to_id[conn], data) for data in priority_data]
+            self._input_buffer.add_data_front_multiple(tagged_priority_data)
+            tagged_unpriority_data = [(self.__conn_to_id[conn], data) for data in unporiority_data]
+            self._input_buffer.add_data_back_multiple(tagged_unpriority_data)
 
         self.__id_to_conn.pop(self.__conn_to_id[conn])
         self.__conn_to_id.pop(conn)

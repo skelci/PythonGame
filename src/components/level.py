@@ -102,10 +102,7 @@ class Level:
         return self.__chunks
         
 
-    def register_actor(self, actor):
-        if actor.name in self.actors:
-            raise ValueError("Actor with the same name already exists in level:", actor.name)
-        
+    def register_actor(self, actor):        
         if isinstance(actor, Actor):
             self.__actors_to_create.add(actor)
         else:
@@ -123,8 +120,6 @@ class Level:
         new_actors = []
         actors_to_create = self.__actors_to_create.copy()
         for actor in actors_to_create:
-            # if actor.name in self.actors:
-            #     raise ValueError("Actor with the same name already exists in level: " + actor.name)
             self.actors[actor.name] = actor
             new_actors.append(actor)
 
