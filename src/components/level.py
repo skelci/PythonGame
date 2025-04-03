@@ -133,6 +133,8 @@ class Level:
         actors_to_destroy = self.__actors_to_destroy.copy()
         for actor in actors_to_destroy:
             destroyed.append(self.actors.pop(actor.name))
+            chk_x, chk_y = actor.chunk
+            self.chunks[chk_x][chk_y].remove(actor.name)
         
         self.__actors_to_destroy.clear()
         return destroyed
