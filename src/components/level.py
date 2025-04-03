@@ -122,6 +122,7 @@ class Level:
         for actor in actors_to_create:
             self.actors[actor.name] = actor
             new_actors.append(actor)
+            self.__add_actor_to_chunk(actor)
 
         self.__actors_to_create.clear()
         return new_actors
@@ -167,6 +168,14 @@ class Level:
                         chunk_updates[chunk_x][chunk_y] = {}
                     chunk_updates[chunk_x][chunk_y][actor_name] = sync_data
 
+                    if "position" in sync_data:
+                        actor = self.actors[actor_name]
+                        a_chk_x, a_chk_y = actor.chunk
+                        if (a_chk_x != chunk_x or a_chk_y != chunk_y) and actor_name in self.__chunks[a_chk_x][a_chk_y]:
+                            self.__chunks[a_chk_x][a_chk_y].remove(actor_name)
+                            self.__add_actor_to_chunk(actor)
+                            
+
         return chunk_updates
     
 
@@ -183,10 +192,6 @@ class Level:
         
 
     def tick(self, delta_time):
-        self.__chunks.clear() 
-        for actor in self.actors.values():
-            self.__add_actor_to_chunk(actor)
-
         self.__physics_step(delta_time * self.simulation_speed)
         
 
@@ -290,6 +295,8 @@ class Level:
         if chunk_y not in self.__chunks[chunk_x]:
             self.__chunks[chunk_x][chunk_y] = set()
         self.__chunks[chunk_x][chunk_y].add(actor.name)
+
+        actor.chunk = Vector(chunk_x, chunk_y)
         
     #?endif
 
