@@ -6,7 +6,6 @@ from engine.network import *
 from components.actor import Actor
 from components.rigidbody import Rigidbody
 from components.character import Character
-from components.material import Material
 from components.button import Button
 from components.background import Background
 from components.level import Level
