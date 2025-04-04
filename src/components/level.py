@@ -8,6 +8,8 @@ from components.game_math import *
 
 class Level:
     def __init__(self, name, default_character, actors = [], background = None, simulation_speed = 1, gravity = 1):
+        self.__engine_ref = None
+
         self.name = name
         self.default_character = default_character
         self.background = background
@@ -21,6 +23,19 @@ class Level:
 
         for actor in actors:
             self.register_actor(actor)
+
+
+    @property
+    def engine_ref(self):
+        return self.__engine_ref
+    
+
+    @engine_ref.setter
+    def engine_ref(self, value):
+        if value.__class__.__name__ == "ServerEngine" or value.__class__.__name__ == "ClientEngine":
+            self.__engine_ref = value
+        else:
+            raise TypeError("Engine refrence must be a Engine object:", value)
 
 
     @property
@@ -117,6 +132,8 @@ class Level:
         new_actors = []
         actors_to_create = self.__actors_to_create.copy()
         for actor in actors_to_create:
+            actor.engine_ref = self.engine_ref
+            actor.level_ref = self
             self.actors[actor.name] = actor
             new_actors.append(actor)
             self.__add_actor_to_chunk(actor)

@@ -91,6 +91,7 @@ class ClientEngine(Engine, Renderer):
 
         self.__network = None
         self.__level = Level("Engine_Level", Character)
+        self.__level.engine_ref = self
 
         self.__widgets = {}
         self.__backgrounds = {}
@@ -419,7 +420,7 @@ class ClientEngine(Engine, Renderer):
         if data[0] not in self.__actor_templates:
             raise Exception(f"Actor template {data[0]} is not registered")
 
-        self.__level.register_actor(self.__actor_templates[data[0]](self, data[1], data[2])) # if it crashes in this line, it's because actor class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
+        self.__level.register_actor(self.__actor_templates[data[0]](data[1], data[2])) # if it crashes in this line, it's because actor class you provided doesn't have correct attributes. It should have only name, position, everything else should be hardcoded
 
 
     def __update_actor(self, data):
@@ -546,6 +547,7 @@ class ServerEngine(Engine):
     def register_level(self, level):
         if level.name in self.__levels or not isinstance(level, Level):
             raise Exception(f"Level {level.name} is already registered or wrong data type")
+        level.engine_ref = self
         self.__levels[level.name] = level
     
 
@@ -750,7 +752,7 @@ class ServerEngine(Engine):
         level_name = data
         if level_name in self.levels:
             self.__players[id].level = level_name
-            player_actor = self.levels[level_name].default_character(self, self.get_player_actor(id), Vector()) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
+            player_actor = self.levels[level_name].default_character(self.get_player_actor(id), Vector()) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only name, position, everything else should be hardcoded
             self.levels[level_name].register_actor(player_actor)
             self.__players[id].previous_chunk = get_chunk_cords(player_actor.position)
             self.__players[id].previous_different_chunk = self.__players[id].previous_chunk

@@ -3,7 +3,7 @@ from components.material import Material
 
 
 class Actor:
-    def __init__(self, engine_ref, name, position, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, visible = True, material = None, restitution = 1):
+    def __init__(self, name, position, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, visible = True, material = None, restitution = 1):
         self.__outdated = {
             "half_size": False,
             "position": False,
@@ -11,7 +11,8 @@ class Actor:
             "material": False,
         }
 
-        self.engine_ref = engine_ref
+        self.__engine_ref = None
+        self.__level_ref = None
         self.name = name
         self.half_size = half_size
         self.position = position
@@ -40,6 +41,19 @@ class Actor:
             self.__engine_ref = value
         else:
             raise TypeError("Engine refrence must be a Engine object:", value)
+        
+
+    @property
+    def level_ref(self):
+        return self.__level_ref
+    
+
+    @level_ref.setter
+    def level_ref(self, value):
+        if any("Level" == cls.__name__ for cls in value.__class__.__mro__):
+            self.__level_ref = value
+        else:
+            raise TypeError("Level refrence must be a Level object:", value)
 
 
     @property
