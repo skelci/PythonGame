@@ -72,7 +72,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 8)
+        eng.set_camera_width(16 * 12)
         eng.resolution = Vector(1600, 900)
 
         eng.connect("localhost", 5555)
@@ -178,66 +178,61 @@ class ServerGame(ServerGameBase):
         self.game_map = {}
         self.loaded_chunks = set()
 
-
     @staticmethod
-    def ridged_multifractal(x, y, octaves=4, lacunarity=2.0, gain=0.5, offset=1.0):
-        frequency = 1.0
-        amplitude = 0.5
-        weight = 1.0
-        result = 0.0
-        for i in range(octaves):
-            n = noise.snoise2(x * frequency, y * frequency)  # noise in [-1,1]
-            n = abs(n)           # ridging: absolute value
-            n = offset - n       # invert so ridges show up
-            n = n * n            # square to accentuate
-            n *= weight
-            result += n * amplitude
-            weight = n * gain
-            weight = max(min(weight, 1.0), 0.0)  # clamp weight [0,1]
-            frequency *= lacunarity
-            amplitude *= gain
-        return result
+    def smoothstep(val, edge0, edge1):
+        # Remaps val from [edge0, edge1] to [0,1] with a smooth transition.
+        t = max(0.0, min((val - edge0) / (edge1 - edge0), 1.0))
+        return t * t * (3 - 2 * t)
 
     def generate_chunk(self, x, y):
         chunk_data = []
         chunk_origin = Vector(x, y) * CHUNK_SIZE
         tree_threshold = 0.1  # chance of a tree being generated on a grass tile
+        terrain_scale = 0.035
         """
-        Cave scale (cave_scale_x and cave_scale_y) acts as a multiplier for the noise coordinates
-        when generating cave patterns. Lower values result in larger, smoother cave features, 
-        while higher values create more detailed and smaller variations in the caves."""
-        cave_scale_x = 0.044
-        cave_scale_y = 0.044
-        cave_threshold_surface = 0.4# Higher threshold to prevent big openings at surface
-        cave_threshold_deep = 0.3  # Higher threshold, fewer caves
+        Cave parameters adjusted for larger caves:
+        • Lower cave_scale values so the noise changes more slowly, resulting in larger, smoother cave features.
+        • Lower thresholds so its easier to carve out a space.
+        """
+        cave_scale_x = 0.02   # slower horizontal variation => bigger cave openings
+        cave_scale_y = 0.03  # slower vertical variation
+        # Lower thresholds to promote more frequent carving (thus larger caves):
+        surface_threshold = 0.7  
+        mid_threshold = 0.5      
+        deep_threshold = 0.3  
+        cave_octaves = 2  # still using fewer octaves to avoid excessive detail
 
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
                 pos = chunk_origin + Vector(x_pos, y_pos)
-                # Noise-based height for a given x position.
-                height_noise = noise.pnoise1((x_pos + chunk_origin.x) * 0.035, repeat=9999999, base=0)
+                # Compute terrain height.
+                height_noise = noise.pnoise1((x_pos + chunk_origin.x) * terrain_scale, repeat=9999999, base=0)
                 height_val = math.floor(height_noise * 10)
                 ground_level = 16 - height_val
 
-                # Use ridged multifractal noise to generate cave patterns (narrower caves)
-                cave_val = self.ridged_multifractal(
+                # Use simplex noise (snoise2) for cave generation.
+                cave_val = noise.snoise2(
                     (x_pos + chunk_origin.x) * cave_scale_x,
                     (y_pos + chunk_origin.y) * cave_scale_y,
-                    octaves=4, lacunarity=1.8, gain=0.5, offset=1.0
+                    octaves=cave_octaves, persistence=0.5, lacunarity=2.0
                 )
+                depth = ground_level - pos.y
+                # Blend thresholds based on depth:
+                if pos.y > ground_level - 16:  # Surface zone: only small openings allowed
+                    depth = ground_level - pos.y
+                    effective_threshold = surface_threshold - (surface_threshold - mid_threshold) * ServerGame.smoothstep(depth, 0, 16)
+                elif pos.y > ground_level - 30:
+                    effective_threshold = mid_threshold - (mid_threshold - deep_threshold) * ServerGame.smoothstep(depth, 0, 24)
+                elif pos.y > ground_level - 50:
+                    effective_threshold = mid_threshold + (deep_threshold - mid_threshold) * ServerGame.smoothstep(depth, 0, 20)
+                else:
+                    effective_threshold = deep_threshold
 
-                # Only allow caves below ground level, but avoid massive caves
-                if pos.y > ground_level - 15:  # Surface caves
-                    if cave_val > cave_threshold_surface:
-                        continue  # Make surface caves smaller
-                elif pos.y > ground_level - 30:  # Transition zone
-                    if cave_val > (cave_threshold_surface + cave_threshold_deep) / 2:
-                        continue
-                else:  # Deep caves
-                    if cave_val > cave_threshold_deep:
-                        continue  # Allow deeper, but not too open
+                # If the cave noise exceeds the effective threshold, carve out this tile.
+                if cave_val > effective_threshold:
+                    continue
 
-                # Determine tile type based on height level
+                # Determine tile type based on height level.
                 tile_type = None
                 if pos.y == ground_level:
                     tile_type = "grass"
@@ -247,22 +242,17 @@ class ServerGame(ServerGameBase):
                             trunk_pos = pos + Vector(0, h)
                             if trunk_pos.y >= chunk_origin.y:
                                 chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
-
-                if pos.y < ground_level and pos.y > ground_level - 5:
+                elif pos.y < ground_level and pos.y > ground_level - 5:
                     tile_type = "dirt"
-                if pos.y <= ground_level - 5:
+                elif pos.y <= ground_level - 5:
                     tile_type = "stone"
-                if pos.y <= ground_level - 10:
-                    if r.random() < 0.02:
+                    if pos.y <= ground_level - 10 and r.random() < 0.02:
                         tile_type = "coal"
-                if pos.y <= ground_level - 20:
-                    if r.random() < 0.01:
+                    if pos.y <= ground_level - 20 and r.random() < 0.01:
                         tile_type = "iron"
-                if pos.y <= ground_level - 35:
-                    if r.random() < 0.005:
+                    if pos.y <= ground_level - 35 and r.random() < 0.005:
                         tile_type = "gold"
 
-                # Add tile to chunk data
                 if tile_type is not None:
                     chunk_data.append([(pos.x, pos.y), tile_type])
 
