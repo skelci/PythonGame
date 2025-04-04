@@ -303,6 +303,8 @@ class Level:
         for actor_name, overlaped_set in overlaped_actors.items():
             self.actors[actor_name].previously_collided = overlaped_set
 
+    #?endif
+    
 
     def __add_actor_to_chunk(self, actor):
         chunk_x, chunk_y = get_chunk_cords(actor.position)
@@ -314,5 +316,4 @@ class Level:
 
         actor.chunk = Vector(chunk_x, chunk_y)
         
-    #?endif
 

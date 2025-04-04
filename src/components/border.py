@@ -1,3 +1,4 @@
+#?attr CLIENT
 from components.widget import Widget
 from components.datatypes import *
 

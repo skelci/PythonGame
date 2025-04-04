@@ -5,10 +5,12 @@ from components.rigidbody import Rigidbody
 from components.datatypes import *
 from components.material import Material
 from components.character import Character
-from components.button import Button
 from components.background import *
-from components.text import Text
 from components.level import Level
+#?ifdef CLIENT
+from components.button import Button
+from components.text import Text
+#?endif
 
 import random as r
 import math
@@ -177,6 +179,11 @@ class ServerGame(ServerGameBase):
 
         self.game_map = {}
         self.loaded_chunks = set()
+
+        #?ifdef ENGINE
+        self.engine.console.handle_cmd("build_server")
+        self.engine.console.handle_cmd("build_client")
+        #?endif
 
 
     @staticmethod

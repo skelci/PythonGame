@@ -1,16 +1,25 @@
+
+#?ifdef CLIENT
 from engine.renderer import Renderer
+#?endif
+#?ifdef SERVER
 from engine.console import Console
+#?endif
+#?ifdef ENGINE
 from engine.builder import *
+#?endif
 from engine.network import *
 
+#?ifdef CLIENT
+from components.button import Button
+from components.text import Text
+from components.widget import Widget
+#?endif
 from components.actor import Actor
 from components.rigidbody import Rigidbody
 from components.character import Character
-from components.button import Button
 from components.background import Background
 from components.level import Level
-from components.text import Text
-from components.widget import Widget
 from components.datatypes import *
 from components.game_math import *
 

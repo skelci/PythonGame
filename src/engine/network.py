@@ -369,11 +369,13 @@ class ServerNetwork(Network):
         request, data = login_data
         username, password = data
 
+        failed_registration_msg = (self._parse_for_send(False, "register_outcome", -1) + chr(31)).encode("ascii")
+
         match request:
             case "register":
                 result = self.__register_user(username, password)
                 if result == -1:
-                    conn.send(b"('register_outcome',-1)")
+                    conn.send(failed_registration_msg)
                     return False
                 self.__conn_to_id[conn] = result
                 self.__id_to_conn[result] = conn
@@ -383,7 +385,7 @@ class ServerNetwork(Network):
             case "login":
                 result = self.__login_user(username, password)
                 if result == -1:
-                    conn.send(b"('register_outcome',-1)")
+                    conn.send(failed_registration_msg)
                     return False
                 self.__conn_to_id[conn] = result
                 self.__id_to_conn[result] = conn

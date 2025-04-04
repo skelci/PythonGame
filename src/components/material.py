@@ -28,8 +28,10 @@ class Material:
     @texture_str.setter
     def texture_str(self, value):
         if isinstance(value, str) or isinstance(value, Color):
+            #?ifdef CLIENT
             if isinstance(value, str) and not os.path.isfile(value) and not isinstance(value, Color):
                 raise FileNotFoundError("Texture file not found:", value)
+            #?endif
             self.__texture_str = value
         else:
             raise TypeError("Texture_str must be a string or Color:", value)
