@@ -74,7 +74,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 4)
+        eng.set_camera_width(16 * 8)
         eng.resolution = Vector(1600, 900)
 
         eng.connect("localhost", 5555)
@@ -209,9 +209,13 @@ class ServerGame(ServerGameBase):
         chunk_data = []
         chunk_origin = Vector(x, y) * CHUNK_SIZE
         tree_threshold = 0.1  # chance of a tree being generated on a grass tile
-        cave_scale_x = 0.035  # Slightly larger spread horizontally
-        cave_scale_y = 0.03   # Vertical spread for caves (smaller)
-        cave_threshold_surface = 0.45  # Higher threshold to prevent big openings at surface
+        """
+        Cave scale (cave_scale_x and cave_scale_y) acts as a multiplier for the noise coordinates
+        when generating cave patterns. Lower values result in larger, smoother cave features, 
+        while higher values create more detailed and smaller variations in the caves."""
+        cave_scale_x = 0.044
+        cave_scale_y = 0.044
+        cave_threshold_surface = 0.4# Higher threshold to prevent big openings at surface
         cave_threshold_deep = 0.3  # Higher threshold, fewer caves
 
         for y_pos in range(CHUNK_SIZE):
@@ -226,14 +230,14 @@ class ServerGame(ServerGameBase):
                 cave_val = self.ridged_multifractal(
                     (x_pos + chunk_origin.x) * cave_scale_x,
                     (y_pos + chunk_origin.y) * cave_scale_y,
-                    octaves=4, lacunarity=2.5, gain=0.4, offset=1.0
+                    octaves=4, lacunarity=1.8, gain=0.5, offset=1.0
                 )
 
                 # Only allow caves below ground level, but avoid massive caves
-                if pos.y > ground_level - 4:  # Surface caves
+                if pos.y > ground_level - 15:  # Surface caves
                     if cave_val > cave_threshold_surface:
                         continue  # Make surface caves smaller
-                elif pos.y > ground_level - 10:  # Transition zone
+                elif pos.y > ground_level - 30:  # Transition zone
                     if cave_val > (cave_threshold_surface + cave_threshold_deep) / 2:
                         continue
                 else:  # Deep caves
@@ -278,7 +282,6 @@ class ServerGame(ServerGameBase):
             return
 
         actors_to_add = []
-        existing_names = set(level.actors.keys())
         target_chunk = f"{chunk_x};{chunk_y}"
                         
 
@@ -308,10 +311,9 @@ class ServerGame(ServerGameBase):
                     new_actor = Iron(actor_name, Vector(pos[0], pos[1]))
                 
 
-                if new_actor is not None and actor_name not in existing_names:
+                if new_actor is not None:
                     actors_to_add.append(new_actor)
-                    existing_names.add(actor_name)
-            
+
             self.loaded_chunks.add(target_chunk)
 
         for actor in actors_to_add:
