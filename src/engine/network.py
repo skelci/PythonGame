@@ -392,7 +392,7 @@ class ServerNetwork(Network):
             case "login":
                 result = self.__login_user(username, password)
                 if result == -1:
-                    conn.send(failed_registration_msg)
+                    conn.send(failed_registration_msg(-1))
                     return False
                 if result in self.__connected_ids:
                     conn.send(failed_registration_msg(-2))
