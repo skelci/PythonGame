@@ -3,9 +3,8 @@
 from components.datatypes import *
 from components.actor import Actor
 from components.widget import Widget
-from components.button import Button
 
-import pygame # type: ignore
+import pygame
 
 import time
 
@@ -24,7 +23,7 @@ class Renderer:
         self.windowed = windowed
         self.camera_position = camera_position
 
-        self.__actors_to_draw = []
+        self.__actors_to_draw = {}
         self.__widgets_to_draw = []
 
 
@@ -134,27 +133,21 @@ class Renderer:
         return self.__widgets_to_draw
 
 
-    def add_actor_to_draw(self, actor, in_front = False):
+    def add_actor_to_draw(self, actor):
         if not isinstance(actor, Actor):
             raise TypeError("Actor must be a subclass of Actor:", actor)
         
-        for existing in self.__actors_to_draw:
-            if existing.name == actor.name:
-                self.__actors_to_draw.remove(existing)
-                break
-        
-        if in_front:
-            self.__actors_to_draw.append(actor)
-        else:
-            self.__actors_to_draw.insert(0, actor)
+        if actor.render_layer not in self.__actors_to_draw:
+            self.__actors_to_draw[actor.render_layer] = set()
+        self.__actors_to_draw[actor.render_layer].add(actor)
 
 
     def remove_actor_from_draw(self, actor):
         if not isinstance(actor, Actor):
             raise TypeError("Actor must be a subclass of Actor:", actor)
         
-        if actor in self.__actors_to_draw:
-            self.__actors_to_draw.remove(actor)
+        if actor in self.__actors_to_draw[actor.render_layer]:
+            self.__actors_to_draw[actor.render_layer].remove(actor)
         else:
             raise ValueError("Actor not found in actors to draw:", actor)
         
@@ -175,15 +168,18 @@ class Renderer:
         
         time_start = time.time()
 
-        magic_scale = camera_ratio * 2 * (1.0005 ** self.camera_width)
-        for a in self.actors_to_draw:
-            top_left_position = (
-                camera_ratio * (a.position.x - a.half_size.x - self.camera_position.x) + self.resolution.x / 2,
-                camera_ratio * -(a.position.y + a.half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
-            )
+        magic_scale = camera_ratio * 2 * (1.0005 ** self.camera_width) # Magic number to prevent gaps between tiles
+        layers = sorted(self.actors_to_draw.keys())
+        for layer in layers:
+            actors = self.actors_to_draw[layer]
+            for a in actors:
+                top_left_position = (
+                    camera_ratio * (a.position.x - a.half_size.x - self.camera_position.x) + self.resolution.x / 2,
+                    camera_ratio * -(a.position.y + a.half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
+                )
 
-            surface = a.material.get_surface(a.half_size * magic_scale)
-            self.screen.blit(surface, top_left_position)
+                surface = a.material.get_surface(a.half_size * magic_scale)
+                self.screen.blit(surface, top_left_position)
 
         time_actors = time.time()
 

@@ -176,6 +176,8 @@ class Level:
                             
                     if not actor.visible and "visible" not in sync_data:
                         continue 
+                    if "visible" in sync_data:
+                        del sync_data["visible"]
 
                     if chunk_x not in chunk_updates:
                         chunk_updates[chunk_x] = {}

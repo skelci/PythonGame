@@ -74,7 +74,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 2)
+        eng.set_camera_width(16 * 4)
         eng.resolution = Vector(1600, 900)
 
         eng.connect("localhost", 5555)
@@ -117,8 +117,6 @@ class ClientGame(ClientGameBase):
             self.current_level = "Test_Level"
             self.engine.join_level(self.current_level)
             return
-        
-        
 
         player_key = f"__Player_{self.engine.network.id}"
         if player_key in self.engine.level.actors:

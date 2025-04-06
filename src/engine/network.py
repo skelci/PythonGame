@@ -19,8 +19,8 @@ class Network(ABC):
         self.__running = True
         
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._output_buffer = DoubleBuffer()
-        self._input_buffer = DoubleBuffer()
+        self._output_buffer = AdvancedDeque()
+        self._input_buffer = AdvancedDeque()
 
 
     @property

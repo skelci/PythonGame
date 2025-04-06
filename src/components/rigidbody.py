@@ -5,8 +5,8 @@ from components.datatypes import *
 
 
 class Rigidbody(Actor):
-    def __init__(self, name, position, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, simulate_physics = True, visible = True, material = None, restitution = 0.5, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 1, gravity_scale = 1, air_resistance = 0.1, deceleration = 10):
-        super().__init__(name, position, half_size, generate_overlap_events, collidable, visible, material, restitution)
+    def __init__(self, name, position, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, simulate_physics = True, visible = True, material = None, render_layer = 0, restitution = 0.5, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 1, gravity_scale = 1, air_resistance = 0.1, deceleration = 10):
+        super().__init__(name, position, half_size, generate_overlap_events, collidable, visible, material, render_layer, restitution)
 
         self.simulate_physics = simulate_physics
         self.velocity = initial_velocity
