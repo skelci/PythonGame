@@ -20,6 +20,8 @@ import os
 
 
 CHUNK_SIZE = 32
+ORIGINAL_CHUNK_SIZE = 8
+DEVIDER = CHUNK_SIZE // ORIGINAL_CHUNK_SIZE
 CAMERA_OFFSET_X = 1
 CAMERA_OFFSET_Y = 1
 
@@ -106,7 +108,6 @@ class ClientGame(ClientGameBase):
 
 
 
-
     def tick(self):
         delta_time = super().tick()
 
@@ -166,7 +167,7 @@ class KeyHandler:
 class TunnelGenerator:
     def __init__(self):
         self.width = 2
-        self.curvature = 0.4 # 0 = straight, 1 = very curved
+        self.curvature = 0.7 # 0 = straight, 1 = very curved
         self.max_tunnel_length = 50
         
 
@@ -247,7 +248,6 @@ class TunnelGenerator:
     
     def _connect_regions(self, cave_data, regions):
         centers = [self._center_point(region) for region in regions]
-        
         # Connect each region to its nearest neighbor
         connected = set()
         connected.add(0)
@@ -384,9 +384,7 @@ class ServerGame(ServerGameBase):
                 pos = chunk_origin + Vector(x_pos, y_pos)
                 
                 # Terrain height
-                height_noise = noise.pnoise1(pos.x * terrain_scale, 
-                                        repeat=9999999, 
-                                        base=0)
+                height_noise = noise.pnoise1(pos.x * terrain_scale, repeat=9999999, base=0)
                 height_val = math.floor(height_noise * 10)
                 ground_level = 16 - height_val
                 
@@ -453,9 +451,7 @@ class ServerGame(ServerGameBase):
                     continue
                     
                 # Generate terrain
-                height_noise = noise.pnoise1(pos.x * terrain_scale, 
-                                        repeat=9999999, 
-                                        base=0)
+                height_noise = noise.pnoise1(pos.x * terrain_scale, repeat=9999999, base=0)
                 height_val = math.floor(height_noise * 10)
                 ground_level = 16 - height_val
                 
@@ -527,13 +523,11 @@ class ServerGame(ServerGameBase):
 
                 if new_actor is not None:
                     actors_to_add.append(new_actor)
-
             # Register all actors at once
             for actor in actors_to_add:
                 level.register_actor(actor)
             
             self.loaded_chunks.add(target_chunk)
-
 
 
     def tick(self):
@@ -578,7 +572,8 @@ class ServerGame(ServerGameBase):
             for player in self.engine.players.values():
                 ud += player.update_distance
         ud //= len(self.engine.players)
-        for offset_y in range(-ud, ud + 1):
+        ud = (ud // DEVIDER) + 1
+        for offset_y in range(-ud + 2, ud + 1):
             for offset_x in range(-ud, ud + 1):
                 chunks_to_load.append((
                     base_chunk_vector.x + offset_x, 
