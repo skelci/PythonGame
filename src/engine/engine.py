@@ -300,10 +300,6 @@ class ClientEngine(Engine, Renderer):
             pygame.quit()
             return delta_time
 
-        for actor in self.level.actors.values():
-            if actor.visible and actor.material:
-                self.add_actor_to_draw(actor)
-
         for widget in self.widgets.values():
             if widget.visible:
                 self.add_widget_to_draw(widget)
@@ -313,12 +309,14 @@ class ClientEngine(Engine, Renderer):
         if self.get_player_actor(self.network.id) in self.level.actors:
             player_actor = self.level.actors[self.get_player_actor(self.network.id)]
             player_chunk = get_chunk_cords(player_actor.position)
+            bl_chk_pos = player_chunk - self.__update_distance - 2
+            tr_chk_pos = player_chunk + self.__update_distance + 2
 
-            for actor in self.level.actors.values():
-                bl_chk_pos = player_chunk - self.__update_distance - 2
-                tr_chk_pos = player_chunk + self.__update_distance + 2
-                if not is_in_rect(bl_chk_pos, tr_chk_pos, get_chunk_cords(actor.position)):
-                    self.level.destroy_actor(actor)
+            for chk_x, chk_column in self.level.chunks.items():
+                for chk_y, chk_actors in chk_column.items():
+                    if not is_in_rect(bl_chk_pos, tr_chk_pos, Vector(chk_x, chk_y)):
+                        for actor in chk_actors:
+                            self.level.destroy_actor(self.level.actors[actor])
 
         self.__time("render_regs")
 
@@ -342,8 +340,12 @@ class ClientEngine(Engine, Renderer):
         self.__stats["widget_render"].pop(0)
 
         self.handle_network()
-        self.level.get_new_actors()
-        self.level.get_destroyed()
+        new_actors = self.level.get_new_actors()
+        for actor in new_actors:
+            self.add_actor_to_draw(actor)
+        old_actors = self.level.get_destroyed()
+        for actor in old_actors:
+            self.remove_actor_from_draw(actor)
 
         self.__time("network")
 
@@ -433,9 +435,19 @@ class ClientEngine(Engine, Renderer):
 
 
     def __update_actor(self, data):
-        actor = data[0]
-        if actor in self.__level.actors:
-            self.__level.actors[actor].update_from_net_sync(data[1])
+        actor_name = data[0]
+        if actor_name in self.__level.actors:
+            self.__level.actors[actor_name].update_from_net_sync(data[1])
+
+            if "position" not in data[1]:
+                return
+
+            actor = self.__level.actors[actor_name]
+            chk_x, chk_y = get_chunk_cords(actor.position)
+            a_chk_x, a_chk_y = actor.chunk
+            if a_chk_x != chk_x or a_chk_y != chk_y:
+                self.level.chunks[a_chk_x][a_chk_y].remove(actor.name)
+                self.level.add_actor_to_chunk(actor)
 
 
     def __destroy_actor(self, data):
@@ -504,7 +516,6 @@ class ServerEngine(Engine):
             "tps":              [0] * 30,
             "console_cmds":     [0] * 30,
             "level_updates":    [0] * 30,
-            "widget_tick":      [0] * 30,
             "network":          [0] * 30,
         }
 

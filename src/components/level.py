@@ -137,7 +137,7 @@ class Level:
             self.actors[actor.name] = actor
             if actor.visible:
                 new_actors.append(actor)
-            self.__add_actor_to_chunk(actor)
+            self.add_actor_to_chunk(actor)
 
         self.__actors_to_create.clear()
         return new_actors
@@ -153,22 +153,9 @@ class Level:
         
         self.__actors_to_destroy.clear()
         return destroyed
-        
+
 
     #?ifdef SERVER
-    def get_loaded_chunks(self, players):
-        chunks = set()
-        for player in players:
-            for x in range(-player.update_distance, player.update_distance + 1):
-                for y in range(-player.update_distance, player.update_distance + 1):
-                    chunk_pos = get_chunk_cords(player.position) + Vector(x, y)
-                    previous_chunk_pos = player.previous_different_chunk + Vector(x, y)
-                    chunks.add(chunk_pos)
-                    chunks.add(previous_chunk_pos)
-
-        return chunks
-
-
     def get_updates(self, players):
         chunk_updates = {}
 
@@ -185,7 +172,7 @@ class Level:
                         a_chk_x, a_chk_y = actor.chunk
                         if (a_chk_x != chunk_x or a_chk_y != chunk_y) and actor_name in self.__chunks[a_chk_x][a_chk_y]:
                             self.__chunks[a_chk_x][a_chk_y].remove(actor_name)
-                            self.__add_actor_to_chunk(actor)
+                            self.add_actor_to_chunk(actor)
                             
                     if not actor.visible and "visible" not in sync_data:
                         continue 
@@ -196,8 +183,20 @@ class Level:
                         chunk_updates[chunk_x][chunk_y] = {}
                     chunk_updates[chunk_x][chunk_y][actor_name] = sync_data
                             
-
         return chunk_updates
+        
+
+    def get_loaded_chunks(self, players):
+        chunks = set()
+        for player in players:
+            for x in range(-player.update_distance, player.update_distance + 1):
+                for y in range(-player.update_distance, player.update_distance + 1):
+                    chunk_pos = get_chunk_cords(player.position) + Vector(x, y)
+                    previous_chunk_pos = player.previous_different_chunk + Vector(x, y)
+                    chunks.add(chunk_pos)
+                    chunks.add(previous_chunk_pos)
+
+        return chunks
     
 
     def get_actors_in_chunks_3x3(self, chunk_pos):
@@ -311,7 +310,7 @@ class Level:
     #?endif
     
 
-    def __add_actor_to_chunk(self, actor):
+    def add_actor_to_chunk(self, actor):
         chunk_x, chunk_y = get_chunk_cords(actor.position)
         if chunk_x not in self.__chunks:
             self.__chunks[chunk_x] = {}

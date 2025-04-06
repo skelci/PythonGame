@@ -134,12 +134,30 @@ class Renderer:
         return self.__widgets_to_draw
 
 
-    def add_actor_to_draw(self, actor):
+    def add_actor_to_draw(self, actor, in_front = False):
         if not isinstance(actor, Actor):
             raise TypeError("Actor must be a subclass of Actor:", actor)
         
-        self.__actors_to_draw.append(actor)
+        for existing in self.__actors_to_draw:
+            if existing.name == actor.name:
+                self.__actors_to_draw.remove(existing)
+                break
+        
+        if in_front:
+            self.__actors_to_draw.append(actor)
+        else:
+            self.__actors_to_draw.insert(0, actor)
 
+
+    def remove_actor_from_draw(self, actor):
+        if not isinstance(actor, Actor):
+            raise TypeError("Actor must be a subclass of Actor:", actor)
+        
+        if actor in self.__actors_to_draw:
+            self.__actors_to_draw.remove(actor)
+        else:
+            raise ValueError("Actor not found in actors to draw:", actor)
+        
 
     def add_widget_to_draw(self, widget):
         if not isinstance(widget, Widget):
@@ -149,7 +167,6 @@ class Renderer:
 
     
     def clear(self):
-        self.__actors_to_draw.clear()
         self.__widgets_to_draw.clear()
 
 

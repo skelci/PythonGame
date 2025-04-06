@@ -18,8 +18,8 @@ class Actor:
         self.position = position
         self.generate_overlap_events = generate_overlap_events
         self.collidable = collidable
-        self.visible = visible
         self.material = material
+        self.visible = visible
         self.restitution = restitution
 
         self.previously_collided = set()
@@ -131,6 +131,8 @@ class Actor:
     @visible.setter
     def visible(self, value):
         if isinstance(value, bool):
+            if not self.material and value:
+                raise ValueError("Material must be set to use visible:", value)
             self.__visible = value
             self.__outdated["visible"] = True
         else:
@@ -190,20 +192,9 @@ class Actor:
                 case "material":
                     self.material = self.engine_ref.get_material(data[key])
     #?endif
-        
-
-
-    #?ifdef SERVER
-    def get_for_full_net_sync(self):
-        for key in self.__outdated:
-            self.__outdated[key] = False
-        return [
-            self.__class__.__name__,
-            self.name,
-            self.position,
-        ]
     
 
+    #?ifdef SERVER
     def get_for_net_sync(self):
         out = {}
         for key in self.__outdated:
@@ -214,6 +205,16 @@ class Actor:
                 self.__outdated[key] = False
 
         return out
+        
+
+    def get_for_full_net_sync(self):
+        for key in self.__outdated:
+            self.__outdated[key] = False
+        return [
+            self.__class__.__name__,
+            self.name,
+            self.position,
+        ]
 
 
     def tick(self, delta_time):
@@ -235,5 +236,9 @@ class Actor:
     
     def __str__(self):
         return self.name
+    
+
+    def __repr__(self):
+        return self.__str__()
 
 

@@ -74,7 +74,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 8)
+        eng.set_camera_width(16 * 2)
         eng.resolution = Vector(1600, 900)
 
         eng.connect("localhost", 5555)
