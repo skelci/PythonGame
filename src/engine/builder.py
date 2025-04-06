@@ -212,6 +212,8 @@ class Builder:
 
             else:
                 if not should_skip:
+                    if line.strip() == "":
+                        continue
                     f.write(line)
 
         f.close()
