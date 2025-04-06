@@ -298,10 +298,9 @@ class CollisionData:
 
 
 """
-A double buffer implementation that allows adding data to the front and back of the buffer.
-It has also a fast way to get all data from the buffer.
+A deque implementatio with a fast way to get all data from/to the buffer.
 """
-class DoubleBuffer:
+class AdvancedDeque:
     def __init__(self):
         self.__front_buffer = deque()
         self.__back_buffer = deque()

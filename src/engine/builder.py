@@ -21,6 +21,12 @@ class Builder:
         self.server_folders = server_folders
         self.client_folders = client_folders
 
+        self.__run_script = (
+            "@echo off\n"
+            "python src/main.py\n"
+            "pause\n"
+        )        
+
 
     @property
     def build_dir(self):
@@ -96,7 +102,7 @@ class Builder:
                     shutil.copy(file, dest_dir)
 
         with open(self.package_dir + "/server/run.bat", "w") as f:
-            f.write("python ./src/main.py")
+            f.write(self.__run_script)
 
         print(f"Server built in {time.time() - build_start:.3f} seconds.")
 
@@ -123,7 +129,7 @@ class Builder:
                     shutil.copy(file, dest_dir)
 
         with open(self.package_dir + "/client/run.bat", "w") as f:
-            f.write("python ./src/main.py")
+            f.write(self.__run_script)
 
         print(f"Client built in {time.time() - build_start:.3f} seconds")
 
@@ -171,6 +177,7 @@ class Builder:
         f = open(file_name, "w")
 
         should_skip = 0
+        prev_def = ""
         
         for line in lines:
             if line.strip().startswith("#?"):
@@ -182,23 +189,31 @@ class Builder:
                 if build_type == BuildType.SERVER:
                     match line[2:7]:
                         case "ifdef":
-                            if line[8:] == "CLIENT" or line[8:] == "ENGINE":
+                            prev_def = line[8:]
+                            if prev_def == "CLIENT" or prev_def == "ENGINE":
                                 should_skip += 1
 
                         case "endif":
+                            if prev_def == "SERVER":
+                                continue
                             should_skip -= 1
                         
                 if build_type == BuildType.CLIENT:
                     match line[2:7]:
                         case "ifdef":
-                            if line[8:] == "SERVER" or line[8:] == "ENGINE":
+                            prev_def = line[8:]
+                            if prev_def == "SERVER" or prev_def == "ENGINE":
                                 should_skip += 1
 
                         case "endif":
+                            if prev_def == "CLIENT":
+                                continue
                             should_skip -= 1
 
             else:
                 if not should_skip:
+                    if line.strip() == "":
+                        continue
                     f.write(line)
 
         f.close()

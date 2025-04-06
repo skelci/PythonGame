@@ -19,8 +19,8 @@ class Network(ABC):
         self.__running = True
         
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._output_buffer = DoubleBuffer()
-        self._input_buffer = DoubleBuffer()
+        self._output_buffer = AdvancedDeque()
+        self._input_buffer = AdvancedDeque()
 
 
     @property
@@ -174,20 +174,20 @@ class ClientNetwork(Network):
                 break
 
             priority_data, unpriority_data = self._parse_data(data)
-            if self.id == -1:
+            if self.id < 0:
                 for data in unpriority_data:
                     cmd, id = data
                     if cmd == "register_outcome":
                         self.__id = id
                         continue
                 
-                if self.__id != -1:
+                if self.__id > 0:
                     continue
 
             self._input_buffer.add_data_back_multiple(unpriority_data)
             self._input_buffer.add_data_front_multiple(priority_data)
 
-        self.__id = -1
+        self.__id = -3
         self.socket.close()
         
 #?endif
@@ -241,6 +241,8 @@ class ServerNetwork(Network):
         accept_thread = threading.Thread(target=self.__accept_connections)
         accept_thread.daemon = True
         accept_thread.start()
+
+        self.__connected_ids = set()
 
         self.__id_to_conn = {}
         self.__conn_to_id = {}
@@ -336,8 +338,9 @@ class ServerNetwork(Network):
                     break
 
             if result:
+                self.__connected_ids.add(result)
                 break
-
+        
         self.__on_connect(self.__conn_to_id[conn])
 
         while self.running:
@@ -360,6 +363,7 @@ class ServerNetwork(Network):
             tagged_unpriority_data = [(self.__conn_to_id[conn], data) for data in unporiority_data]
             self._input_buffer.add_data_back_multiple(tagged_unpriority_data)
 
+        self.__connected_ids.remove(self.__conn_to_id[conn])
         self.__id_to_conn.pop(self.__conn_to_id[conn])
         self.__conn_to_id.pop(conn)
         conn.close()
@@ -369,11 +373,16 @@ class ServerNetwork(Network):
         request, data = login_data
         username, password = data
 
+        failed_registration_msg = lambda id: (self._parse_for_send(False, "register_outcome", id) + chr(31)).encode("ascii")
+
         match request:
             case "register":
                 result = self.__register_user(username, password)
                 if result == -1:
-                    conn.send(b"('register_outcome',-1)")
+                    conn.send(failed_registration_msg(-1))
+                    return False
+                if result in self.__connected_ids:
+                    conn.send(failed_registration_msg(-2))
                     return False
                 self.__conn_to_id[conn] = result
                 self.__id_to_conn[result] = conn
@@ -383,7 +392,10 @@ class ServerNetwork(Network):
             case "login":
                 result = self.__login_user(username, password)
                 if result == -1:
-                    conn.send(b"('register_outcome',-1)")
+                    conn.send(failed_registration_msg)
+                    return False
+                if result in self.__connected_ids:
+                    conn.send(failed_registration_msg(-2))
                     return False
                 self.__conn_to_id[conn] = result
                 self.__id_to_conn[result] = conn

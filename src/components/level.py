@@ -1,8 +1,5 @@
 from components.datatypes import *
-from components.widget import Widget
-from components.button import Button
 from components.actor import Actor
-from components.background import Background
 from components.rigidbody import Rigidbody
 from components.character import Character
 from components.game_math import *
@@ -11,6 +8,8 @@ from components.game_math import *
 
 class Level:
     def __init__(self, name, default_character, actors = [], background = None, simulation_speed = 1, gravity = 1):
+        self.__engine_ref = None
+
         self.name = name
         self.default_character = default_character
         self.background = background
@@ -24,6 +23,19 @@ class Level:
 
         for actor in actors:
             self.register_actor(actor)
+
+
+    @property
+    def engine_ref(self):
+        return self.__engine_ref
+    
+
+    @engine_ref.setter
+    def engine_ref(self, value):
+        if value.__class__.__name__ == "ServerEngine" or value.__class__.__name__ == "ClientEngine":
+            self.__engine_ref = value
+        else:
+            raise TypeError("Engine refrence must be a Engine object:", value)
 
 
     @property
@@ -120,9 +132,12 @@ class Level:
         new_actors = []
         actors_to_create = self.__actors_to_create.copy()
         for actor in actors_to_create:
+            actor.engine_ref = self.engine_ref
+            actor.level_ref = self
             self.actors[actor.name] = actor
-            new_actors.append(actor)
-            self.__add_actor_to_chunk(actor)
+            if actor.visible:
+                new_actors.append(actor)
+            self.add_actor_to_chunk(actor)
 
         self.__actors_to_create.clear()
         return new_actors
@@ -138,9 +153,41 @@ class Level:
         
         self.__actors_to_destroy.clear()
         return destroyed
-        
+
 
     #?ifdef SERVER
+    def get_updates(self, players):
+        chunk_updates = {}
+
+        for chunk in self.get_loaded_chunks(players):
+            chunk_x, chunk_y = chunk
+            if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
+                for actor_name in self.__chunks[chunk_x][chunk_y]:
+                    sync_data = self.actors[actor_name].get_for_net_sync()
+                    if not sync_data:
+                        continue
+
+                    actor = self.actors[actor_name]
+                    if "position" in sync_data:
+                        a_chk_x, a_chk_y = actor.chunk
+                        if (a_chk_x != chunk_x or a_chk_y != chunk_y) and actor_name in self.__chunks[a_chk_x][a_chk_y]:
+                            self.__chunks[a_chk_x][a_chk_y].remove(actor_name)
+                            self.add_actor_to_chunk(actor)
+                            
+                    if not actor.visible and "visible" not in sync_data:
+                        continue 
+                    if "visible" in sync_data:
+                        del sync_data["visible"]
+
+                    if chunk_x not in chunk_updates:
+                        chunk_updates[chunk_x] = {}
+                    if chunk_y not in chunk_updates[chunk_x]:
+                        chunk_updates[chunk_x][chunk_y] = {}
+                    chunk_updates[chunk_x][chunk_y][actor_name] = sync_data
+                            
+        return chunk_updates
+        
+
     def get_loaded_chunks(self, players):
         chunks = set()
         for player in players:
@@ -152,33 +199,6 @@ class Level:
                     chunks.add(previous_chunk_pos)
 
         return chunks
-
-
-    def get_updates(self, players):
-        chunk_updates = {}
-
-        for chunk in self.get_loaded_chunks(players):
-            chunk_x, chunk_y = chunk
-            if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
-                for actor_name in self.__chunks[chunk_x][chunk_y]:
-                    sync_data = self.actors[actor_name].get_for_net_sync()
-                    if not sync_data:
-                        continue
-                    if chunk_x not in chunk_updates:
-                        chunk_updates[chunk_x] = {}
-                    if chunk_y not in chunk_updates[chunk_x]:
-                        chunk_updates[chunk_x][chunk_y] = {}
-                    chunk_updates[chunk_x][chunk_y][actor_name] = sync_data
-
-                    if "position" in sync_data:
-                        actor = self.actors[actor_name]
-                        a_chk_x, a_chk_y = actor.chunk
-                        if (a_chk_x != chunk_x or a_chk_y != chunk_y) and actor_name in self.__chunks[a_chk_x][a_chk_y]:
-                            self.__chunks[a_chk_x][a_chk_y].remove(actor_name)
-                            self.__add_actor_to_chunk(actor)
-                            
-
-        return chunk_updates
     
 
     def get_actors_in_chunks_3x3(self, chunk_pos):
@@ -289,8 +309,10 @@ class Level:
         for actor_name, overlaped_set in overlaped_actors.items():
             self.actors[actor_name].previously_collided = overlaped_set
 
+    #?endif
+    
 
-    def __add_actor_to_chunk(self, actor):
+    def add_actor_to_chunk(self, actor):
         chunk_x, chunk_y = get_chunk_cords(actor.position)
         if chunk_x not in self.__chunks:
             self.__chunks[chunk_x] = {}
@@ -300,5 +322,4 @@ class Level:
 
         actor.chunk = Vector(chunk_x, chunk_y)
         
-    #?endif
 

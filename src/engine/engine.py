@@ -1,17 +1,25 @@
+
+#?ifdef CLIENT
 from engine.renderer import Renderer
+#?endif
+#?ifdef SERVER
 from engine.console import Console
+#?endif
+#?ifdef ENGINE
 from engine.builder import *
+#?endif
 from engine.network import *
 
+#?ifdef CLIENT
+from components.button import Button
+from components.text import Text
+from components.widget import Widget
+#?endif
 from components.actor import Actor
 from components.rigidbody import Rigidbody
 from components.character import Character
-from components.material import Material
-from components.button import Button
 from components.background import Background
 from components.level import Level
-from components.text import Text
-from components.widget import Widget
 from components.datatypes import *
 from components.game_math import *
 
@@ -92,6 +100,7 @@ class ClientEngine(Engine, Renderer):
 
         self.__network = None
         self.__level = Level("Engine_Level", Character)
+        self.__level.engine_ref = self
 
         self.__widgets = {}
         self.__backgrounds = {}
@@ -291,10 +300,6 @@ class ClientEngine(Engine, Renderer):
             pygame.quit()
             return delta_time
 
-        for actor in self.level.actors.values():
-            if actor.visible and actor.material:
-                self.add_actor_to_draw(actor)
-
         for widget in self.widgets.values():
             if widget.visible:
                 self.add_widget_to_draw(widget)
@@ -304,12 +309,14 @@ class ClientEngine(Engine, Renderer):
         if self.get_player_actor(self.network.id) in self.level.actors:
             player_actor = self.level.actors[self.get_player_actor(self.network.id)]
             player_chunk = get_chunk_cords(player_actor.position)
+            bl_chk_pos = player_chunk - self.__update_distance - 2
+            tr_chk_pos = player_chunk + self.__update_distance + 2
 
-            for actor in self.level.actors.values():
-                bl_chk_pos = player_chunk - self.__update_distance - 2
-                tr_chk_pos = player_chunk + self.__update_distance + 2
-                if not is_in_rect(bl_chk_pos, tr_chk_pos, get_chunk_cords(actor.position)):
-                    self.level.destroy_actor(actor)
+            for chk_x, chk_column in self.level.chunks.items():
+                for chk_y, chk_actors in chk_column.items():
+                    if not is_in_rect(bl_chk_pos, tr_chk_pos, Vector(chk_x, chk_y)):
+                        for actor in chk_actors:
+                            self.level.destroy_actor(self.level.actors[actor])
 
         self.__time("render_regs")
 
@@ -333,8 +340,12 @@ class ClientEngine(Engine, Renderer):
         self.__stats["widget_render"].pop(0)
 
         self.handle_network()
-        self.level.get_new_actors()
-        self.level.get_destroyed()
+        new_actors = self.level.get_new_actors()
+        for actor in new_actors:
+            self.add_actor_to_draw(actor)
+        old_actors = self.level.get_destroyed()
+        for actor in old_actors:
+            self.remove_actor_from_draw(actor)
 
         self.__time("network")
 
@@ -352,10 +363,11 @@ class ClientEngine(Engine, Renderer):
         while not self.network:
             time.sleep(0.1)
 
+        sleep_time = 1 / self.fps / 2
         while True:
             buffer = self.network.get_data(10)
             if not buffer:
-                time.sleep(0.1)
+                time.sleep(sleep_time)
 
             for cmd, data in buffer:
                 if cmd in self.__network_commands:
@@ -366,7 +378,7 @@ class ClientEngine(Engine, Renderer):
 
     def __update_mouse_pos(self, screen_pos):
         self.__screen_mouse_pos = screen_pos
-        if self.network and self.network.id != -1:
+        if self.network and self.network.id > 1:
             world_mouse_pos = (screen_pos - self.resolution / 2) * self.camera_width / self.resolution.x + self.camera_position
             self.network.send("world_mouse_pos", world_mouse_pos)
 
@@ -382,24 +394,24 @@ class ClientEngine(Engine, Renderer):
 
                 case pygame.MOUSEBUTTONDOWN:
                     self.__pressed_keys.add(Keys(event.button))
-                    if self.network and self.network.id != -1:
+                    if self.network and self.network.id > 1:
                         self.network.send("key_down", Keys(event.button))
 
                 case pygame.MOUSEBUTTONUP:
                     self.__pressed_keys.remove(Keys(event.button))
                     self.__released_keys.add(Keys(event.button))
-                    if self.network and self.network.id != -1:
+                    if self.network and self.network.id > 1:
                         self.network.send("key_up", Keys(event.button))
 
                 case pygame.KEYDOWN:
                     self.__pressed_keys.add(event.key)
-                    if self.network and self.network.id != -1:
+                    if self.network and self.network.id > 1:
                         self.network.send("key_down", event.key)
 
                 case pygame.KEYUP:
                     self.__pressed_keys.remove(event.key)
                     self.__released_keys.add(event.key)
-                    if self.network and self.network.id != -1:
+                    if self.network and self.network.id > 1:
                         self.network.send("key_up", event.key)
 
         screen_mouse_position = Vector(*pygame.mouse.get_pos())
@@ -420,13 +432,23 @@ class ClientEngine(Engine, Renderer):
         if data[0] not in self.__actor_templates:
             raise Exception(f"Actor template {data[0]} is not registered")
 
-        self.__level.register_actor(self.__actor_templates[data[0]](self, data[1], data[2])) # if it crashes in this line, it's because actor class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
+        self.__level.register_actor(self.__actor_templates[data[0]](data[1], data[2])) # if it crashes in this line, it's because actor class you provided doesn't have correct attributes. It should have only name, position, everything else should be hardcoded
 
 
     def __update_actor(self, data):
-        actor = data[0]
-        if actor in self.__level.actors:
-            self.__level.actors[actor].update_from_net_sync(data[1])
+        actor_name = data[0]
+        if actor_name in self.__level.actors:
+            self.__level.actors[actor_name].update_from_net_sync(data[1])
+
+            if "position" not in data[1]:
+                return
+
+            actor = self.__level.actors[actor_name]
+            chk_x, chk_y = get_chunk_cords(actor.position)
+            a_chk_x, a_chk_y = actor.chunk
+            if a_chk_x != chk_x or a_chk_y != chk_y:
+                self.level.chunks[a_chk_x][a_chk_y].remove(actor.name)
+                self.level.add_actor_to_chunk(actor)
 
 
     def __destroy_actor(self, data):
@@ -495,7 +517,6 @@ class ServerEngine(Engine):
             "tps":              [0] * 30,
             "console_cmds":     [0] * 30,
             "level_updates":    [0] * 30,
-            "widget_tick":      [0] * 30,
             "network":          [0] * 30,
         }
 
@@ -547,6 +568,7 @@ class ServerEngine(Engine):
     def register_level(self, level):
         if level.name in self.__levels or not isinstance(level, Level):
             raise Exception(f"Level {level.name} is already registered or wrong data type")
+        level.engine_ref = self
         self.__levels[level.name] = level
     
 
@@ -655,6 +677,14 @@ class ServerEngine(Engine):
 
                 for actor_dict in self.get_actors_from_chk_pkg(updates_pkg, bl_chk_pos, tr_chk_pos, lambda a, el: a.append(el)):
                     for actor_name, sync_data in actor_dict.items():
+                        if "visible" in sync_data:
+                            visible = sync_data["visible"]
+                            if not visible:
+                                self.network.send(player_id, "destroy_actor", actor_name)
+                            else:
+                                self.network.send(player_id, "register_actor", level.actors[actor_name].get_for_full_net_sync())
+                            continue
+                            
                         self.network.send(player_id, "update_actor", (actor_name, sync_data), True)
 
                 prev_synced_chunks = player.synced_chuks.copy()
@@ -751,7 +781,7 @@ class ServerEngine(Engine):
         level_name = data
         if level_name in self.levels:
             self.__players[id].level = level_name
-            player_actor = self.levels[level_name].default_character(self, self.get_player_actor(id), Vector()) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only engine_ref, name, position, everything else should be hardcoded
+            player_actor = self.levels[level_name].default_character(self.get_player_actor(id), Vector()) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only name, position, everything else should be hardcoded
             self.levels[level_name].register_actor(player_actor)
             self.__players[id].previous_chunk = get_chunk_cords(player_actor.position)
             self.__players[id].previous_different_chunk = self.__players[id].previous_chunk

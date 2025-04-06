@@ -5,10 +5,12 @@ from components.rigidbody import Rigidbody
 from components.datatypes import *
 from components.material import Material
 from components.character import Character
-from components.button import Button
 from components.background import *
-from components.text import Text
 from components.level import Level
+#?ifdef CLIENT
+from components.button import Button
+from components.text import Text
+#?endif
 from collections import defaultdict
 
 import random as r
@@ -23,37 +25,37 @@ CAMERA_OFFSET_Y = 1
 
 
 class Log(Actor):
-    def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material(Color(139, 69, 19)))
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material(Color(139, 69, 19)))
         self.position = position
 
 class Grass(Actor):
-    def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass_block.png"))
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass_block.png"))
         self.position = position
 
 class Dirt(Actor):
-    def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/dirt.png"))
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/dirt.png"))
         self.position = position
 class Stone(Actor):
-    def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/stone.png"))
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/stone.png"))
         self.position = position
 
 class Coal(Actor):
-    def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/coal_ore.png"))
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/coal_ore.png"))
         self.position = position
 
 class Iron(Actor):
-    def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/iron_ore.png"))
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/iron_ore.png"))
         self.position = position
 
 class Gold(Actor):
-    def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/gold_ore.png"))
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/gold_ore.png"))
         self.position = position
 
 class DebugTunnel(Actor):
@@ -62,8 +64,8 @@ class DebugTunnel(Actor):
         self.position = position
 
 class TestPlayer(Character):
-    def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7)
+    def __init__(self, name, position):
+        super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7)
 
 
 #?ifdef CLIENT
@@ -110,7 +112,7 @@ class ClientGame(ClientGameBase):
 
         self.clock_1s += delta_time
 
-        if self.engine.network.id == -1:
+        if self.engine.network.id < 0:
             if self.clock_1s > 1:
                 self.clock_1s = 0
                 self.engine.network.send("login", ("username", "password"))
@@ -121,8 +123,6 @@ class ClientGame(ClientGameBase):
             self.current_level = "Test_Level"
             self.engine.join_level(self.current_level)
             return
-        
-        
 
         player_key = f"__Player_{self.engine.network.id}"
         if player_key in self.engine.level.actors:
@@ -143,7 +143,7 @@ class ClientGame(ClientGameBase):
 
 #?ifdef SERVER
 class TestLevel(Level):
-    def __init__(self, engine_ref):
+    def __init__(self):
         super().__init__("Test_Level", TestPlayer, [], "sky")
 
 
@@ -337,7 +337,9 @@ class ServerGame(ServerGameBase):
         super().__init__()
         self.engine.max_tps = 60
         self.engine.start_network("0.0.0.0", 5555, 10)
-        self.engine.register_level(TestLevel(self.engine))
+
+        self.engine.register_level(TestLevel())
+
         self.engine.register_key(Keys.W, KeyPressType.HOLD, KeyHandler.key_W)
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
@@ -346,6 +348,16 @@ class ServerGame(ServerGameBase):
         self.current_base_chunk = Vector(0, 0)
         self.tunnel_generator = TunnelGenerator()
     
+
+        #?ifdef ENGINE
+        self.engine.console.handle_cmd("build_server")
+        self.engine.console.handle_cmd("build_client")
+        #?endif
+
+        #?ifdef ENGINE
+        self.engine.console.handle_cmd("build_server")
+        self.engine.console.handle_cmd("build_client")
+        #?endif
 
 
     @staticmethod
@@ -501,22 +513,21 @@ class ServerGame(ServerGameBase):
                 new_actor = None
                 
                 if tile_type == "grass":
-                    new_actor = Grass(self.engine, actor_name, Vector(pos[0], pos[1]))
+                    new_actor = Grass(actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "log":
-                    new_actor = Log(self.engine, actor_name, Vector(pos[0], pos[1]))
+                    new_actor = Log(actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "dirt":
-                    new_actor = Dirt(self.engine, actor_name, Vector(pos[0], pos[1]))
+                    new_actor = Dirt(actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "stone":
-                    new_actor = Stone(self.engine, actor_name, Vector(pos[0], pos[1]))
+                    new_actor = Stone(actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "coal":
-                    new_actor = Coal(self.engine, actor_name, Vector(pos[0], pos[1]))
-                elif tile_type == "iron":
-                    new_actor = Iron(self.engine, actor_name, Vector(pos[0], pos[1]))
+                    new_actor = Coal(actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "gold":
-                    new_actor = Gold(self.engine, actor_name, Vector(pos[0], pos[1]))
-                elif tile_type == "tunnel_debug":
-                    new_actor = DebugTunnel(self.engine, actor_name, Vector(pos[0], pos[1]))
+                    new_actor = Gold(actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "iron":
+                    new_actor = Iron(actor_name, Vector(pos[0], pos[1]))
                 
+
                 if new_actor is not None:
                     actors_to_add.append(new_actor)
 

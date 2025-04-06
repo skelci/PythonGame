@@ -1,3 +1,4 @@
+#?attr CLIENT
 from components.border import Border
 
 from components.text import Text
