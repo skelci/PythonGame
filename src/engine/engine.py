@@ -363,10 +363,11 @@ class ClientEngine(Engine, Renderer):
         while not self.network:
             time.sleep(0.1)
 
+        sleep_time = 1 / self.fps / 2
         while True:
             buffer = self.network.get_data(10)
             if not buffer:
-                time.sleep(0.1)
+                time.sleep(sleep_time)
 
             for cmd, data in buffer:
                 if cmd in self.__network_commands:
