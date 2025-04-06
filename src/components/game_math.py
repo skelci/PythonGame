@@ -27,6 +27,11 @@ def lerp(a, b, t):
 
 
 
+def clamp(value, min_value = 0, max_value = 1):
+    return max(min(value, max_value), min_value)
+
+
+
 def get_chunk_cords(pos):
         return pos // chunk_size
 
