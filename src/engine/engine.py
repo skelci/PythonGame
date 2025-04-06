@@ -378,7 +378,7 @@ class ClientEngine(Engine, Renderer):
 
     def __update_mouse_pos(self, screen_pos):
         self.__screen_mouse_pos = screen_pos
-        if self.network and self.network.id != -1:
+        if self.network and self.network.id > 1:
             world_mouse_pos = (screen_pos - self.resolution / 2) * self.camera_width / self.resolution.x + self.camera_position
             self.network.send("world_mouse_pos", world_mouse_pos)
 
@@ -394,24 +394,24 @@ class ClientEngine(Engine, Renderer):
 
                 case pygame.MOUSEBUTTONDOWN:
                     self.__pressed_keys.add(Keys(event.button))
-                    if self.network and self.network.id != -1:
+                    if self.network and self.network.id > 1:
                         self.network.send("key_down", Keys(event.button))
 
                 case pygame.MOUSEBUTTONUP:
                     self.__pressed_keys.remove(Keys(event.button))
                     self.__released_keys.add(Keys(event.button))
-                    if self.network and self.network.id != -1:
+                    if self.network and self.network.id > 1:
                         self.network.send("key_up", Keys(event.button))
 
                 case pygame.KEYDOWN:
                     self.__pressed_keys.add(event.key)
-                    if self.network and self.network.id != -1:
+                    if self.network and self.network.id > 1:
                         self.network.send("key_down", event.key)
 
                 case pygame.KEYUP:
                     self.__pressed_keys.remove(event.key)
                     self.__released_keys.add(event.key)
-                    if self.network and self.network.id != -1:
+                    if self.network and self.network.id > 1:
                         self.network.send("key_up", event.key)
 
         screen_mouse_position = Vector(*pygame.mouse.get_pos())
