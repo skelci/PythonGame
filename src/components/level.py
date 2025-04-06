@@ -135,7 +135,8 @@ class Level:
             actor.engine_ref = self.engine_ref
             actor.level_ref = self
             self.actors[actor.name] = actor
-            new_actors.append(actor)
+            if actor.visible:
+                new_actors.append(actor)
             self.__add_actor_to_chunk(actor)
 
         self.__actors_to_create.clear()
@@ -178,18 +179,22 @@ class Level:
                     sync_data = self.actors[actor_name].get_for_net_sync()
                     if not sync_data:
                         continue
+
+                    actor = self.actors[actor_name]
+                    if "position" in sync_data:
+                        a_chk_x, a_chk_y = actor.chunk
+                        if (a_chk_x != chunk_x or a_chk_y != chunk_y) and actor_name in self.__chunks[a_chk_x][a_chk_y]:
+                            self.__chunks[a_chk_x][a_chk_y].remove(actor_name)
+                            self.__add_actor_to_chunk(actor)
+                            
+                    if not actor.visible and "visible" not in sync_data:
+                        continue 
+
                     if chunk_x not in chunk_updates:
                         chunk_updates[chunk_x] = {}
                     if chunk_y not in chunk_updates[chunk_x]:
                         chunk_updates[chunk_x][chunk_y] = {}
                     chunk_updates[chunk_x][chunk_y][actor_name] = sync_data
-
-                    if "position" in sync_data:
-                        actor = self.actors[actor_name]
-                        a_chk_x, a_chk_y = actor.chunk
-                        if (a_chk_x != chunk_x or a_chk_y != chunk_y) and actor_name in self.__chunks[a_chk_x][a_chk_y]:
-                            self.__chunks[a_chk_x][a_chk_y].remove(actor_name)
-                            self.__add_actor_to_chunk(actor)
                             
 
         return chunk_updates

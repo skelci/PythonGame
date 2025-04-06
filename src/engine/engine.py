@@ -665,6 +665,14 @@ class ServerEngine(Engine):
 
                 for actor_dict in self.get_actors_from_chk_pkg(updates_pkg, bl_chk_pos, tr_chk_pos, lambda a, el: a.append(el)):
                     for actor_name, sync_data in actor_dict.items():
+                        if "visible" in sync_data:
+                            visible = sync_data["visible"]
+                            if not visible:
+                                self.network.send(player_id, "destroy_actor", actor_name)
+                            else:
+                                self.network.send(player_id, "register_actor", level.actors[actor_name].get_for_full_net_sync())
+                            continue
+                            
                         self.network.send(player_id, "update_actor", (actor_name, sync_data), True)
 
                 prev_synced_chunks = player.synced_chuks.copy()
