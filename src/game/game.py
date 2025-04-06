@@ -31,6 +31,11 @@ class Log(Actor):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material(Color(139, 69, 19)))
         self.position = position
 
+class Leaf(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), collidable=False, material = Material(Color(34, 139, 34)))
+        self.position = position
+
 class Grass(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass_block.png"))
@@ -81,7 +86,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 16)
+        eng.set_camera_width(16 * 10)
         eng.resolution = Vector(1600, 900)
 
         eng.connect("localhost", 5555)
@@ -96,6 +101,7 @@ class ClientGame(ClientGameBase):
 
         eng.add_actor_template(TestPlayer)
         eng.add_actor_template(Log)
+        eng.add_actor_template(Leaf)
         eng.add_actor_template(Grass)
         eng.add_actor_template(Dirt)
         eng.add_actor_template(Stone)
@@ -167,7 +173,7 @@ class KeyHandler:
 class TunnelGenerator:
     def __init__(self):
         self.width = 2
-        self.curvature = 0.7 # 0 = straight, 1 = very curved
+        self.curvature = 0.8# 0 = straight, 1 = very curved
         self.max_tunnel_length = 50
         
 
@@ -364,7 +370,7 @@ class ServerGame(ServerGameBase):
     def generate_chunk(self, x, y):
         chunk_data = []
         chunk_origin = Vector(x, y) * CHUNK_SIZE
-        tree_threshold = 0.1
+        tree_threshold = 0.06
         
         # Noise parameters
         terrain_scale = 0.035
@@ -422,7 +428,7 @@ class ServerGame(ServerGameBase):
             noise_data.append(row)
         
         # Generate tunnels (only if chunk is below surface)
-        if y < 0:  # Only in underground chunks
+        if y < 0.3:  # Only in underground chunks
             tunnel_gen = TunnelGenerator()
             if tunnel_gen.generate_tunnels(noise_data):
                 # Ensure tunnels get added to chunk_data
@@ -460,10 +466,26 @@ class ServerGame(ServerGameBase):
                     tile_type = "grass"
                     if r.random() < tree_threshold:
                         tree_height = r.randint(4, 7)
+                        top = pos + Vector(0, tree_height)
+                        # Generate trunk
                         for h in range(1, tree_height + 1):
                             trunk_pos = pos + Vector(0, h)
                             if trunk_pos.y >= chunk_origin.y:
                                 chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
+                        # Add leaves in an elliptical shape (less wide, more high) below the canopy center
+                        leaf_radius = 3
+                        # Horizontal radius scaled down, vertical radius scaled up
+                        rx = leaf_radius   # half-width
+                        ry = leaf_radius * 1.5  # increased height
+                        # Iterate dy from 0 (canopy center) to extended vertical offset
+                        for dy in range(0, int(ry) + 1):
+                            # Iterate dx in a narrow band
+                            for dx in range(-int(rx), int(rx) + 1):
+                                # Elliptical check
+                                if (dx*dx)/(rx*rx) + (dy*dy)/(ry*ry) <= 1:
+                                    leaf_pos = top + Vector(dx, dy)
+                                    chunk_data.append([(leaf_pos.x, leaf_pos.y), "leaf"])
+
                 elif pos.y < ground_level and pos.y > ground_level - 5:
                     tile_type = "dirt"
                 elif pos.y <= ground_level - 5:
@@ -508,6 +530,8 @@ class ServerGame(ServerGameBase):
                     new_actor = Grass(actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "log":
                     new_actor = Log(actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "leaf":
+                    new_actor = Leaf(actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "dirt":
                     new_actor = Dirt(actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "stone":
