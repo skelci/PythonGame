@@ -211,8 +211,6 @@ class TunnelGenerator:
             # Random width for organic look
             radius = self.width
             self._dig_circle(cave_data, x, y, radius)
-
-
     
     def _find_cave_regions(self, cave_data):
         # Implementation using flood fill
@@ -533,8 +531,9 @@ class ServerGame(ServerGameBase):
             # Register all actors at once
             for actor in actors_to_add:
                 level.register_actor(actor)
-        
+            
             self.loaded_chunks.add(target_chunk)
+
 
 
     def tick(self):
