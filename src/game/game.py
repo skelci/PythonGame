@@ -59,8 +59,8 @@ class Gold(Actor):
         self.position = position
 
 class DebugTunnel(Actor):
-    def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position=position, half_size=Vector(0.5, 0.5), collidable=False, material=Material(Color(255, 0, 0)))  # Bright red
+    def __init__(self, name, position):
+        super().__init__(name, position=position, half_size=Vector(0.5, 0.5), collidable=False, material=Material(Color(255, 0, 0)))  # Bright red
         self.position = position
 
 class TestPlayer(Character):
@@ -526,7 +526,8 @@ class ServerGame(ServerGameBase):
                     new_actor = Gold(actor_name, Vector(pos[0], pos[1]))
                 elif tile_type == "iron":
                     new_actor = Iron(actor_name, Vector(pos[0], pos[1]))
-                
+                elif tile_type == "tunnel_debug":
+                    new_actor = DebugTunnel(actor_name, Vector(pos[0], pos[1]))
 
                 if new_actor is not None:
                     actors_to_add.append(new_actor)
