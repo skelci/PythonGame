@@ -19,7 +19,7 @@ import noise
 import os
 
 
-CHUNK_SIZE = 8
+CHUNK_SIZE = 32
 CAMERA_OFFSET_X = 1
 CAMERA_OFFSET_Y = 1
 
@@ -167,6 +167,7 @@ class TunnelGenerator:
     def __init__(self):
         self.width = 2
         self.curvature = 0.4 # 0 = straight, 1 = very curved
+        self.max_tunnel_length = 50
         
 
     def _center_point(self, region):
@@ -179,7 +180,6 @@ class TunnelGenerator:
         """Euclidean distance"""
         dx = p1[0] - p2[0]
         dy = p1[1] - p2[1]
-        print(f"Distance between {p1} and {p2}: {dx}, {dy}")
         return math.sqrt(dx*dx + dy*dy)
     
 
@@ -211,7 +211,7 @@ class TunnelGenerator:
             # Random width for organic look
             radius = self.width
             self._dig_circle(cave_data, x, y, radius)
-            print(f"Digging at ({x}, {y}) with radius {radius}")
+
 
     
     def _find_cave_regions(self, cave_data):
@@ -242,9 +242,8 @@ class TunnelGenerator:
                                cave_data[ny][nx][1]:
                                 stack.append((nx,ny))
                     
-                    if len(region) >= 1:  # Minimum region size
+                    if len(region) >= 2:  # Minimum region size
                         regions.append(region)
-                        print(f"Found region of size {len(region)} at {region}")
         return regions
         
     
@@ -272,7 +271,6 @@ class TunnelGenerator:
                 i, j = closest
                 self._create_tunnel(cave_data, centers[i], centers[j])
                 connected.add(j)
-                print(f"Connected region {i} to {j} with tunnel")
                 
 
     def generate_tunnels(self, cave_data):
@@ -329,7 +327,6 @@ class TunnelGenerator:
             x1, y1 = path[i]
             x2, y2 = path[i+1]
             self._dig_line(cave_data, x1, y1, x2, y2)
-            print(f"Digging tunnel from {path[i]} to {path[i+1]}")
 
 
 class ServerGame(ServerGameBase):
@@ -437,6 +434,7 @@ class ServerGame(ServerGameBase):
                     for x_pos in range(CHUNK_SIZE):
                         pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                         if is_tunnel:
+                            noise_data[y_pos][x_pos] = (pos, True, False)
                             # Ensure proper coordinates and unique name
                             name = f"tunnel_{pos.x}_{pos.y}"
                             if not any(t[1] == name for t in chunk_data):
@@ -535,9 +533,8 @@ class ServerGame(ServerGameBase):
             # Register all actors at once
             for actor in actors_to_add:
                 level.register_actor(actor)
-            
+        
             self.loaded_chunks.add(target_chunk)
-
 
 
     def tick(self):
