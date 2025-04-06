@@ -9,6 +9,7 @@ from components.button import Button
 from components.background import *
 from components.text import Text
 from components.level import Level
+from collections import defaultdict
 
 import random as r
 import math
@@ -57,17 +58,12 @@ class Gold(Actor):
 
 class DebugTunnel(Actor):
     def __init__(self, engine_ref, name, position):
-        super().__init__(engine_ref, name, position=position, 
-                        half_size=Vector(0.5, 0.5), 
-                        collidable=False, 
-                        material=Material(Color(255, 0, 0)))  # Bright red
+        super().__init__(engine_ref, name, position=position, half_size=Vector(0.5, 0.5), collidable=False, material=Material(Color(255, 0, 0)))  # Bright red
         self.position = position
-
 
 class TestPlayer(Character):
     def __init__(self, engine_ref, name, position):
         super().__init__(engine_ref, name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7)
-
 
 
 #?ifdef CLIENT
@@ -145,12 +141,10 @@ class ClientGame(ClientGameBase):
 #?endif
 
 
-
 #?ifdef SERVER
 class TestLevel(Level):
     def __init__(self, engine_ref):
         super().__init__("Test_Level", TestPlayer, [], "sky")
-
 
 
 class KeyHandler:
@@ -169,6 +163,175 @@ class KeyHandler:
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = 1
 
 
+class TunnelGenerator:
+    def __init__(self):
+        self.width = 2
+        self.curvature = 0.4 # 0 = straight, 1 = very curved
+        
+
+    def _center_point(self, region):
+        """Calculate center of region"""
+        avg_x = sum(p[0] for p in region) // len(region)
+        avg_y = sum(p[1] for p in region) // len(region)
+        return (avg_x, avg_y)
+    
+    def _distance(self, p1, p2):
+        """Euclidean distance"""
+        dx = p1[0] - p2[0]
+        dy = p1[1] - p2[1]
+        print(f"Distance between {p1} and {p2}: {dx}, {dy}")
+        return math.sqrt(dx*dx + dy*dy)
+    
+
+    def _dig_circle(self, cave_data, center_x, center_y, radius):
+        """Carve out a circular tunnel area with validation"""
+        tiles_dug = 0
+        for y in range(int(center_y-radius), int(center_y+radius)+1):
+            for x in range(int(center_x-radius), int(center_x+radius)+1):
+                if (0 <= y < len(cave_data) and 
+                    0 <= x < len(cave_data[0])):
+                    dx = x - center_x
+                    dy = y - center_y
+                    if dx*dx + dy*dy <= radius*radius:
+                        cave_data[y][x] = (cave_data[y][x][0], True, True)
+                        tiles_dug += 1
+
+
+    def _dig_line(self, cave_data, x1, y1, x2, y2):
+        """Dig tunnel segment with varying width"""
+        dx = x2 - x1
+        dy = y2 - y1
+        steps = max(abs(dx), abs(dy))
+        
+        for i in range(steps+1):
+            t = i/max(steps, 1)
+            x = int(x1 + dx * t)
+            y = int(y1 + dy * t)
+            
+            # Random width for organic look
+            radius = self.width
+            self._dig_circle(cave_data, x, y, radius)
+            print(f"Digging at ({x}, {y}) with radius {radius}")
+
+    
+    def _find_cave_regions(self, cave_data):
+        # Implementation using flood fill
+        regions = []
+        visited = set()
+        
+        for y in range(len(cave_data)):
+            for x in range(len(cave_data[0])):
+                if (x,y) not in visited and cave_data[y][x][1]:
+                    # New region found
+                    region = []
+                    stack = [(x,y)]
+                    
+                    while stack:
+                        cx, cy = stack.pop()
+                        if (cx,cy) in visited:
+                            continue
+                            
+                        visited.add((cx,cy))
+                        region.append((cx,cy))
+                        
+                        # Check neighbors
+                        for dx, dy in [(-1,0),(1,0),(0,-1),(0,1)]:
+                            nx, ny = cx + dx, cy + dy
+                            if 0 <= nx < len(cave_data[0]) and \
+                               (0 <= ny < len(cave_data)) and \
+                               cave_data[ny][nx][1]:
+                                stack.append((nx,ny))
+                    
+                    if len(region) >= 1:  # Minimum region size
+                        regions.append(region)
+                        print(f"Found region of size {len(region)} at {region}")
+        return regions
+        
+    
+    def _connect_regions(self, cave_data, regions):
+        centers = [self._center_point(region) for region in regions]
+        
+        # Connect each region to its nearest neighbor
+        connected = set()
+        connected.add(0)
+        
+        while len(connected) < len(regions):
+            closest = None
+            min_dist = float('inf')
+            
+            # Find closest unconnected region
+            for i in connected:
+                for j in range(len(regions)):
+                    if j not in connected:
+                        dist = self._distance(centers[i], centers[j])
+                        if dist < min_dist:
+                            min_dist = dist
+                            closest = (i, j)
+            
+            if closest:
+                i, j = closest
+                self._create_tunnel(cave_data, centers[i], centers[j])
+                connected.add(j)
+                print(f"Connected region {i} to {j} with tunnel")
+                
+
+    def generate_tunnels(self, cave_data):
+        # Find all cave regions
+        regions = self._find_cave_regions(cave_data)
+        
+        if len(regions) < 2:
+            return False
+            
+        # Connect regions with organic tunnels
+        self._connect_regions(cave_data, regions)
+        return True            
+
+    
+    def _calculate_curve(self, start, end):
+        """Create smooth curve between points"""
+        points = []
+        steps = 10
+        
+        # Add midpoint with random offset
+        mid_x = (start[0] + end[0]) / 2
+        mid_y = (start[1] + end[1]) / 2
+        
+        # Calculate perpendicular direction
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        length = math.sqrt(dx*dx + dy*dy)
+        
+        if length > 0:
+            perp_x = -dy/length
+            perp_y = dx/length
+            
+            # Apply curvature
+            offset = (r.random() * 2 - 1) * length * self.curvature
+            mid_x += perp_x * offset
+            mid_y += perp_y * offset
+        
+        # Generate bezier curve points
+        for i in range(steps+1):
+            t = i/steps
+            # Quadratic bezier
+            x = (1-t)**2 * start[0] + 2*(1-t)*t * mid_x + t**2 * end[0]
+            y = (1-t)**2 * start[1] + 2*(1-t)*t * mid_y + t**2 * end[1]
+            points.append((int(x), int(y)))
+        return points
+    
+
+    def _create_tunnel(self, cave_data, start, end):
+        # Create curved path
+        path = self._calculate_curve(start, end)
+        
+        # Dig along path
+        for i in range(len(path)-1):
+            x1, y1 = path[i]
+            x2, y2 = path[i+1]
+            self._dig_line(cave_data, x1, y1, x2, y2)
+            print(f"Digging tunnel from {path[i]} to {path[i+1]}")
+
+
 class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
@@ -181,6 +344,7 @@ class ServerGame(ServerGameBase):
         self.game_map = {}
         self.loaded_chunks = set()
         self.current_base_chunk = Vector(0, 0)
+        self.tunnel_generator = TunnelGenerator()
     
 
 
@@ -190,219 +354,12 @@ class ServerGame(ServerGameBase):
         return t * t * (3 - 2 * t)
     
 
-
-    def dig_tunnel_segment(self, cave_data, x1, y1, x2, y2, min_width, max_width):
-        """Digs a straight tunnel segment with varying width"""
-        # Calculate steps needed
-        dx = x2 - x1
-        dy = y2 - y1
-        steps = max(abs(dx), abs(dy))
-        
-        # Ensure we have at least 1 step to avoid division by zero
-        steps = max(steps, 1)
-        
-        for t in range(steps + 1):
-            # Calculate current position along the line
-            t_normalized = t / steps
-            bx = round(x1 + dx * t_normalized)
-            by = round(y1 + dy * t_normalized)
-            
-            # Vary width along the tunnel
-            current_width = r.randint(min_width, max_width)
-            
-            # Carve out the tunnel area
-            for wy in range(-current_width, current_width + 1):
-                for wx in range(-current_width, current_width + 1):
-                    # Circular carving pattern
-                    if wx**2 + wy**2 <= current_width**2 + 1:  # +1 for smoother edges
-                        nx, ny = bx + wx, by + wy
-                        if 0 <= nx < len(cave_data[0]) and 0 <= ny < len(cave_data):
-                            cave_data[ny][nx] = (cave_data[ny][nx][0], True, True)  # Mark as tunnel
-
-
-
-    def find_cave_regions(self, cave_data):
-        """Find only noise-generated cave regions (ignoring tunnels)"""
-        regions = []
-        height = len(cave_data)
-        if height == 0:
-            return regions
-        width = len(cave_data[0])
-        
-        visited = [[False for _ in range(width)] for _ in range(height)]
-        
-        for y in range(height):
-            for x in range(width):
-                # Only look for natural caves (is_cave=True, is_tunnel=False)
-                if (not visited[y][x] and 
-                    cave_data[y][x][1] and  # is_cave
-                    not cave_data[y][x][2]):  # not is_tunnel
-                    
-                    region = []
-                    stack = [(x, y)]
-                    visited[y][x] = True
-                    
-                    while stack:
-                        cx, cy = stack.pop()
-                        region.append((cx, cy))
-                        
-                        # 4-directional connectivity for more natural cave shapes
-                        for dx, dy in [(-1,0),(1,0),(0,-1),(0,1)]:
-                            nx, ny = cx + dx, cy + dy
-                            if (0 <= nx < width and 0 <= ny < height and
-                                not visited[ny][nx] and 
-                                cave_data[ny][nx][1] and 
-                                not cave_data[ny][nx][2]):
-                                visited[ny][nx] = True
-                                stack.append((nx, ny))
-                    
-                    # Minimum 3 blocks to be considered a cave
-                    if len(region) >= 3:
-                        regions.append(region)
-        
-        return regions
-
-    def connect_cave_regions(self, cave_data):
-        """Connect only noise-generated cave regions"""
-        regions = self.find_cave_regions(cave_data)
-        if len(regions) < 2:
-            return  # No tunnels if less than 2 caves
-        
-        # Calculate center points of each cave
-        centers = []
-        for region in regions:
-            avg_x = sum(x for x,y in region) // len(region)
-            avg_y = sum(y for x,y in region) // len(region)
-            centers.append((avg_x, avg_y))
-        
-        # Connect each cave to its nearest neighbor
-        connected = set([0])  # Start with first cave
-        while len(connected) < len(regions):
-            closest_pair = None
-            min_distance = float('inf')
-            
-            # Find closest unconnected cave to any connected cave
-            for i in connected:
-                for j in range(len(regions)):
-                    if j not in connected:
-                        dist = (centers[i][0]-centers[j][0])**2 + (centers[i][1]-centers[j][1])**2
-                        if dist < min_distance:
-                            min_distance = dist
-                            closest_pair = (i, j)
-            
-            if closest_pair:
-                i, j = closest_pair
-                # Create tunnel between these caves
-                self.dig_organic_tunnel(
-                    cave_data,
-                    centers[i][0], centers[i][1],
-                    centers[j][0], centers[j][1],
-                    min_width=1,  # Narrower tunnels
-                    max_width=2
-                )
-                connected.add(j)
-    
-
-    def dig_organic_tunnel(self, cave_data, x1, y1, x2, y2, min_width=1, max_width=2):
-        """Create natural-looking tunnels between cave centers"""
-        # Calculate direction
-        dx, dy = x2 - x1, y2 - y1
-        distance = max(abs(dx), abs(dy))
-        
-        # Simple curved path with 1 control point
-        mid_x = x1 + dx//2 + r.randint(-1, 1)
-        mid_y = y1 + dy//2 + r.randint(-1, 1)
-        
-        # Dig the tunnel segments
-        self.dig_tunnel_segment(cave_data, x1, y1, mid_x, mid_y, min_width, max_width)
-        self.dig_tunnel_segment(cave_data, mid_x, mid_y, x2, y2, min_width, max_width)
-        
-        # Only add branches for longer tunnels
-        if distance > 6 and r.random() < 0.3:
-            branch_x = mid_x + r.randint(-2, 2)
-            branch_y = mid_y + r.randint(-2, 2)
-            self.dig_tunnel_segment(cave_data, mid_x, mid_y, branch_x, branch_y, 
-                                max(1, min_width-1), max_width)
-        
-
-
-    def dig_tunnel_segment(self, cave_data, x1, y1, x2, y2, min_width, max_width):
-        """Digs a straight tunnel segment with varying width"""
-        dx = x2 - x1
-        dy = y2 - y1
-        steps = max(abs(dx), abs(dy))
-        
-        for i in range(steps + 1):
-            t = i / max(steps, 1)
-            bx = round(x1 + dx * t)
-            by = round(y1 + dy * t)
-            
-            # Vary width along the tunnel
-            current_width = r.randint(min_width, max_width)
-            
-            # Carve out the tunnel area
-            for wy in range(-current_width, current_width + 1):
-                for wx in range(-current_width, current_width + 1):
-                    if wx**2 + wy**2 <= current_width**2 + 1:  # Circular pattern
-                        nx, ny = bx + wx, by + wy
-                        if 0 <= ny < len(cave_data) and 0 <= nx < len(cave_data[0]):
-                            # Mark as tunnel (preserving original noise value)
-                            cave_data[ny][nx] = (cave_data[ny][nx][0], True, True)
-        
-
-
-    def create_guaranteed_tunnel(self, cave_data, x1, y1, x2, y2, min_width=2, max_width=3):
-        """Creates an organic-looking tunnel between two points"""
-        # Add some jitter to make the tunnel path more natural
-        mid_x = (x1 + x2) // 2 + r.randint(-3, 3)
-        mid_y = (y1 + y2) // 2 + r.randint(-3, 3)
-        
-        # Dig first segment
-        self.dig_tunnel_segment(cave_data, x1, y1, mid_x, mid_y, min_width, max_width)
-        
-        # Dig second segment
-        self.dig_tunnel_segment(cave_data, mid_x, mid_y, x2, y2, min_width, max_width)
-        
-        # 40% chance to add a small side branch
-        if r.random() < 0.4:
-            branch_x = mid_x + r.randint(-4, 4)
-            branch_y = mid_y + r.randint(-4, 4)
-            self.dig_tunnel_segment(
-                cave_data, 
-                mid_x, mid_y, 
-                branch_x, branch_y,
-                max(1, min_width-1),  # Slightly narrower branch
-                max(2, max_width-1)
-            )
-
-    
-
-    def create_tunnel_between(self, cave_data, x1, y1, x2, y2, base_width=3):
-        """Create organic tunnel between two points with width variation"""
-        if x1 == x2 and y1 == y2:
-            return
-        
-        # Add some jitter to the path
-        mid_x = (x1 + x2) // 2 + r.randint(-3, 3)
-        mid_y = (y1 + y2) // 2 + r.randint(-3, 3)
-        
-        # Create two curved segments
-        self.dig_tunnel_segment(cave_data, x1, y1, mid_x, mid_y, base_width)
-        self.dig_tunnel_segment(cave_data, mid_x, mid_y, x2, y2, base_width)
-        
-        # 30% chance to add a small side tunnel
-        if r.random() < 0.3:
-            branch_x = mid_x + r.randint(-4, 4)
-            branch_y = mid_y + r.randint(-4, 4)
-            self.dig_tunnel_segment(cave_data, mid_x, mid_y, branch_x, branch_y, max(1, base_width-1))
-                                    
-
     def generate_chunk(self, x, y):
         chunk_data = []
         chunk_origin = Vector(x, y) * CHUNK_SIZE
         tree_threshold = 0.1
         
-        # Your original unchanged noise parameters
+        # Noise parameters
         terrain_scale = 0.035
         cave_scale_x = 0.02
         cave_scale_y = 0.025
@@ -412,19 +369,21 @@ class ServerGame(ServerGameBase):
         cave_octaves = 2
         cave_persistence = 0.5
         
-        # Generate initial cave data as (position, is_cave, is_tunnel) tuples
+        # Generate initial noise data (position, is_cave, is_tunnel)
         noise_data = []
         for y_pos in range(CHUNK_SIZE):
             row = []
             for x_pos in range(CHUNK_SIZE):
                 pos = chunk_origin + Vector(x_pos, y_pos)
                 
-                # Terrain height (unchanged)
-                height_noise = noise.pnoise1(pos.x * terrain_scale, repeat=9999999, base=0)
+                # Terrain height
+                height_noise = noise.pnoise1(pos.x * terrain_scale, 
+                                        repeat=9999999, 
+                                        base=0)
                 height_val = math.floor(height_noise * 10)
                 ground_level = 16 - height_val
                 
-                # Cave generation (unchanged noise calculation)
+                # Cave generation
                 base_val = noise.snoise2(
                     pos.x * cave_scale_x,
                     pos.y * cave_scale_y,
@@ -439,99 +398,44 @@ class ServerGame(ServerGameBase):
                 ) * 0.2
                 combined_noise = base_val + detail
                 
-                # Depth thresholds (unchanged)
+                # Depth-based thresholds
                 depth = ground_level - pos.y
                 if depth < 6:
                     effective_threshold = surface_threshold
-                elif depth >= 6 and depth < 16:
-                    effective_threshold = surface_threshold - (surface_threshold - mid_threshold) * self.smoothstep(depth, 6, 16)
-                elif depth >= 16 and depth < 30:
-                    effective_threshold = mid_threshold - (mid_threshold - deep_threshold) * self.smoothstep(depth, 16, 30)
+                elif 6 <= depth < 16:
+                    effective_threshold = surface_threshold - \
+                        (surface_threshold - mid_threshold) * \
+                        self.smoothstep(depth, 6, 16)
+                elif 16 <= depth < 30:
+                    effective_threshold = mid_threshold - \
+                        (mid_threshold - deep_threshold) * \
+                        self.smoothstep(depth, 16, 30)
                 else:
                     effective_threshold = deep_threshold
 
                 row.append((pos, combined_noise > effective_threshold, False))
             noise_data.append(row)
         
-        # NEW: Improved cave connection system
-        regions = []
-        visited = [[False for _ in range(CHUNK_SIZE)] for _ in range(CHUNK_SIZE)]
-        
-        # Find all cave regions (4-way connectivity)
-        for y_pos in range(CHUNK_SIZE):
-            for x_pos in range(CHUNK_SIZE):
-                if (not visited[y_pos][x_pos] and 
-                    noise_data[y_pos][x_pos][1] and  # is_cave
-                    not noise_data[y_pos][x_pos][2]):  # not already tunnel
-                    
-                    # Flood fill to find connected cave region
-                    region = []
-                    stack = [(x_pos, y_pos)]
-                    visited[y_pos][x_pos] = True
-                    
-                    while stack:
-                        cx, cy = stack.pop()
-                        region.append((cx, cy))
-                        
-                        # Check 4-directional neighbors
-                        for dx, dy in [(-1,0),(1,0),(0,-1),(0,1)]:
-                            nx, ny = cx + dx, cy + dy
-                            if (0 <= nx < CHUNK_SIZE and 0 <= ny < CHUNK_SIZE and
-                                not visited[ny][nx] and 
-                                noise_data[ny][nx][1] and 
-                                not noise_data[ny][nx][2]):
-                                visited[ny][nx] = True
-                                stack.append((nx, ny))
-                    
-                    if len(region) >= 3:  # Minimum 3 blocks to count as a cave
-                        regions.append(region)
-        
-        # Connect the two closest cave regions if found
-        if len(regions) >= 2:
-            # Find two closest caves
-            min_dist = float('inf')
-            best_pair = None
-            
-            for i in range(len(regions)):
-                for j in range(i+1, len(regions)):
-                    # Get approximate centers
-                    x1 = sum(p[0] for p in regions[i]) // len(regions[i])
-                    y1 = sum(p[1] for p in regions[i]) // len(regions[i])
-                    x2 = sum(p[0] for p in regions[j]) // len(regions[j])
-                    y2 = sum(p[1] for p in regions[j]) // len(regions[j])
-                    
-                    dist = (x2-x1)**2 + (y2-y1)**2
-                    if dist < min_dist:
-                        min_dist = dist
-                        best_pair = (x1, y1, x2, y2)
-            
-            if best_pair:
-                x1, y1, x2, y2 = best_pair
-                # Create winding tunnel between them
-                mid_x = (x1 + x2) // 2 + r.randint(-1, 1)
-                mid_y = (y1 + y2) // 2 + r.randint(-1, 1)
+        # Generate tunnels (only if chunk is below surface)
+        if y < 0:  # Only in underground chunks
+            tunnel_gen = TunnelGenerator()
+            if tunnel_gen.generate_tunnels(noise_data):
+                # Ensure tunnels get added to chunk_data
+                for y_pos in range(CHUNK_SIZE):
+                    for x_pos in range(CHUNK_SIZE):
+                        pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
+                        if is_tunnel:
+                            # Ensure proper coordinates and unique name
+                            name = f"tunnel_{pos.x}_{pos.y}"
+                            if not any(t[1] == name for t in chunk_data):
+                                chunk_data.append([(pos.x, pos.y), "tunnel_debug"])
                 
-                # Mark tunnel segments
-                for t in [0.0, 0.33, 0.66, 1.0]:  # Smooth path with 3 segments
-                    bx = int(x1 + (x2-x1)*t)
-                    by = int(y1 + (y2-y1)*t)
-                    radius = r.randint(1, 2)
-                    # Mark circular area around path
-                    for dy in range(-radius, radius+1):
-                        for dx in range(-radius, radius+1):
-                            if dx*dx + dy*dy <= radius*radius + 1:  # Circular shape
-                                nx, ny = bx + dx, by + dy
-                                if (0 <= nx < CHUNK_SIZE and 
-                                    0 <= ny < CHUNK_SIZE):
-                                    pos, is_cave, _ = noise_data[ny][nx]
-                                    noise_data[ny][nx] = (pos, is_cave, True)  # Mark as tunnel
-        
-        # Convert to final tiles
+        # Convert noise data to tiles
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
                 pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                 
-                # Tunnels take priority (visualization)
+                # Debug tunnels (red)
                 if is_tunnel:
                     chunk_data.append([(pos.x, pos.y), "tunnel_debug"])
                     continue
@@ -540,8 +444,10 @@ class ServerGame(ServerGameBase):
                 if is_cave:
                     continue
                     
-                # Generate terrain (unchanged from your original)
-                height_noise = noise.pnoise1(pos.x * terrain_scale, repeat=9999999, base=0)
+                # Generate terrain
+                height_noise = noise.pnoise1(pos.x * terrain_scale, 
+                                        repeat=9999999, 
+                                        base=0)
                 height_val = math.floor(height_noise * 10)
                 ground_level = 16 - height_val
                 
@@ -569,7 +475,7 @@ class ServerGame(ServerGameBase):
                     chunk_data.append([(pos.x, pos.y), tile_type])
         
         return chunk_data
-        
+            
 
     def generate_and_load_chunks(self, chunk_x, chunk_y):
         level = self.engine.levels.get("Test_Level")
