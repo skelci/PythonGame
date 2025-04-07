@@ -10,6 +10,9 @@ from components.level import Level
 #?ifdef CLIENT
 from components.button import Button
 from components.text import Text
+from components.input_box import InputBox
+from components.widget import Widget
+from components.border import Border
 #?endif
 
 import random as r
@@ -64,6 +67,52 @@ class TestPlayer(Character):
 
 
 #?ifdef CLIENT
+#* This class was made by skelci
+class WarningWidget:
+    current_warnings = {}
+
+
+    def __init__(self, name, text):
+        self.widget = Border(name, Vector(1300, 10), Vector(290, 30), 2, Color(255, 0, 0), Color(30, 0, 0, 70), False, 2,
+            subwidgets={
+                "text": Text("text", Vector(0, 0), Vector(285, 20), Color(255, 255, 255), "res/fonts/arial.ttf", text=text)
+            },
+            subwidget_offsets={
+                "text": Vector(5, 0)
+            },
+            subwidget_alignments={
+                "text": Alignment.CENTER_LEFT,
+            }
+        )
+
+
+    def show(self):
+        if not self.widget.visible:
+            self.widget.position.y = 10 + len(WarningWidget.current_warnings) * 50
+            self.widget.visible = True
+            WarningWidget.current_warnings[self.widget.name] = (self.widget, 15)
+            return
+        
+        WarningWidget.current_warnings[self.widget.name] = (self.widget, 15)
+        
+
+    @classmethod
+    def tick(cls, delta_time):
+        widgets_to_remove = []
+        for widget, time_left in cls.current_warnings.values():
+            time_left -= delta_time
+            cls.current_warnings[widget.name] = (widget, time_left)
+            if time_left <= 0:
+                widget.visible = False
+                widgets_to_remove.append(widget.name)
+                for widget, _ in cls.current_warnings.values():
+                    widget.position.y -= 50
+
+        for widget_name in widgets_to_remove:
+            del cls.current_warnings[widget_name]
+
+
+
 class ClientGame(ClientGameBase):
     def __init__(self):
         super().__init__()
@@ -77,12 +126,7 @@ class ClientGame(ClientGameBase):
         eng.set_camera_width(16 * 4)
         eng.resolution = Vector(1600, 900)
 
-        eng.connect("localhost", 5555)
         # eng.fullscreen=True
-
-        self.clock_1s = 0
-
-        self.current_level = None
 
         eng.show_all_stats()
         #eng.hide_all_stats()
@@ -98,24 +142,170 @@ class ClientGame(ClientGameBase):
     
         eng.register_background(Background("sky", (BackgroundLayer(Material(Color(100, 175, 255)), 20, 0.25), )))
 
+        #* from here on, this method was made by skelci
+        self.switched_to_login_menu = False
+        self.authenticated = False
+        eng.register_background(Background("main_menu", (BackgroundLayer(Material(Color(19, 3, 31)), eng.camera_width, 0), )))
+        eng.current_background = "main_menu"
 
+        #?ifdef ENGINE
+        eng.connect("localhost", 5555)
+        #?endif
+
+        self.invalid_port_warning = WarningWidget("invalid_port_warning", "Invalid port number")
+        self.failed_connection_warning = WarningWidget("failed_connection_warning", "Failed to connect to server")
+        self.invalid_credentials_warning = WarningWidget("invalid_credentials_warning", "Invalid username or password")
+        eng.register_widget(self.invalid_port_warning.widget)
+        eng.register_widget(self.failed_connection_warning.widget)
+        eng.register_widget(self.invalid_credentials_warning.widget)
+
+        def connect_to_server(server_address):
+            if not server_address:
+                return
+            eng.widgets["main_menu-server_prompt"].subwidgets["prompt_field"].subwidgets["input_box"].current_text = ""
+            server_address = server_address.split(":")
+            server_ip = server_address[0]
+            if len(server_address) == 1:
+                port = 5555
+            else:
+                try:
+                    port = int(server_address[1])
+                except ValueError:
+                    self.invalid_port_warning.show()
+                    return
+            try:
+                eng.connect(server_ip, port)
+            except Exception as e:
+                print(f"Failed to connect: {e}")
+                self.failed_connection_warning.show()
+                return
+            
+        def get_usernname_password():
+            username = self.engine.widgets["main_menu-credentials"].subwidgets["prompt_field-username"].subwidgets["input_box"].current_text
+            password = self.engine.widgets["main_menu-credentials"].subwidgets["prompt_field-password"].subwidgets["input_box"].current_text
+            return username, password
+        
+        def login():
+            username, password = get_usernname_password()
+            if not username or not password:
+                self.invalid_credentials_warning.show()
+                return
+            self.engine.network.send("login", (username, password))
+
+        def register():
+            username, password = get_usernname_password()
+            if not username or not password:
+                self.invalid_credentials_warning.show()
+                return
+            self.engine.network.send("register", (username, password))
+
+        class PromptField(Border):
+            def __init__(self, name, action = None):
+                super().__init__(name, Vector(0, 0), Vector(500, 50), 0, Color(204, 255, 102), Color(255, 255, 153), True, 5,
+                    subwidgets={
+                        "input_box": InputBox("input_box", Vector(0, 0), Vector(490, 40), Color(), "res/fonts/arial.ttf", 0, True, 22, action),
+                    },
+                    subwidget_offsets={
+                        "input_box": Vector(7, -7),
+                    },
+                    subwidget_alignments={
+                        "input_box": Alignment.CENTER_LEFT,
+                    }
+                )
+
+        class PromptText(Text):
+            def __init__(self, name, text):
+                super().__init__(name, Vector(0, 0), Vector(500, 50), Color(255, 255, 255), "res/fonts/arial.ttf", 0, True, text)
+
+        class PromptButton(Button):
+            def __init__(self, name, text, action = None):
+                super().__init__(name, Vector(0, 0), Vector(500, 75), 0, Color(192, 32, 224), Color(32, 4, 48), True, 5,
+                    subwidgets={
+                        "text": Text("text", Vector(0, 0), Vector(200, 40), Color(192, 32, 224), "res/fonts/arial.ttf", 0, True, text),
+                    },
+                    subwidget_offsets={
+                        "text": Vector(0, 0),
+                    },
+                    subwidget_alignments={
+                        "text": Alignment.CENTER,
+                    },
+                    hover_color = Color(0, 0, 0),
+                    click_color = Color(64, 8, 96),
+                    action = action
+                )
+        
+        eng.register_widget(Widget("main_menu-server_prompt", Vector(), Vector(1600, 900), Color(0, 0, 0, 0), 0, True,
+            subwidgets={
+                "prompt_field": PromptField("prompt_field", connect_to_server),
+                "prompt_text": PromptText("prompt_text", "Server Address:")
+            },
+            subwidget_offsets={
+                "prompt_field": Vector(),
+                "prompt_text": Vector(0, -53)
+            },
+            subwidget_alignments={
+                "prompt_field": Alignment.CENTER,
+                "prompt_text": Alignment.CENTER,
+            }
+        ))
+        
+        eng.register_widget(Widget("main_menu-credentials", Vector(), Vector(1600, 900), Color(0, 0, 0, 0), 0, False,
+            subwidgets={
+                "prompt_field-username": PromptField("prompt_field-username"),
+                "prompt_text-username": PromptText("prompt_text-username", "Username:"),
+                "prompt_field-password": PromptField("prompt_field-password"),
+                "prompt_text-password": PromptText("prompt_text-password", "Password:"),
+                "prompt_button-login": PromptButton("prompt_button-login", "Login", login),
+                "prompt_button-register": PromptButton("prompt_button-register", "Register", register),
+            },
+            subwidget_offsets={
+                "prompt_field-username": Vector(200, -50),
+                "prompt_text-username": Vector(-190, -52),
+                "prompt_field-password": Vector(200, 10),
+                "prompt_text-password": Vector(-185, 8),
+                "prompt_button-login": Vector(0, 100),
+                "prompt_button-register": Vector(0, 200),
+            },
+            subwidget_alignments={
+                "prompt_field-username": Alignment.CENTER,
+                "prompt_text-username": Alignment.CENTER,
+                "prompt_field-password": Alignment.CENTER,
+                "prompt_text-password": Alignment.CENTER,
+                "prompt_button-login": Alignment.CENTER,
+                "prompt_button-register": Alignment.CENTER,
+            }
+        ))
+
+
+    #* this method was  made by skelci
+    def handle_login(self):
+        if self.engine.network and self.engine.network.connected and not self.switched_to_login_menu:
+            self.switched_to_login_menu = True
+            self.engine.widgets["main_menu-server_prompt"].visible = False
+            self.engine.widgets["main_menu-credentials"].visible = True
+            #?ifdef ENGINE
+            self.engine.network.send("login", ("test", "test"))
+            self.engine.network.send("register", ("test", "test"))
+            return False
+            #?endif
+            return False
+
+        if self.engine.check_network() and not self.authenticated:
+            self.authenticated = True
+            self.engine.widgets["main_menu-credentials"].visible = False
+            self.engine.join_level("Test_Level")
+            #?ifdef ENGINE
+            return True
+            #?endif
+            return True
+
+        return self.engine.check_network()
 
 
     def tick(self):
         delta_time = super().tick()
-
-        self.clock_1s += delta_time
-
-        if self.engine.network.id < 0:
-            if self.clock_1s > 1:
-                self.clock_1s = 0
-                self.engine.network.send("login", ("username", "password"))
-                self.engine.network.send("register", ("username", "password"))
-            return
-        
-        if not self.current_level:
-            self.current_level = "Test_Level"
-            self.engine.join_level(self.current_level)
+        WarningWidget.tick(delta_time)
+        if not self.handle_login():
             return
 
         player_key = f"__Player_{self.engine.network.id}"
@@ -143,6 +333,7 @@ class TestLevel(Level):
 
 
 
+#* This class was made by skelci
 class KeyHandler:
     @staticmethod
     def key_W(engine_ref, level_ref, id):

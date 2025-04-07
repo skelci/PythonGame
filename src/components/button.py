@@ -8,17 +8,15 @@ from components.game_math import *
 
 
 class Button(Border):
-    def __init__(self, name, position, size, layer, border_color, bg_color, font, visible = False, thickness = 10, text = "", text_color = Color(0, 0, 0), font_size = 32, text_alignment = Alignment.CENTER, hover_color = Color(0, 0, 0), click_color = Color(0, 0, 0), action = None):
+    def __init__(self, name, position, size, layer, border_color, bg_color = Color(0, 0, 0, 0), visible = False, thickness = 10, subwidgets = {}, subwidget_offsets = {}, subwidget_alignments = {}, hover_color = Color(0, 0, 0), click_color = Color(0, 0, 0), action = None):
         self.__main_color = bg_color
-        super().__init__(name, position, size, layer, border_color, bg_color, visible, thickness)
-
-        self.__text = Text(name + "_text", position, size, layer, font, Color(0, 0, 0, 0), visible, text, text_color, font_size, text_alignment)
+        super().__init__(name, position, size, layer, border_color, bg_color, visible, thickness, subwidgets, subwidget_offsets, subwidget_alignments)
 
         self.hover_color = hover_color
         self.click_color = click_color
         self.action = action
 
-        self.screen_rect = (Vector(), Vector())
+        self.screen_rect = (Vector(), 0)
 
 
     @property
@@ -67,22 +65,16 @@ class Button(Border):
 
     @screen_rect.setter
     def screen_rect(self, value):
-        if isinstance(value, tuple) and len(value) == 2 and isinstance(value[0], Vector) and isinstance(value[1], Vector):
-            self.__screen_rect = value
+        if isinstance(value, tuple) and len(value) == 2 and isinstance(value[0], Vector) and isinstance(value[1], (int, float)):
+            top_left = value[0]
+            self.__screen_rect = (top_left, top_left + self.size * value[1])
         else:
-            raise TypeError("Screen rect must be a tuple of two Vectors:", value)
+            raise TypeError("Screen rect must be a tuple of Vector and float:", value)
         
 
     @property
     def main_color(self):
         return self.__main_color
-
-
-    @property
-    def surface(self):
-        surface = super().surface
-        surface.blit(self.__text.surface, (0, 0))
-        return surface
     
 
     def tick(self, pressed_keys, left_click, mouse_pos):

@@ -12,6 +12,7 @@ from engine.network import *
 
 #?ifdef CLIENT
 from components.button import Button
+from components.input_box import InputBox
 from components.text import Text
 from components.widget import Widget
 #?endif
@@ -104,6 +105,7 @@ class ClientEngine(Engine, Renderer):
 
         self.__widgets = {}
         self.__backgrounds = {}
+        self.__triggered_keys = set()
         self.__pressed_keys = set()
         self.__released_keys = set()
         self.__screen_mouse_pos = Vector()
@@ -209,6 +211,11 @@ class ClientEngine(Engine, Renderer):
     @property
     def level(self):
         return self.__level
+    
+
+    @property
+    def triggered_keys(self):
+        return self.__triggered_keys
          
 
     @property
@@ -239,6 +246,12 @@ class ClientEngine(Engine, Renderer):
     def hide_all_stats(self):
         for name, _ in self.__stats.items():
             self.widgets[name].visible = False
+
+
+    def check_network(self):
+        if not self.network or self.network.id <= 0:
+            return False
+        return True
 
 
     def add_actor_template(self, actor):
@@ -282,6 +295,17 @@ class ClientEngine(Engine, Renderer):
             self.network.send("update_distance", self.__update_distance)
 
 
+    def __tick_widget(self, delta_time, widget):
+        if widget.visible:
+            if isinstance(widget, Button):
+                widget.tick(self.pressed_keys, Keys.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
+            elif isinstance(widget, InputBox):
+                widget.tick(delta_time, self.triggered_keys, self.pressed_keys, self.screen_mouse_pos)
+            
+            if hasattr(widget, "subwidgets"):
+                for subwidget in widget.subwidgets.values():
+                    self.__tick_widget(delta_time, subwidget)
+
     def tick(self):
         self.clear()
 
@@ -303,10 +327,9 @@ class ClientEngine(Engine, Renderer):
         for widget in self.widgets.values():
             if widget.visible:
                 self.add_widget_to_draw(widget)
-                if isinstance(widget, Button):
-                    widget.tick(self.pressed_keys, Keys.MOUSE_LEFT in self.released_keys, self.screen_mouse_pos)
+                self.__tick_widget(delta_time, widget)
 
-        if self.get_player_actor(self.network.id) in self.level.actors:
+        if self.check_network() and self.get_player_actor(self.network.id) in self.level.actors:
             player_actor = self.level.actors[self.get_player_actor(self.network.id)]
             player_chunk = get_chunk_cords(player_actor.position)
             bl_chk_pos = player_chunk - self.__update_distance - 2
@@ -385,6 +408,7 @@ class ClientEngine(Engine, Renderer):
 
     def __handle_events(self):
         self.__released_keys.clear()
+        self.__triggered_keys.clear()
         for event in pygame.event.get():
             match event.type:
                 case pygame.QUIT:
@@ -394,24 +418,26 @@ class ClientEngine(Engine, Renderer):
 
                 case pygame.MOUSEBUTTONDOWN:
                     self.__pressed_keys.add(Keys(event.button))
-                    if self.network and self.network.id > 1:
+                    self.__triggered_keys.add(Keys(event.button))
+                    if self.check_network():
                         self.network.send("key_down", Keys(event.button))
 
                 case pygame.MOUSEBUTTONUP:
                     self.__pressed_keys.remove(Keys(event.button))
                     self.__released_keys.add(Keys(event.button))
-                    if self.network and self.network.id > 1:
+                    if self.check_network():
                         self.network.send("key_up", Keys(event.button))
 
                 case pygame.KEYDOWN:
                     self.__pressed_keys.add(event.key)
-                    if self.network and self.network.id > 1:
+                    self.__triggered_keys.add(event.key)
+                    if self.check_network():
                         self.network.send("key_down", event.key)
 
                 case pygame.KEYUP:
                     self.__pressed_keys.remove(event.key)
                     self.__released_keys.add(event.key)
-                    if self.network and self.network.id > 1:
+                    if self.check_network():
                         self.network.send("key_up", event.key)
 
         screen_mouse_position = Vector(*pygame.mouse.get_pos())

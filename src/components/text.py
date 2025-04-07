@@ -2,8 +2,6 @@
 
 from components.widget import Widget
 
-from components.datatypes import *
-
 import os
 import pygame
 
