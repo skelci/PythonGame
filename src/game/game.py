@@ -31,7 +31,7 @@ CAMERA_OFFSET_Y = 1
 
 class Log(Actor):
     def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material(Color(139, 69, 19)))
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material("res/textures/log.png"))
         self.position = position
 
 class Leaf(Actor):
@@ -574,7 +574,7 @@ class ServerGame(ServerGameBase):
     def generate_chunk(self, x, y):
         chunk_data = []
         chunk_origin = Vector(x, y) * CHUNK_SIZE
-        tree_threshold = 0.06
+        tree_threshold = 0.03
         
         # Noise parameters
         terrain_scale = 0.035
@@ -671,10 +671,10 @@ class ServerGame(ServerGameBase):
                 if pos.y == ground_level:
                     tile_type = "grass"
                     if r.random() < tree_threshold:
-                        tree_height = r.randint(4, 7)
+                        tree_height = r.randint(5, 7)
                         top = pos + Vector(0, tree_height)
                         # Generate trunk
-                        for h in range(1, tree_height + 1):
+                        for h in range(1, tree_height):
                             trunk_pos = pos + Vector(0, h)
                             if trunk_pos.y >= chunk_origin.y:
                                 chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
@@ -682,8 +682,11 @@ class ServerGame(ServerGameBase):
                         rx = 3.25  # half-width
                         ry = 4.5  # increased height
                         # Iterate dy from 0 (canopy center) to extended vertical offset
+                        
                         top_leaf_pos = top + Vector(0, 5)
+                        bottom_leaf_pos = top + Vector(0, 0)
                         chunk_data.append([(top_leaf_pos.x, top_leaf_pos.y), "leaf"])
+                        chunk_data.append([(bottom_leaf_pos.x, bottom_leaf_pos.y), "DebugTunnel"])
                         # Generate leaves in an elliptical pattern
                         for dy in range(0, int(ry) + 1):
                             # Iterate dx in a narrow band
@@ -692,6 +695,8 @@ class ServerGame(ServerGameBase):
                                 if (dx*dx)/(rx*rx) + (dy*dy)/(ry*ry) <= 1:
                                     leaf_pos = top + Vector(dx, dy)
                                     chunk_data.append([(leaf_pos.x, leaf_pos.y), "leaf"])
+                        #add bottom and top leaves            
+                        
 
                 elif pos.y < ground_level and pos.y > ground_level - 5:
                     tile_type = "dirt"
