@@ -478,7 +478,7 @@ class ClientEngine(Engine, Renderer):
 
 
     def __destroy_actor(self, data):
-        self.__level.destroy_actor(data)
+        self.level.destroy_actor(self.level.actors[data])
 
 
     def __background(self, data):
