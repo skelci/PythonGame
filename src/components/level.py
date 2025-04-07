@@ -308,11 +308,10 @@ class Level:
             if actor1.generate_overlap_events:
                 actor1.half_size += kinda_small_number
                 for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
-                    if actor1 is not actor2:
-                        if is_overlapping_rect(actor1, actor2):
-                            if actor2.name not in overlaped_actors:
-                                overlaped_actors[actor2.name] = set()
-                            overlaped_actors[actor2.name].add(actor1)
+                    if actor1 is not actor2 and is_overlapping_rect(actor1, actor2):
+                        if actor2.name not in overlaped_actors:
+                            overlaped_actors[actor2.name] = set()
+                        overlaped_actors[actor2.name].add(actor1)
                 actor1.half_size -= kinda_small_number
 
         for actor_name, overlaped_set in overlaped_actors.items():
