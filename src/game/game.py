@@ -158,21 +158,27 @@ class ClientGame(ClientGameBase):
         eng.register_background(Background("sky", (BackgroundLayer(Material(Color(100, 175, 255)), 20, 0.25), )))
 
         #* from here on, this method was made by skelci
+        #?ifdef ENGINE
+        eng.connect("localhost", 5555)
+        #?endif
+
         self.switched_to_login_menu = False
         self.authenticated = False
         eng.register_background(Background("main_menu", (BackgroundLayer(Material(Color(19, 3, 31)), eng.camera_width, 0), )))
         eng.current_background = "main_menu"
 
-        #?ifdef ENGINE
-        eng.connect("localhost", 5555)
-        #?endif
-
         self.invalid_port_warning = WarningWidget("invalid_port_warning", "Invalid port number")
         self.failed_connection_warning = WarningWidget("failed_connection_warning", "Failed to connect to server")
         self.invalid_credentials_warning = WarningWidget("invalid_credentials_warning", "Invalid username or password")
+        self.user_already_logged_in_warning = WarningWidget("user_already_logged_in_warning", "User is already logged in")
+        self.username_already_exists_warning = WarningWidget("username_already_exists_warning", "Username already exists")
+        self.wrong_credentials_warning = WarningWidget("wrong_credentials_warning", "Wrong username or password")
         eng.register_widget(self.invalid_port_warning.widget)
         eng.register_widget(self.failed_connection_warning.widget)
         eng.register_widget(self.invalid_credentials_warning.widget)
+        eng.register_widget(self.user_already_logged_in_warning.widget)
+        eng.register_widget(self.username_already_exists_warning.widget)
+        eng.register_widget(self.wrong_credentials_warning.widget)
 
         def connect_to_server(server_address):
             if not server_address:
@@ -213,6 +219,18 @@ class ClientGame(ClientGameBase):
                 self.invalid_credentials_warning.show()
                 return
             self.engine.network.send("register", (username, password))
+
+        def register_outcome(data):
+            if data > 0:
+                return
+            elif data == -1:
+                self.user_already_logged_in_warning.show()
+            elif data == -2:
+                self.username_already_exists_warning.show()
+            elif data == -3:
+                self.wrong_credentials_warning.show()
+
+        eng.regisrer_network_command("register_outcome", register_outcome)
 
         class PromptField(Border):
             def __init__(self, name, action = None):
@@ -301,7 +319,6 @@ class ClientGame(ClientGameBase):
             #?ifdef ENGINE
             self.engine.network.send("login", ("test", "test"))
             self.engine.network.send("register", ("test", "test"))
-            return False
             #?endif
             return False
 
@@ -309,9 +326,6 @@ class ClientGame(ClientGameBase):
             self.authenticated = True
             self.engine.widgets["main_menu-credentials"].visible = False
             self.engine.join_level("Test_Level")
-            #?ifdef ENGINE
-            return True
-            #?endif
             return True
 
         return self.engine.check_network()

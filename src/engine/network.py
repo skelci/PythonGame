@@ -189,7 +189,7 @@ class ClientNetwork(Network):
             self._input_buffer.add_data_back_multiple(unpriority_data)
             self._input_buffer.add_data_front_multiple(priority_data)
 
-        self.__id = -3
+        self.__id = -10
         self.socket.close()
         
 #?endif
@@ -371,6 +371,11 @@ class ServerNetwork(Network):
         conn.close()
 
 
+    """
+    -1: User already logged in
+    -2: User already exists
+    -3: Invalid username or password
+    """
     def __handle_login(self, login_data, conn):
         request, data = login_data
         username, password = data
@@ -381,10 +386,10 @@ class ServerNetwork(Network):
             case "register":
                 result = self.__register_user(username, password)
                 if result == -1:
-                    conn.send(failed_registration_msg(-1))
+                    conn.send(failed_registration_msg(-2))
                     return False
                 if result in self.__connected_ids:
-                    conn.send(failed_registration_msg(-2))
+                    conn.send(failed_registration_msg(-1))
                     return False
                 self.__conn_to_id[conn] = result
                 self.__id_to_conn[result] = conn
@@ -394,10 +399,10 @@ class ServerNetwork(Network):
             case "login":
                 result = self.__login_user(username, password)
                 if result == -1:
-                    conn.send(failed_registration_msg(-1))
+                    conn.send(failed_registration_msg(-3))
                     return False
                 if result in self.__connected_ids:
-                    conn.send(failed_registration_msg(-2))
+                    conn.send(failed_registration_msg(-1))
                     return False
                 self.__conn_to_id[conn] = result
                 self.__id_to_conn[result] = conn
