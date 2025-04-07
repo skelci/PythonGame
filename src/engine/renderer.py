@@ -199,13 +199,21 @@ class Renderer:
         self.screen.blit(bg_surface, (0, 0))
 
 
+    def __update_widget_screen_rect(self, widget, top_left_pos, camera_ratio):
+        widget.screen_rect = (top_left_pos, camera_ratio)
+
+        if hasattr(widget, "subwidgets"):
+            for subwidget_key in widget.subwidgets.keys():
+                subwidget_top_left_pos = widget.subwidget_pos(subwidget_key) + top_left_pos
+                self.__update_widget_screen_rect(widget.subwidgets[subwidget_key], subwidget_top_left_pos, camera_ratio)
+
+
     def __draw_widget(self, widget):
         camera_ratio = self.resolution / Vector(1600, 900)
         top_left_position = camera_ratio * widget.position
-
         size = widget.size * camera_ratio.x
 
-        widget.screen_rect = (top_left_position, top_left_position + size)
+        self.__update_widget_screen_rect(widget, top_left_position, camera_ratio.x)
 
         surface = widget.surface
         surface = pygame.transform.scale(surface, size.tuple)

@@ -9,6 +9,7 @@ from components.datatypes import *
 
 class InputBox(Text):
     def __init__(self, name, position, size, color, font, layer = 0, visible = False, max_length = 20, action = None):
+        self.__original_size = size.copy
         super().__init__(name, position, size, color, font, layer, visible)
 
         self.action = action
@@ -22,7 +23,7 @@ class InputBox(Text):
         self.__cursor_blink_time = 0.5
         self.__cursor_blink_timer = 0
 
-        self.screen_rect = (Vector(), Vector())
+        self.screen_rect = (Vector(), 0)
 
 
     @property
@@ -64,24 +65,25 @@ class InputBox(Text):
 
     @screen_rect.setter
     def screen_rect(self, value):
-        if isinstance(value, tuple) and len(value) == 2 and isinstance(value[0], Vector) and isinstance(value[1], Vector):
-            self.__screen_rect = value
+        if isinstance(value, tuple) and len(value) == 2 and isinstance(value[0], Vector) and isinstance(value[1], (int, float)):
+            top_left = value[0]
+            self.__screen_rect = (top_left, top_left + self.__original_size * value[1])
         else:
-            raise TypeError("Screen rect must be a tuple of two Vectors:", value)
+            raise TypeError("Screen rect must be a tuple of Vector and float:", value)
 
 
-    def tick(self, delta_time, pressed_keys, mouse_pos):
+    def tick(self, delta_time, triggered_keys, pressed_keys, mouse_pos):
         if not self.visible:
             return
 
-        if Keys.MOUSE_LEFT in pressed_keys:
+        if Keys.MOUSE_LEFT in triggered_keys:
             if is_in_screen_rect(*self.screen_rect, mouse_pos):
                 self.__is_in_focus = True
             else:
                 self.__is_in_focus = False
         
         if self.__is_in_focus:
-            for key in pressed_keys:
+            for key in triggered_keys:
                 match key:
                     case Keys.BACKSPACE:
                         if self.__cursor_position > 0:
@@ -110,8 +112,13 @@ class InputBox(Text):
                         self.__is_in_focus = False
                         self.__is_cursor_visible = False
                         self.action(self.__current_text) if self.action else None
-                        self.__current_text = ""
-                        self.__cursor_position = 0
+
+                    case Keys.DOT:
+                        char = "."
+                        if Keys.LEFT_SHIFT in pressed_keys or Keys.RIGHT_SHIFT in pressed_keys:
+                            char = ":"    
+                        self.__current_text = self.__current_text[:self.__cursor_position] + char + self.__current_text[self.__cursor_position:]
+                        self.__cursor_position += 1
 
                     case _:
                         if 32 <= key <= 126 and len(self.__current_text) < self.max_length:

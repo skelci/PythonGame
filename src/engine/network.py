@@ -125,7 +125,12 @@ class ClientNetwork(Network):
         self.__conn_thread.daemon = True
         self.__conn_thread.start()
 
-        self.__id = -1
+        self.__id = 0
+
+
+    @property
+    def connected(self):
+        return self.socket is not None and self.socket.fileno() != -1
 
 
     @property
@@ -174,15 +179,12 @@ class ClientNetwork(Network):
                 break
 
             priority_data, unpriority_data = self._parse_data(data)
-            if self.id < 0:
+            if self.id <= 0:
                 for data in unpriority_data:
                     cmd, id = data
                     if cmd == "register_outcome":
                         self.__id = id
                         continue
-                
-                if self.__id > 0:
-                    continue
 
             self._input_buffer.add_data_back_multiple(unpriority_data)
             self._input_buffer.add_data_front_multiple(priority_data)
