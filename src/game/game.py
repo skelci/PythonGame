@@ -569,7 +569,7 @@ class ServerGame(ServerGameBase):
     def smoothstep(val, edge0, edge1):
         t = max(0.0, min((val - edge0) / (edge1 - edge0), 1.0))
         return t * t * (3 - 2 * t)
-    
+
 
     def generate_chunk(self, x, y):
         chunk_data = []
@@ -586,17 +586,51 @@ class ServerGame(ServerGameBase):
         cave_octaves = 2
         cave_persistence = 0.5
         
-        # Generate initial noise data (position, is_cave, is_tunnel)
+        # Enhanced ore generation parameters - different for each type
+        ore_parameters = {
+            "coal": {
+                "scale": 0.05,       # Larger scale = bigger, spread-out veins
+                "threshold": 0.72,   # Lower threshold = more common
+                "base": 1000,        # Unique noise pattern
+                "min_depth": 5,      # Shallowest depth
+                "vein_size": (4, 8), # Larger veins (now represents potential blocks)
+                "spread": 1,         # Wider spread
+                "density": 0.85      # Higher density
+            },
+            "iron": {
+                "scale": 0.04,
+                "threshold": 0.76,
+                "base": 2000,
+                "min_depth": 10,
+                "vein_size": (3, 5),
+                "spread": 1,
+                "density": 0.85
+            },
+            "gold": {
+                "scale": 0.03,       # Smaller scale = tighter veins
+                "threshold": 0.8,    # Slightly higher threshold = slightly rarer
+                "base": 3000,
+                "min_depth": 10,
+                "vein_size": (2, 4),  # Smaller veins
+                "spread": 1,          # Tighter clusters
+                "density": 0.84
+            }
+        }
+        
+        # First calculate ground levels
+        ground_levels = []
+        for x_pos in range(CHUNK_SIZE):
+            pos_x = chunk_origin.x + x_pos
+            height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=0)
+            ground_levels.append(16 - math.floor(height_noise * 10))
+        
+        # Generate initial noise data
         noise_data = []
         for y_pos in range(CHUNK_SIZE):
             row = []
             for x_pos in range(CHUNK_SIZE):
                 pos = chunk_origin + Vector(x_pos, y_pos)
-                
-                # Terrain height
-                height_noise = noise.pnoise1(pos.x * terrain_scale, repeat=9999999, base=0)
-                height_val = math.floor(height_noise * 10)
-                ground_level = 16 - height_val
+                ground_level = ground_levels[x_pos]
                 
                 # Cave generation
                 base_val = noise.snoise2(
@@ -606,114 +640,161 @@ class ServerGame(ServerGameBase):
                     persistence=cave_persistence,
                     lacunarity=2.0
                 )
-                detail = noise.snoise2(
+                combined_noise = base_val + (noise.snoise2(
                     pos.x * cave_scale_x * 3,
                     pos.y * cave_scale_y * 3,
                     octaves=1
-                ) * 0.2
-                combined_noise = base_val + detail
+                ) * 0.2)
                 
                 # Depth-based thresholds
                 depth = ground_level - pos.y
                 if depth < 6:
                     effective_threshold = surface_threshold
                 elif 6 <= depth < 16:
-                    effective_threshold = surface_threshold - \
-                        (surface_threshold - mid_threshold) * \
-                        self.smoothstep(depth, 6, 16)
+                    effective_threshold = surface_threshold - (surface_threshold - mid_threshold) * self.smoothstep(depth, 6, 16)
                 elif 16 <= depth < 30:
-                    effective_threshold = mid_threshold - \
-                        (mid_threshold - deep_threshold) * \
-                        self.smoothstep(depth, 16, 30)
+                    effective_threshold = mid_threshold - (mid_threshold - deep_threshold) * self.smoothstep(depth, 16, 30)
                 else:
                     effective_threshold = deep_threshold
 
-                # Only allow caves below ground level
                 is_cave = combined_noise > effective_threshold and pos.y < ground_level
                 row.append((pos, is_cave, False))
             noise_data.append(row)
-            
-        # Generate tunnels (only if chunk is below surface)
-        if y <= 0:  # Only in underground chunks
+        
+        # Generate tunnels
+        if y <= 0:
             tunnel_gen = TunnelGenerator()
             if tunnel_gen.generate_tunnels(noise_data):
-                # Ensure tunnels get added to chunk_data
                 for y_pos in range(CHUNK_SIZE):
                     for x_pos in range(CHUNK_SIZE):
                         pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                         if is_tunnel:
-                            noise_data[y_pos][x_pos] = (pos, True, False)
-                            # Ensure proper coordinates and unique name
-                            name = f"tunnel_{pos.x}_{pos.y}"
-                            if not any(t[1] == name for t in chunk_data):
-                                chunk_data.append([(pos.x, pos.y), "tunnel_debug"])
+                            chunk_data.append([(pos.x, pos.y), "tunnel_debug"])
+        
+        # Generate ore veins with flood-fill approach for better connectivity
+        ore_positions = set()
+        for ore_type, parameters in ore_parameters.items():
+            # First pass - find potential vein starts
+            potential_starts = []
+            for y_pos in range(CHUNK_SIZE):
+                for x_pos in range(CHUNK_SIZE):
+                    pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
+                    ground_level = ground_levels[x_pos]
+                    depth = ground_level - pos.y
+                    
+                    if (not is_cave and not is_tunnel and 
+                        depth > parameters["min_depth"] and 
+                        (pos.x, pos.y) not in ore_positions):
+                        
+                        ore_noise = noise.snoise2(
+                            pos.x * parameters["scale"],
+                            pos.y * parameters["scale"],
+                            octaves=2,
+                            persistence=0.5,
+                            lacunarity=2.0,
+                            base=parameters["base"]
+                        )
+                        
+                        if ore_noise > parameters["threshold"]:
+                            potential_starts.append((x_pos, y_pos))
+            
+            # Second pass - generate connected veins from starts
+            for start_x, start_y in potential_starts:
+                if (chunk_origin.x + start_x, chunk_origin.y + start_y) in ore_positions:
+                    continue
+                    
+                min_vein, max_vein = parameters["vein_size"]
+                target_size = r.randint(min_vein, max_vein)
+                current_size = 0
+                queue = []
+                visited = set()
                 
-        # Convert noise data to tiles
+                start_pos = chunk_origin + Vector(start_x, start_y)
+                queue.append((start_x, start_y))
+                visited.add((start_x, start_y))
+                
+                while queue and current_size < target_size:
+                    x_pos, y_pos = queue.pop(0)
+                    pos = chunk_origin + Vector(x_pos, y_pos)
+                    
+                    # Only place ore if it meets conditions
+                    ground_level = ground_levels[x_pos]
+                    depth = ground_level - pos.y
+                    if (not noise_data[y_pos][x_pos][1] and  # Not a cave
+                        not noise_data[y_pos][x_pos][2] and  # Not a tunnel
+                        depth > parameters["min_depth"] and
+                        (pos.x, pos.y) not in ore_positions and
+                        r.random() < parameters["density"]):
+                        
+                        chunk_data.append([(pos.x, pos.y), ore_type])
+                        ore_positions.add((pos.x, pos.y))
+                        current_size += 1
+                    
+                    # Add neighbors to queue if they're good candidates
+                    for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                        nx, ny = x_pos + dx, y_pos + dy
+                        if (0 <= nx < CHUNK_SIZE and 0 <= ny < CHUNK_SIZE and
+                            (nx, ny) not in visited):
+                            
+                            # Check if neighbor has good ore potential
+                            n_pos = chunk_origin + Vector(nx, ny)
+                            n_ground_level = ground_levels[nx]
+                            n_depth = n_ground_level - n_pos.y
+                            
+                            if (n_depth > parameters["min_depth"] and
+                                not noise_data[ny][nx][1] and
+                                not noise_data[ny][nx][2]):
+                                
+                                n_ore_noise = noise.snoise2(
+                                    n_pos.x * parameters["scale"],
+                                    n_pos.y * parameters["scale"],
+                                    octaves=2,
+                                    persistence=0.5,
+                                    lacunarity=2.0,
+                                    base=parameters["base"]
+                                )
+                                
+                                if n_ore_noise > parameters["threshold"] * 0.8:  # Slightly lower threshold for neighbors
+                                    visited.add((nx, ny))
+                                    queue.append((nx, ny))
+        
+        # Rest of terrain generation (unchanged)
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
                 pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
+                ground_level = ground_levels[x_pos]
                 
-                # Debug tunnels (red)
-                if is_tunnel:
-                    chunk_data.append([(pos.x, pos.y), "tunnel_debug"])
+                if any(block[0] == (pos.x, pos.y) for block in chunk_data):
                     continue
                     
-                # Leave natural caves empty
                 if is_cave:
                     continue
-                    
-                # Generate terrain
-                height_noise = noise.pnoise1(pos.x * terrain_scale, repeat=9999999, base=0)
-                height_val = math.floor(height_noise * 10)
-                ground_level = 16 - height_val
-                
-                tile_type = None
-                if pos.y == ground_level:
-                    tile_type = "grass"
+                elif pos.y == ground_level:
+                    chunk_data.append([(pos.x, pos.y), "grass"])
                     if r.random() < tree_threshold:
-                        tree_height = r.randint(5, 7)
+                        tree_height = r.randint(4, 7)
                         top = pos + Vector(0, tree_height)
-                        # Generate trunk
-                        for h in range(1, tree_height):
+                        for h in range(1, tree_height + 1):
                             trunk_pos = pos + Vector(0, h)
                             if trunk_pos.y >= chunk_origin.y:
                                 chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
-                        # Generate leaves
-                        rx = 3.25  # half-width
-                        ry = 4.5  # increased height
-                        # Iterate dy from 0 (canopy center) to extended vertical offset
-                        
+                        rx = 3.25
+                        ry = 4.5
                         top_leaf_pos = top + Vector(0, 5)
                         bottom_leaf_pos = top + Vector(0, 0)
                         chunk_data.append([(top_leaf_pos.x, top_leaf_pos.y), "leaf"])
-                        chunk_data.append([(bottom_leaf_pos.x, bottom_leaf_pos.y), "DebugTunnel"])
-                        # Generate leaves in an elliptical pattern
+                        chunk_data.append([(bottom_leaf_pos.x, bottom_leaf_pos.y), "leaf"])
                         for dy in range(0, int(ry) + 1):
-                            # Iterate dx in a narrow band
                             for dx in range(-int(rx), int(rx) + 1):
-                                # Elliptical check
                                 if (dx*dx)/(rx*rx) + (dy*dy)/(ry*ry) <= 1:
                                     leaf_pos = top + Vector(dx, dy)
                                     chunk_data.append([(leaf_pos.x, leaf_pos.y), "leaf"])
-                        #add bottom and top leaves            
-                        
-
                 elif pos.y < ground_level and pos.y > ground_level - 5:
-                    tile_type = "dirt"
+                    chunk_data.append([(pos.x, pos.y), "dirt"])
                 elif pos.y <= ground_level - 5:
-                    tile_type = "stone"
-                    if pos.y <= ground_level - 10 and r.random() < 0.02:
-                        tile_type = "coal"
-                    if pos.y <= ground_level - 20 and r.random() < 0.01:
-                        tile_type = "iron"
-                    if pos.y <= ground_level - 35 and r.random() < 0.005:
-                        tile_type = "gold"
-
-                if tile_type is not None:
-                    chunk_data.append([(pos.x, pos.y), tile_type])
+                    chunk_data.append([(pos.x, pos.y), "stone"])
         
         return chunk_data
-            
 
     def generate_and_load_chunks(self, chunk_x, chunk_y):
         level = self.engine.levels.get("Test_Level")
@@ -809,8 +890,8 @@ class ServerGame(ServerGameBase):
                 ud += player.update_distance
         ud //= len(self.engine.players)
         ud = (ud // DEVIDER) + 1
-        for offset_y in range(-ud + 2, ud + 1):
-            for offset_x in range(-ud, ud + 1):
+        for offset_y in range(-ud - 2, ud + 3):
+            for offset_x in range(-ud - 2, ud + 3):
                 chunks_to_load.append((
                     base_chunk_vector.x + offset_x, 
                     base_chunk_vector.y + offset_y
