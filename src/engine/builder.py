@@ -177,7 +177,7 @@ class Builder:
         f = open(file_name, "w")
 
         should_skip = 0
-        prev_def = ""
+        prev_def = []
         
         for line in lines:
             if line.strip().startswith("#?"):
@@ -189,30 +189,33 @@ class Builder:
                 if build_type == BuildType.SERVER:
                     match line[2:7]:
                         case "ifdef":
-                            prev_def = line[8:]
-                            if prev_def == "CLIENT" or prev_def == "ENGINE":
+                            prev_def.append(line[8:])
+                            if prev_def[-1] == "CLIENT" or prev_def[-1] == "ENGINE":
                                 should_skip += 1
 
                         case "endif":
-                            if prev_def == "SERVER":
+                            if prev_def[-1] == "SERVER":
                                 continue
                             should_skip -= 1
+                            prev_def.pop()
                         
                 if build_type == BuildType.CLIENT:
                     match line[2:7]:
                         case "ifdef":
-                            prev_def = line[8:]
-                            if prev_def == "SERVER" or prev_def == "ENGINE":
+                            prev_def.append(line[8:])
+                            if prev_def[-1] == "SERVER" or prev_def[-1] == "ENGINE":
                                 should_skip += 1
 
                         case "endif":
-                            if prev_def == "CLIENT":
+                            if prev_def[-1] == "CLIENT":
                                 continue
                             should_skip -= 1
+                            prev_def.pop()
 
             else:
                 if not should_skip:
-                    if line.strip() == "":
+                    stripped_line = line.strip()
+                    if not stripped_line or stripped_line.startswith("#"):
                         continue
                     f.write(line)
 

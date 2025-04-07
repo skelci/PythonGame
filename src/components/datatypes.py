@@ -201,6 +201,11 @@ class Vector:
     
 
     @property
+    def int(self):
+        return self.floored
+    
+
+    @property
     def tuple(self):
         return (self.x, self.y)
     

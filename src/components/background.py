@@ -1,6 +1,8 @@
 from components.datatypes import *
 
-import pygame # type: ignore
+#?ifdef CLIENT
+import pygame
+#?endif
 
 
 

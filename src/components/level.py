@@ -153,6 +153,29 @@ class Level:
         
         self.__actors_to_destroy.clear()
         return destroyed
+    
+
+    def get_actors_in_chunks_3x3(self, chunk_pos):
+        actors = []
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                chunk_x, chunk_y = chunk_pos + Vector(x, y)
+                if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
+                    for actor_name in self.__chunks[chunk_x][chunk_y]:
+                        actors.append(self.actors[actor_name])
+
+        return actors
+    
+
+    def add_actor_to_chunk(self, actor):
+        chunk_x, chunk_y = get_chunk_cords(actor.position)
+        if chunk_x not in self.__chunks:
+            self.__chunks[chunk_x] = {}
+        if chunk_y not in self.__chunks[chunk_x]:
+            self.__chunks[chunk_x][chunk_y] = set()
+        self.__chunks[chunk_x][chunk_y].add(actor.name)
+
+        actor.chunk = Vector(chunk_x, chunk_y)
 
 
     #?ifdef SERVER
@@ -199,18 +222,6 @@ class Level:
                     chunks.add(previous_chunk_pos)
 
         return chunks
-    
-
-    def get_actors_in_chunks_3x3(self, chunk_pos):
-        actors = []
-        for x in range(-1, 2):
-            for y in range(-1, 2):
-                chunk_x, chunk_y = chunk_pos + Vector(x, y)
-                if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
-                    for actor_name in self.__chunks[chunk_x][chunk_y]:
-                        actors.append(self.actors[actor_name])
-
-        return actors
         
 
     def tick(self, delta_time):
@@ -310,16 +321,5 @@ class Level:
             self.actors[actor_name].previously_collided = overlaped_set
 
     #?endif
-    
-
-    def add_actor_to_chunk(self, actor):
-        chunk_x, chunk_y = get_chunk_cords(actor.position)
-        if chunk_x not in self.__chunks:
-            self.__chunks[chunk_x] = {}
-        if chunk_y not in self.__chunks[chunk_x]:
-            self.__chunks[chunk_x][chunk_y] = set()
-        self.__chunks[chunk_x][chunk_y].add(actor.name)
-
-        actor.chunk = Vector(chunk_x, chunk_y)
         
 
