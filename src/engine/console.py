@@ -24,7 +24,7 @@ class Console:
             "level_updates": "print('level_updates:', self.get_stat('level_updates'), 'ms')",
             "stat_widget_tick": "print('widget_tick:', self.get_stat('widget_tick'), 'ms')",
             "stat_network": "print('network:', self.get_stat('network'), 'ms')",
-            "stat_all": "for stat in ('tps', 'console_cmds', 'level_updates', 'widget_tick', 'network'):\n\tprint(stat + ': ' + self.get_stat(stat))",
+            "stat_all": "for stat in ('tps', 'console_cmds', 'level_updates', 'network'):\n\tprint(stat + ': ' + self.get_stat(stat))",
         }
 
 

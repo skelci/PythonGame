@@ -7,7 +7,7 @@ import pygame
 
 
 class Widget:
-    def __init__(self, name, position, size, color, layer=0, visible = True, subwidgets={}, subwidgets_offsets={}, subwidgets_alignments={}):
+    def __init__(self, name, position, size, color, layer=0, visible = True, subwidgets={}, subwidget_offsets={}, subwidget_alignments={}):
         self.name = name
         self.position = position
         self.size = size
@@ -15,8 +15,8 @@ class Widget:
         self.color = color
         self.visible = visible
         self.subwidgets = subwidgets
-        self.subwidgets_offsets = subwidgets_offsets
-        self.subwidgets_alignments = subwidgets_alignments
+        self.subwidget_offsets = subwidget_offsets
+        self.subwidget_alignments = subwidget_alignments
 
 
     @property
@@ -114,13 +114,13 @@ class Widget:
         
 
     @property
-    def subwidgets_offsets(self):
+    def subwidget_offsets(self):
         self._subwidget_updated = False
         return self.__subwidget_offset
 
 
-    @subwidgets_offsets.setter
-    def subwidgets_offsets(self, value):
+    @subwidget_offsets.setter
+    def subwidget_offsets(self, value):
         if isinstance(value, dict):
             self.__subwidget_offset = value
         else:
@@ -128,13 +128,13 @@ class Widget:
         
 
     @property
-    def subwidgets_alignments(self):
+    def subwidget_alignments(self):
         self._subwidget_updated = False
         return self.__subwidget_alignment
     
 
-    @subwidgets_alignments.setter
-    def subwidgets_alignments(self, value):
+    @subwidget_alignments.setter
+    def subwidget_alignments(self, value):
         if isinstance(value, dict):
             self.__subwidget_alignment = value
         else:
@@ -168,7 +168,7 @@ class Widget:
     
 
     def subwidget_pos(self, widget):
-        offset, alignment = self.subwidgets_offsets[widget], self.subwidgets_alignments[widget]
+        offset, alignment = self.subwidget_offsets[widget], self.subwidget_alignments[widget]
         subwidget = self.subwidgets[widget]
         subwidget_offset = offset.copy
 

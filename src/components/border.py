@@ -1,3 +1,4 @@
+#?attr CLIENT
 from components.widget import Widget
 from components.datatypes import *
 
@@ -6,8 +7,8 @@ import pygame
 
 
 class Border(Widget):
-    def __init__(self, name, position, size, layer, border_color, bg_color = Color(0, 0, 0, 0), visible = False, thickness = 10):
-        super().__init__(name, position, size, layer, bg_color, visible)
+    def __init__(self, name, position, size, layer, border_color, bg_color = Color(0, 0, 0, 0), visible = False, thickness = 10, subwidgets = {}, subwidget_offsets = {}, subwidget_alignments = {}):
+        super().__init__(name, position, size, bg_color, layer, visible, subwidgets, subwidget_offsets, subwidget_alignments)
 
         self.border_color = border_color
         self.thickness = thickness

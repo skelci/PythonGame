@@ -3,7 +3,7 @@ from components.material import Material
 
 
 class Actor:
-    def __init__(self, engine_ref, name, position, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, visible = True, material = None, restitution = 1):
+    def __init__(self, name, position, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, visible = True, material = None, render_layer = 0, restitution = 1):
         self.__outdated = {
             "half_size": False,
             "position": False,
@@ -11,15 +11,17 @@ class Actor:
             "material": False,
         }
 
-        self.engine_ref = engine_ref
+        self.__engine_ref = None
+        self.__level_ref = None
         self.name = name
         self.half_size = half_size
         self.position = position
         self.generate_overlap_events = generate_overlap_events
         self.collidable = collidable
-        self.visible = visible
         self.material = material
+        self.visible = visible
         self.restitution = restitution
+        self.render_layer = render_layer
 
         self.previously_collided = set()
 
@@ -40,6 +42,19 @@ class Actor:
             self.__engine_ref = value
         else:
             raise TypeError("Engine refrence must be a Engine object:", value)
+        
+
+    @property
+    def level_ref(self):
+        return self.__level_ref
+    
+
+    @level_ref.setter
+    def level_ref(self, value):
+        if any("Level" == cls.__name__ for cls in value.__class__.__mro__):
+            self.__level_ref = value
+        else:
+            raise TypeError("Level refrence must be a Level object:", value)
 
 
     @property
@@ -117,6 +132,8 @@ class Actor:
     @visible.setter
     def visible(self, value):
         if isinstance(value, bool):
+            if not self.material and value:
+                raise ValueError("Material must be set to use visible:", value)
             self.__visible = value
             self.__outdated["visible"] = True
         else:
@@ -134,7 +151,20 @@ class Actor:
             self.__material = value
             self.__outdated["material"] = True
         else:
-            raise TypeError("Material name must be a string None:", value)
+            raise TypeError("Material name must be a string or None:", value)
+        
+
+    @property
+    def render_layer(self):
+        return self.__render_layer
+    
+
+    @render_layer.setter
+    def render_layer(self, value):
+        if isinstance(value, int):
+            self.__render_layer = value
+        else:
+            raise TypeError("Render layer must be an int:", value)
         
 
     @property
@@ -171,25 +201,12 @@ class Actor:
                     self.half_size = Vector(*data[key])
                 case "position":
                     self.position = Vector(*data[key])
-                case "visible":
-                    self.visible = data[key]
                 case "material":
                     self.material = self.engine_ref.get_material(data[key])
     #?endif
-        
-
-
-    #?ifdef SERVER
-    def get_for_full_net_sync(self):
-        for key in self.__outdated:
-            self.__outdated[key] = False
-        return [
-            self.__class__.__name__,
-            self.name,
-            self.position,
-        ]
     
 
+    #?ifdef SERVER
     def get_for_net_sync(self):
         out = {}
         for key in self.__outdated:
@@ -200,6 +217,16 @@ class Actor:
                 self.__outdated[key] = False
 
         return out
+        
+
+    def get_for_full_net_sync(self):
+        for key in self.__outdated:
+            self.__outdated[key] = False
+        return [
+            self.__class__.__name__,
+            self.name,
+            self.position,
+        ]
 
 
     def tick(self, delta_time):
@@ -221,5 +248,19 @@ class Actor:
     
     def __str__(self):
         return self.name
+    
+
+    def __repr__(self):
+        return self.__str__()
+    
+
+    def __hash__(self):
+        return hash(self.name)
+    
+
+    def __eq__(self, other):
+        if isinstance(other, Actor):
+            return self.name == other.name
+        return False
 
 
