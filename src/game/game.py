@@ -472,12 +472,13 @@ class ServerGame(ServerGameBase):
                             trunk_pos = pos + Vector(0, h)
                             if trunk_pos.y >= chunk_origin.y:
                                 chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
-                        # Add leaves in an elliptical shape (less wide, more high) below the canopy center
-                        leaf_radius = 3
-                        # Horizontal radius scaled down, vertical radius scaled up
-                        rx = leaf_radius   # half-width
-                        ry = leaf_radius * 1.5  # increased height
+                        # Generate leaves
+                        rx = 3.25  # half-width
+                        ry = 4.5  # increased height
                         # Iterate dy from 0 (canopy center) to extended vertical offset
+                        top_leaf_pos = top + Vector(0, 5)
+                        chunk_data.append([(top_leaf_pos.x, top_leaf_pos.y), "leaf"])
+                        # Generate leaves in an elliptical pattern
                         for dy in range(0, int(ry) + 1):
                             # Iterate dx in a narrow band
                             for dx in range(-int(rx), int(rx) + 1):
