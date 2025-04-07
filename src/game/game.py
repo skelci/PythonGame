@@ -823,17 +823,21 @@ def breaking_blocks(engine_ref, level_ref, id):
     mouse_pos = mouse_pos.floored
     #print(mouse_pos)   
 
+    #allowed to break this blocks
+    allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves"))
+
     for actor_name in chunk_Actor_name:
         #actor=engine_ref.levels["Test_Level"].actors[actor_name]
         #print(actor_name)
         try:
-            _, actor_x, actor_y = actor_name.split("_")
+            block_type_, actor_x, actor_y = actor_name.split("_")
             actor_position = Vector(int(actor_x), int(actor_y))
         except ValueError:
             continue
 
-        if actor_position == mouse_pos:
+        if actor_position == mouse_pos and block_type_ in allowed_blocks:
             actor=engine_ref.levels["Test_Level"].actors.get(actor_name)
+            #print(actor)
             
             if not actor:
                 print(f"Actor {actor_name} not found in level.")
