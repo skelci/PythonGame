@@ -66,6 +66,7 @@ class ClientGame(ClientGameBase):
     def __init__(self):
         super().__init__()
 
+
         self.true_scroll = [0, 0]
         self.game_map = {}
         self.loaded_chunks = set()
@@ -101,6 +102,7 @@ class ClientGame(ClientGameBase):
 
     def tick(self):
         delta_time = super().tick()
+        #print('game loope running')
 
         self.clock_1s += delta_time
 
@@ -173,6 +175,7 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.W, KeyPressType.HOLD, KeyHandler.key_W)
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
+        self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
 
 
         self.game_map = {}
@@ -359,3 +362,41 @@ class ServerGame(ServerGameBase):
 
         for base_chunk_x, base_chunk_y in chunks_to_load:
             self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
+
+
+def breaking_blocks(engine_ref, level_ref, id):
+    #print('breaking_blocks')
+    # Get the player's position
+    player = level_ref.actors[engine_ref.get_player_actor(id)].position
+    chunk_x, chunk_y=engine_ref.players[id].previous_chunk
+
+    # Get the chunk name and position
+    chunk_Actor_name=tuple(engine_ref.levels["Test_Level"].chunks[chunk_x][chunk_y])
+
+    # Get the positions of actors in the current chunk
+
+
+    #Get the mouse position 
+    mouse_pos = engine_ref.players[id].world_mouse_pos
+    mouse_pos = mouse_pos.floored
+    #print(mouse_pos)   
+
+    for actor_name in chunk_Actor_name:
+        #actor=engine_ref.levels["Test_Level"].actors[actor_name]
+        #print(actor_name)
+        try:
+            _, actor_x, actor_y = actor_name.split("_")
+            actor_position = Vector(int(actor_x), int(actor_y))
+        except ValueError:
+            continue
+
+        if actor_position == mouse_pos:
+            actor=engine_ref.levels["Test_Level"].actors.get(actor_name)
+            
+            if not actor:
+                print(f"Actor {actor_name} not found in level.")
+
+            engine_ref.levels["Test_Level"].destroy_actor(actor)
+            break
+            
+
