@@ -424,11 +424,13 @@ class ServerGame(ServerGameBase):
                 else:
                     effective_threshold = deep_threshold
 
-                row.append((pos, combined_noise > effective_threshold, False))
+                # Only allow caves below ground level
+                is_cave = combined_noise > effective_threshold and pos.y < ground_level
+                row.append((pos, is_cave, False))
             noise_data.append(row)
-        
+            
         # Generate tunnels (only if chunk is below surface)
-        if y < 0.3:  # Only in underground chunks
+        if y <= 0:  # Only in underground chunks
             tunnel_gen = TunnelGenerator()
             if tunnel_gen.generate_tunnels(noise_data):
                 # Ensure tunnels get added to chunk_data
