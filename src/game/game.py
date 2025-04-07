@@ -136,7 +136,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 10)
+        eng.set_camera_width(16 * 4)
         eng.resolution = Vector(1600, 900)
 
         # eng.fullscreen=True
@@ -544,11 +544,6 @@ class ServerGame(ServerGameBase):
         self.current_base_chunk = Vector(0, 0)
         self.tunnel_generator = TunnelGenerator()
     
-
-        #?ifdef ENGINE
-        self.engine.console.handle_cmd("build_server")
-        self.engine.console.handle_cmd("build_client")
-        #?endif
 
         #?ifdef ENGINE
         self.engine.console.handle_cmd("build_server")
