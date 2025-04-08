@@ -160,9 +160,10 @@ class Level:
         for x in range(-1, 2):
             for y in range(-1, 2):
                 chunk_x, chunk_y = chunk_pos + Vector(x, y)
-                if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
-                    for actor_name in self.__chunks[chunk_x][chunk_y]:
-                        actors.append(self.actors[actor_name])
+                if chunk_x not in self.__chunks or chunk_y not in self.__chunks[chunk_x]:
+                    continue
+                for actor_name in self.__chunks[chunk_x][chunk_y]:
+                    actors.append(self.actors[actor_name])
 
         return actors
     
@@ -184,30 +185,32 @@ class Level:
 
         for chunk in self.get_loaded_chunks(players):
             chunk_x, chunk_y = chunk
-            if chunk_x in self.__chunks and chunk_y in self.__chunks[chunk_x]:
-                for actor_name in self.__chunks[chunk_x][chunk_y]:
-                    sync_data = self.actors[actor_name].get_for_net_sync()
-                    if not sync_data:
-                        continue
+            if chunk_x not in self.__chunks or chunk_y not in self.__chunks[chunk_x]:
+                continue
 
-                    actor = self.actors[actor_name]
-                    if "position" in sync_data:
-                        a_chk_x, a_chk_y = actor.chunk
-                        if (a_chk_x != chunk_x or a_chk_y != chunk_y) and actor_name in self.__chunks[a_chk_x][a_chk_y]:
-                            self.__chunks[a_chk_x][a_chk_y].remove(actor_name)
-                            self.add_actor_to_chunk(actor)
-                            
-                    if not actor.visible and "visible" not in sync_data:
-                        continue 
-                    if "visible" in sync_data:
-                        del sync_data["visible"]
+            for actor_name in self.__chunks[chunk_x][chunk_y]:
+                sync_data = self.actors[actor_name].get_for_net_sync()
+                if not sync_data:
+                    continue
 
-                    if chunk_x not in chunk_updates:
-                        chunk_updates[chunk_x] = {}
-                    if chunk_y not in chunk_updates[chunk_x]:
-                        chunk_updates[chunk_x][chunk_y] = {}
-                    chunk_updates[chunk_x][chunk_y][actor_name] = sync_data
-                            
+                actor = self.actors[actor_name]
+                if "position" in sync_data:
+                    a_chk_x, a_chk_y = actor.chunk
+                    if (a_chk_x != chunk_x or a_chk_y != chunk_y) and actor_name in self.__chunks[a_chk_x][a_chk_y]:
+                        self.__chunks[a_chk_x][a_chk_y].remove(actor_name)
+                        self.add_actor_to_chunk(actor)
+                        
+                if not actor.visible and "visible" not in sync_data:
+                    continue 
+                if "visible" in sync_data:
+                    del sync_data["visible"]
+
+                if chunk_x not in chunk_updates:
+                    chunk_updates[chunk_x] = {}
+                if chunk_y not in chunk_updates[chunk_x]:
+                    chunk_updates[chunk_x][chunk_y] = {}
+                chunk_updates[chunk_x][chunk_y][actor_name] = sync_data
+                        
         return chunk_updates
         
 
@@ -245,29 +248,33 @@ class Level:
             corrected_actors = {}
 
             for actor1 in self.actors.values():
-                if isinstance(actor1, Rigidbody) and actor1.simulate_physics:
-                    for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
-                        if actor2 is actor1 or not actor2.collidable:
-                            continue
+                if not isinstance(actor1, Rigidbody) or not actor1.simulate_physics:
+                    continue
 
-                        if actor1.position.distance(actor2.position) > actor1.half_size.abs.max + actor2.half_size.abs.max:
-                            continue
-                        direction = actor1.collision_response_direction(actor2)
-                        if not direction == Vector(0, 0):
-                            collisions_not_resolved = True
+                for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
+                    if actor2 is actor1 or not actor2.collidable:
+                        continue
 
-                            if actor1.name not in corrected_actors:
-                                corrected_actors[actor1.name] = Vector(0, 0)
-                            corrected_actors[actor1.name] += direction
+                    if actor1.position.distance(actor2.position) > actor1.half_size.abs.max + actor2.half_size.abs.max:
+                        continue
+                    direction = actor1.collision_response_direction(actor2)
+                    if direction == Vector(0, 0):
+                        continue
 
-                            if actor1.name not in collided_actors:
-                                collided_actors[actor1.name] = [None, Vector(0, 0)]
-                            collided_actors[actor1.name][0] = CollisionData( direction.normalized, actor2.velocity if hasattr(actor2, "velocity") else Vector(0, 0), actor2.restitution, actor2.mass if hasattr(actor2, "mass") else float("inf"), actor2)
-                            if actor2.name not in collided_actors:
-                                collided_actors[actor2.name] = [None, Vector(0, 0)]
-                            collided_actors[actor2.name][0] = CollisionData(-direction.normalized, actor1.velocity, actor1.restitution, actor1.mass, actor1)
+                    collisions_not_resolved = True
 
-                            collided_actors[actor1.name][1] += direction
+                    if actor1.name not in corrected_actors:
+                        corrected_actors[actor1.name] = Vector(0, 0)
+                    corrected_actors[actor1.name] += direction
+
+                    if actor1.name not in collided_actors:
+                        collided_actors[actor1.name] = [None, Vector(0, 0)]
+                    collided_actors[actor1.name][0] = CollisionData( direction.normalized, actor2.velocity if hasattr(actor2, "velocity") else Vector(0, 0), actor2.restitution, actor2.mass if hasattr(actor2, "mass") else float("inf"), actor2)
+                    if actor2.name not in collided_actors:
+                        collided_actors[actor2.name] = [None, Vector(0, 0)]
+                    collided_actors[actor2.name][0] = CollisionData(-direction.normalized, actor1.velocity, actor1.restitution, actor1.mass, actor1)
+
+                    collided_actors[actor1.name][1] += direction
 
             for name, direction in corrected_actors.items():
                 self.actors[name].position += direction
@@ -280,39 +287,46 @@ class Level:
 
         collided_actors_directions = {}
         for actor1 in self.actors.values():
-            if isinstance(actor1, Rigidbody) and actor1.simulate_physics:
-                for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
-                    if actor2 is actor1 or not actor2.collidable:
-                        continue
+            if not isinstance(actor1, Rigidbody) or not actor1.simulate_physics:
+                continue
 
-                    actor1.half_size += kinda_small_number
-                    direction = actor1.collision_response_direction(actor2)
-                    if actor1.name not in collided_actors_directions:
-                        collided_actors_directions[actor1.name] = [0, 0, 0, 0]
-                    # right, left, top, bottom
-                    if direction.x < 0:
-                        collided_actors_directions[actor1.name][0] = 1
-                    if direction.x > 0:
-                        collided_actors_directions[actor1.name][1] = 1
-                    if direction.y < 0:
-                        collided_actors_directions[actor1.name][2] = 1
-                    if direction.y > 0:
-                        collided_actors_directions[actor1.name][3] = 1
-                    actor1.half_size -= kinda_small_number
+            for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
+                if actor2 is actor1 or not actor2.collidable:
+                    continue
+
+                actor1.half_size += kinda_small_number
+                direction = actor1.collision_response_direction(actor2)
+                if actor1.name not in collided_actors_directions:
+                    collided_actors_directions[actor1.name] = [0, 0, 0, 0]
+                # right, left, top, bottom
+                if direction.x < 0:
+                    collided_actors_directions[actor1.name][0] = 1
+                if direction.x > 0:
+                    collided_actors_directions[actor1.name][1] = 1
+                if direction.y < 0:
+                    collided_actors_directions[actor1.name][2] = 1
+                if direction.y > 0:
+                    collided_actors_directions[actor1.name][3] = 1
+                actor1.half_size -= kinda_small_number
 
         for name, direction in collided_actors_directions.items():
             self.actors[name].collided_sides = direction
 
         overlaped_actors = {}
         for actor1 in self.actors.values():
-            if actor1.generate_overlap_events:
-                actor1.half_size += kinda_small_number
-                for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
-                    if actor1 is not actor2 and is_overlapping_rect(actor1, actor2):
-                        if actor2.name not in overlaped_actors:
-                            overlaped_actors[actor2.name] = set()
-                        overlaped_actors[actor2.name].add(actor1)
-                actor1.half_size -= kinda_small_number
+            if not actor1.generate_overlap_events:
+                continue
+
+            actor1.half_size += kinda_small_number
+            for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
+                if actor1 is actor2 or not is_overlapping_rect(actor1, actor2):
+                    continue
+
+                if actor2.name not in overlaped_actors:
+                    overlaped_actors[actor2.name] = set()
+                overlaped_actors[actor2.name].add(actor1)
+
+            actor1.half_size -= kinda_small_number
 
         for actor_name, overlaped_set in overlaped_actors.items():
             for actor in overlaped_set - self.actors[actor_name].previously_collided:
