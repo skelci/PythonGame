@@ -120,7 +120,7 @@ class Network(ABC):
 
     def get_data(self, size = 1):
         """
-        Called only inside the engine.
+        Called only by the engine.
         Returns the data from the input buffer.
         Args:
             size: The number of data to return.
@@ -142,7 +142,6 @@ class Network(ABC):
 class ClientNetwork(Network):
     def __init__(self, address: str, port: int):
         """
-        Called only inside the engine.
         Args:
             address: The address of the server.
             port: The port of the server.
@@ -197,7 +196,7 @@ class ClientNetwork(Network):
 
     def tick(self):
         """
-        Called only inside the engine.
+        Called only by the engine.
         It ticks the network and sends all data in the output buffer to the server.
         """
         if not self.running:
@@ -287,7 +286,6 @@ class ServerNetwork(Network):
 
     def __init__(self, address: str, port: int, max_connections: int, on_connect: function):
         """
-        Called only inside the engine.
         Args:
             address: The address of the server.
             port: The port of the server.
@@ -357,7 +355,7 @@ class ServerNetwork(Network):
 
     def tick(self):
         """
-        Called only inside the engine.
+        Called only by the engine.
         It ticks the network and sends all data in the output buffer to the clients.
         """
         if not self.running:

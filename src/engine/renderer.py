@@ -188,7 +188,7 @@ class Renderer:
 
     def add_actor_to_draw(self, actor: Actor):
         """
-        Called only inside engine.
+        Called only by engine.
         It adds actor to the list of actors to draw.\n
         Args:
             actor (Actor): Actor to add to the list of actors to draw.
@@ -204,7 +204,7 @@ class Renderer:
 
     def remove_actor_from_draw(self, actor: Actor):
         """
-        Called only inside engine.
+        Called only by engine.
         It removes actor from the list of actors to draw.\n
         Args:
             actor (Actor): Actor to remove from the list of actors to draw.
@@ -222,7 +222,7 @@ class Renderer:
 
     def add_widget_to_draw(self, widget: Widget):
         """
-        Called only inside engine before rendering begins.
+        Called only by engine before rendering begins.
         It adds widget to the list of widgets to draw for current frame.\n
         Args:
             widget (Widget): Widget to add to the list of widgets to draw.
@@ -237,7 +237,7 @@ class Renderer:
     
     def clear(self):
         """
-        Called only inside engine at the beginning of the frame.
+        Called only by engine at the beginning of the frame.
         This method clears buffers from previous frame.
         """
         self.__widgets_to_draw.clear()
@@ -245,7 +245,7 @@ class Renderer:
 
     def render(self):
         """
-        Called only inside engine after background is drawn.
+        Called only by the engine after background is drawn.
         It draws actors and widgets.\n
         Returns:
             tuple[time_actors, time_widgets] - Time taken to draw actors and widgets respectively.
@@ -282,7 +282,7 @@ class Renderer:
 
     def draw_background(self, background: Background):
         """
-        Called only inside engine at the beginning of the frame after buffers are cleared.
+        Called only by engine at the beginning of the frame after buffers are cleared.
         It draws background.
         """
         bg_surface = background.get_bg_surface(self.camera_position, self.resolution, self.camera_width)
