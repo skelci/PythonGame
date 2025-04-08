@@ -248,7 +248,7 @@ class Renderer:
         Called only by the engine after background is drawn.
         It draws actors and widgets.\n
         Returns:
-            tuple[time_actors, time_widgets] - Time taken to draw actors and widgets respectively.
+            tuple[float, float] - Time taken to draw actors and widgets respectively.
         """
         camera_ratio = self.resolution.x / self.camera_width
         

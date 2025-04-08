@@ -1,5 +1,13 @@
 """
 Template classes for the game.
+Template code in game/game.py:
+```
+from engine.game_base import *
+class ClientGame(ClientGameBase):
+    pass
+class ServerGame(ServerGameBase):
+    pass
+```
 """
 
 from engine.engine import *
