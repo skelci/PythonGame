@@ -380,9 +380,9 @@ class KeyHandler:
 
 class TunnelGenerator:
     def __init__(self):
-        self.width = 2
-        self.curvature = 0.8# 0 = straight, 1 = very curved
-        self.max_tunnel_length = 50
+        self.width = 1.5
+        self.curvature = 0.6# 0 = straight, 1 = very curved
+        self.max_tunnel_length = 15
         
 
     def _center_point(self, region):
@@ -475,7 +475,7 @@ class TunnelGenerator:
                 for j in range(len(regions)):
                     if j not in connected:
                         dist = self._distance(centers[i], centers[j])
-                        if dist < min_dist:
+                        if dist < min_dist : #and dist < self.max_tunnel_length
                             min_dist = dist
                             closest = (i, j)
             
