@@ -1,5 +1,9 @@
 #?attr ENGINE
 
+"""
+Preprocessor for building and packaging server and client files.
+"""
+
 from enum import IntEnum
 
 import os
@@ -15,7 +19,19 @@ class BuildType(IntEnum):
 
 
 class Builder:
+    """
+    Simple python preprocessor for building and packaging server and client files.
+    """
+
+
     def __init__(self, build_dir, package_dir, server_folders, client_folders):
+        """
+        Args:
+            build_dir (str): Directory to put the build cache files in.
+            package_dir (str): Directory to put the package files in.
+            server_folders (list): List of folders to build server files from.
+            client_folders (list): List of folders to build client files from.
+        """
         self.build_dir = build_dir
         self.package_dir = package_dir
         self.server_folders = server_folders
@@ -30,6 +46,9 @@ class Builder:
 
     @property
     def build_dir(self):
+        """
+        str - Directory to put the build cache files in.
+        """
         return self.__build_dir
     
 
@@ -43,6 +62,9 @@ class Builder:
 
     @property
     def package_dir(self):
+        """
+        str - Directory to put the package files in.
+        """
         return self.__package_dir
     
 
@@ -56,6 +78,9 @@ class Builder:
 
     @property
     def server_folders(self):
+        """
+        list - List of folders to build server files from.
+        """
         return self.__server_folders
     
 
@@ -69,6 +94,9 @@ class Builder:
 
     @property
     def client_folders(self):
+        """
+        list - List of folders to build client files from.
+        """
         return self.__client_folders
     
 
@@ -81,6 +109,9 @@ class Builder:
 
 
     def build_server(self):
+        """
+        Builds and packages the server files.
+        """
         print("Building server...")
         build_start = time.time()
 
@@ -108,6 +139,9 @@ class Builder:
 
 
     def build_client(self):
+        """
+        Builds and packages the client files.
+        """
         print("Building client...")
         build_start = time.time()
 
@@ -135,6 +169,11 @@ class Builder:
 
 
     def clear_build(self, build_type = BuildType.COMBINED):
+        """
+        Clears files from package and build directories.
+        Args:
+            build_type (BuildType): Type of build to clear.
+        """
         dir_suffix = ("/server", "/client", "")[build_type]
         if os.path.exists(self.build_dir + dir_suffix):
             shutil.rmtree(self.build_dir + dir_suffix)
