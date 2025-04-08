@@ -1,7 +1,7 @@
 #?attr CLIENT
 
 """
-Renderer class for managing the Pygame display and rendering.
+Renderer module for the game engine.
 """
 
 from components.datatypes import *

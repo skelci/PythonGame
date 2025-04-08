@@ -1,3 +1,7 @@
+"""
+Network module for the game engine.
+"""
+
 from components.datatypes import *
 
 import socket
@@ -25,6 +29,9 @@ class Network(ABC):
 
     @property
     def address(self):
+        """
+        str - The address of the network.
+        """
         return self.__address
     
 
@@ -38,6 +45,9 @@ class Network(ABC):
 
     @property
     def port(self):
+        """
+        int - The port of the network.
+        """
         return self.__port
     
 
@@ -51,6 +61,9 @@ class Network(ABC):
 
     @property
     def running(self):
+        """
+        bool - True if the network is running, False otherwise.\n
+        """
         return self.__running
 
 
@@ -106,17 +119,34 @@ class Network(ABC):
 
 
     def get_data(self, size = 1):
+        """
+        Called only inside the engine.
+        Returns the data from the input buffer.
+        Args:
+            size: The number of data to return.
+        Returns:
+            list[(str, any)] - The data from the input buffer.
+        """
         return self._input_buffer.get_data(size)
     
 
     def stop(self):
+        """
+        Stops the network thread and closes the socket.
+        """
         self.__running = False
         
 
 
 #?ifdef CLIENT
 class ClientNetwork(Network):
-    def __init__(self, address, port):
+    def __init__(self, address: str, port: int):
+        """
+        Called only inside the engine.
+        Args:
+            address: The address of the server.
+            port: The port of the server.
+        """
         super().__init__(address, port)
         
         self.socket.connect((self.address, self.port))
@@ -130,15 +160,34 @@ class ClientNetwork(Network):
 
     @property
     def connected(self):
+        """
+        bool - True if the client is connected to the server, False otherwise.\n
+        """
         return self.socket is not None and self.socket.fileno() != -1
 
 
     @property
     def id(self):
+        """
+        int - The id of the client.\n
+        If id is 0 or less, it can mean something of the following:
+            0 -> The client is not yet connected to the server.
+            -1 -> The client is connected to the server, but not yet registered.
+            -2 -> The client is connected to the server, but the registration failed because the user already exists.
+            -3 -> The client is connected to the server, but the registration failed because the username or password is invalid.
+            -10 -> The client disconnected from the server.
+        """
         return self.__id
 
 
-    def send(self, cmd, data, has_priority = False):
+    def send(self, cmd: str, data, has_priority = False):
+        """
+        Sends data to the client with the given id.
+        Args:
+            cmd: The command to send.
+            data: The data to send.
+            has_priority: If True, the data will be sent and processed first.
+        """
         if has_priority:
             self._output_buffer.add_data_front(self._parse_for_send(has_priority, cmd, data))
             return
@@ -147,6 +196,10 @@ class ClientNetwork(Network):
 
 
     def tick(self):
+        """
+        Called only inside the engine.
+        It ticks the network and sends all data in the output buffer to the server.
+        """
         if not self.running:
             return
         
@@ -198,6 +251,11 @@ class ClientNetwork(Network):
 
 #?ifdef SERVER
 class FakeConnection:
+    """
+    Helper class to simulate a connection.
+    """
+    
+    
     def __init__(self, sock, address):
         self.sock = sock
         self.address = address
@@ -221,7 +279,21 @@ class FakeConnection:
 
 
 class ServerNetwork(Network):
-    def __init__(self, address, port, max_connections, on_connect):
+    """
+    Network class for the server.
+    It handles the connections and the data sending and receiving.
+    """
+
+
+    def __init__(self, address: str, port: int, max_connections: int, on_connect: function):
+        """
+        Called only inside the engine.
+        Args:
+            address: The address of the server.
+            port: The port of the server.
+            max_connections: The maximum number of connections allowed.
+            on_connect: [void on_connect(int client_id)] A function that is called when a client connects to the server.
+        """
         super().__init__(address, port)
         self.max_connections = max_connections
 
@@ -253,6 +325,9 @@ class ServerNetwork(Network):
 
     @property
     def max_connections(self):
+        """
+        int - The maximum number of connections allowed.
+        """
         return self.__max_connections
 
 
@@ -264,7 +339,15 @@ class ServerNetwork(Network):
             raise TypeError("Max connections must be a positive integer:", value)
 
 
-    def send(self, id, cmd, data, has_priority = False):
+    def send(self, id: int, cmd: str, data, has_priority = False):
+        """
+        Sends data to the client with the given id.
+        Args:
+            id: The id of the client to send data to.
+            cmd: The command to send.
+            data: The data to send.
+            has_priority: If True, the data will be sent and processed first.
+        """
         if has_priority:
             self._output_buffer.add_data_front((id, self._parse_for_send(has_priority, cmd, data)))
             return
@@ -273,6 +356,10 @@ class ServerNetwork(Network):
 
 
     def tick(self):
+        """
+        Called only inside the engine.
+        It ticks the network and sends all data in the output buffer to the clients.
+        """
         if not self.running:
             return
         
@@ -371,12 +458,14 @@ class ServerNetwork(Network):
         conn.close()
 
 
-    """
-    -1: User already logged in
-    -2: User already exists
-    -3: Invalid username or password
-    """
     def __handle_login(self, login_data, conn):
+        """
+        Returns:
+            If it retuturns a positive integer, it is the id of the user -> login was successful\n
+            -1: User already logged in\n
+            -2: User already exists\n
+            -3: Invalid username or password
+        """
         request, data = login_data
         username, password = data
 
