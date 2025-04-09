@@ -10,6 +10,7 @@ import sqlite3 as sql
 from abc import ABC, abstractmethod
 import json
 import queue
+from typing import Callable
 import time
 
 
@@ -283,8 +284,7 @@ class ServerNetwork(Network):
     It handles the connections and the data sending and receiving.
     """
 
-
-    def __init__(self, address: str, port: int, max_connections: int, on_connect: function):
+    def __init__(self, address: str, port: int, max_connections: int, on_connect: Callable[[int], None]):
         """
         Args:
             address: The address of the server.
