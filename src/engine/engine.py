@@ -323,6 +323,16 @@ class ClientEngine(Engine, Renderer):
         if not self.running:
             pygame.quit()
             return delta_time
+        
+        self.handle_network()
+        new_actors = self.level.get_new_actors()
+        for actor in new_actors:
+            self.add_actor_to_draw(actor)
+        old_actors = self.level.get_destroyed()
+        for actor in old_actors:
+            self.remove_actor_from_draw(actor)
+
+        self.__time("network")
 
         for widget in self.widgets.values():
             if widget.visible:
@@ -337,9 +347,11 @@ class ClientEngine(Engine, Renderer):
 
             for chk_x, chk_column in self.level.chunks.items():
                 for chk_y, chk_actors in chk_column.items():
-                    if not is_in_rect(bl_chk_pos, tr_chk_pos, Vector(chk_x, chk_y)):
-                        for actor in chk_actors:
-                            self.level.destroy_actor(self.level.actors[actor])
+                    if is_in_rect(bl_chk_pos, tr_chk_pos, Vector(chk_x, chk_y)):
+                        continue
+
+                    for actor in chk_actors:
+                        self.level.destroy_actor(self.level.actors[actor])
 
         self.__time("render_regs")
 
@@ -361,16 +373,6 @@ class ClientEngine(Engine, Renderer):
         self.__stats["widget_render"].append(render_time[1])
         self.__stats["actor_render"].pop(0)
         self.__stats["widget_render"].pop(0)
-
-        self.handle_network()
-        new_actors = self.level.get_new_actors()
-        for actor in new_actors:
-            self.add_actor_to_draw(actor)
-        old_actors = self.level.get_destroyed()
-        for actor in old_actors:
-            self.remove_actor_from_draw(actor)
-
-        self.__time("network")
 
         return delta_time
 
