@@ -450,7 +450,8 @@ class ClientEngine(Engine, Renderer):
             pygame.quit()
             return delta_time
         
-        self.network.tick()
+        if self.network:
+            self.network.tick()
         new_actors = self.level.get_new_actors()
         for actor in new_actors:
             self.add_actor_to_draw(actor)
