@@ -17,8 +17,6 @@ class Text(Widget):
     Represents a text widget. It renders text on the screen using a specified font and color.
     Its size is dynamically updated based on the text content and font size.
     """
-
-
     __fonts = {}
 
 
