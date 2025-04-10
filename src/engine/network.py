@@ -16,6 +16,9 @@ import time
 
 
 class Network(ABC):
+    """
+    Common network class for the client and server.
+    """
     def __init__(self, address, port):
         self._packet_size = 65504
 
@@ -141,6 +144,11 @@ class Network(ABC):
 
 #?ifdef CLIENT
 class ClientNetwork(Network):
+    """
+    Network class for the client. It handles connection and authentication with the server.
+    """
+
+
     def __init__(self, address: str, port: int):
         """
         Args:
@@ -280,8 +288,8 @@ class FakeConnection:
 
 class ServerNetwork(Network):
     """
-    Network class for the server.
-    It handles the connections and the data sending and receiving.
+    Network class for the server. It handles connection and authentication with the clients.
+    It also handles the database connection and authentication.
     """
 
     def __init__(self, address: str, port: int, max_connections: int, on_connect: Callable[[int], None]):
@@ -290,7 +298,7 @@ class ServerNetwork(Network):
             address: The address of the server.
             port: The port of the server.
             max_connections: The maximum number of connections allowed.
-            on_connect: [void on_connect(int client_id)] A function that is called when a client connects to the server.
+            on_connect:  A function that is called when a client connects to the server.
         """
         super().__init__(address, port)
         self.max_connections = max_connections
@@ -460,9 +468,9 @@ class ServerNetwork(Network):
         """
         Returns:
             If it retuturns a positive integer, it is the id of the user -> login was successful\n
-            -1: User already logged in\n
-            -2: User already exists\n
-            -3: Invalid username or password
+            -1 -> User already logged in\n
+            -2 -> User already exists\n
+            -3 -> Invalid username or password
         """
         request, data = login_data
         username, password = data

@@ -1,3 +1,7 @@
+"""
+Engine core class. It is used to run the game on the client and server side.
+It handles all the game logic and physics.
+"""
 
 #?ifdef CLIENT
 from engine.renderer import Renderer
@@ -31,14 +35,18 @@ import pygame
 import threading
 import time
 from abc import ABC
+from typing import Any, Callable
 
 
 
 class Engine(ABC):
+    """
+    Common things in server and client engine.
+    """
+
+
     def __init__(self):
         self.__running = True
-
-        self.__world_mouse_pos = Vector()
 
         #?ifdef ENGINE
         self.builder = Builder("./build", "./packaged", ["./src"], ["./src", "./res"])
@@ -47,20 +55,27 @@ class Engine(ABC):
 
     @property
     def running(self):
+        """
+        bool - If True, engine is running, if False, engine is stopped.
+        """
         return self.__running
-
-    
-    @property
-    def world_mouse_pos(self):
-        return self.__world_mouse_pos
 
 
     @staticmethod
-    def get_player_actor(player_id):
+    def get_player_actor(player_id: int):
+        """
+        Args:
+            player_id: Player id. You can get it from network class on client or from players dict on server.
+        Returns:
+            str - player actor name. You can use it to get player actor from level.actors dict.
+        """
         return "__Player_" + str(player_id)
 
 
     def stop(self):
+        """
+        Stop the engine. It will stop the main loop and end all threads.
+        """
         self.__running = False
 
 
@@ -68,7 +83,18 @@ class Engine(ABC):
 
 #?ifdef CLIENT
 class InfoText(Widget):
-    def __init__(self, name, pos_y, pre_text_str):
+    """
+    Widget that is used to display stats in the top left corner of the screen.
+    """
+
+
+    def __init__(self, name: str, pos_y: int, pre_text_str: str):
+        """
+        Args:
+            name: Widget name.
+            pos_y: Number of the row in the stats table.
+            pre_text_str: Text that will be displayed before the value.
+        """
         pre_text = Text("pre_text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf", text=pre_text_str)
         stat_text = Text("after_text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf")
         super().__init__(
@@ -84,12 +110,22 @@ class InfoText(Widget):
         )
 
 
-    def set_value(self, value):
+    def set_value(self, value: float):
+        """
+        Set the value of the displayed stat.
+        Args:
+            value: Value to be displayed.
+        """
         self.subwidgets["stat_text"].text = f"{value:.1f}"
 
 
 
 class ClientEngine(Engine, Renderer):
+    """
+    Client engine class. It is used to run the game on the client side.
+    """
+
+
     def __init__(self):
         Engine.__init__(self)
         Renderer.__init__(self, 1600, 900, 10, "Game", False, True, Vector())
@@ -132,6 +168,7 @@ class ClientEngine(Engine, Renderer):
         pygame.init()
 
         self.__clock = pygame.time.Clock()
+        self.__world_mouse_pos = Vector()
 
         self.__stats = {
             "fps":              [0] * 30,
@@ -156,6 +193,9 @@ class ClientEngine(Engine, Renderer):
 
     @property
     def fps(self):
+        """
+        float - Maximum frames per second. Default is 120.
+        """
         return self.__fps
     
 
@@ -168,20 +208,10 @@ class ClientEngine(Engine, Renderer):
         
 
     @property
-    def tps(self):
-        return self.__tps
-    
-
-    @tps.setter
-    def tps(self, value):
-        if isinstance(value, (int, float)) and value > 0:
-            self.__tps = value
-        else:
-            raise TypeError("TPS must be a positive number:", value)
-        
-
-    @property
     def current_background(self):
+        """
+        str - Current background name. If None, background with Color(0, 0, 0) is drawn.
+        """
         return self.__current_background
     
 
@@ -195,100 +225,191 @@ class ClientEngine(Engine, Renderer):
 
     @property
     def widgets(self):
+        """
+        dict[str, Widget] - Dictionary of all registered widgets. Key is widget name, value is widget object.
+        """
         return self.__widgets
 
 
     @property
     def backgrounds(self):
+        """
+        dict[str, Background] - Dictionary of all registered backgrounds. Key is background name, value is background object.
+        """
         return self.__backgrounds
 
 
     @property
     def network(self):
+        """
+        ClientNetwork - used to handle connection and authentication with server.
+        """
         return self.__network
     
 
     @property
     def level(self):
+        """
+        Level - Client level object. It is used to handle all actors (including physics).
+        """
         return self.__level
     
 
     @property
     def triggered_keys(self):
+        """
+        set[Keys] - Set of all keys that were pressed in the last frame.
+        """
         return self.__triggered_keys
          
 
     @property
     def pressed_keys(self):
+        """
+        set[Keys] - Set of all keys that are currently pressed.
+        """
         return self.__pressed_keys
     
 
     @property
     def released_keys(self):
+        """
+        set[Keys] - Set of all keys that were released in the last frame.
+        """
         return self.__released_keys
             
 
     @property
     def screen_mouse_pos(self):
+        """
+        Vector - Mouse position in screen coordinates.
+        """
         return self.__screen_mouse_pos
     
 
     @property
+    def world_mouse_pos(self):
+        """
+        Vector - Mouse position in world coordinates. It is calculated from screen_mouse_pos, camera_width and camera_position.
+        """
+        return self.__world_mouse_pos
+    
+
+    @property
     def update_distance(self):
+        """
+        int - Distance in chunks from player to load actors. It is calculated from camera_width.
+        """
         return self.__update_distance
     
 
     def show_all_stats(self):
+        """
+        Show all stats of the engine in the top left corner of the screen. It sets all stat widgets to visible.
+        """
         for name, _ in self.__stats.items():
             self.widgets[name].visible = True
 
 
     def hide_all_stats(self):
+        """
+        Hide all stats of the engine. It sets all stat widgets to invisible.
+        """
         for name, _ in self.__stats.items():
             self.widgets[name].visible = False
 
 
     def check_network(self):
+        """
+        Check if network is connected and if player id is valid.
+        Returns:
+            bool - True if network is connected and player id is valid, False otherwise.
+        """
         if not self.network or self.network.id <= 0:
             return False
         return True
 
 
-    def add_actor_template(self, actor):
-        if not issubclass(actor, Actor):
+    def add_actor_template(self, actor: Actor):
+        """
+        Adds actor template to the engine. It is used to create new actors in the level when server sends them.
+        Args:
+            actor: Actor class. It must be subclass of Actor.
+        Raises:
+            Exception: If actor class is already registered or if it is not subclass of Actor.
+        """
+        if not issubclass(actor, Actor) or actor.__name__ in self.__actor_templates:
             raise Exception(f"Actor template {actor.__name__} is already registered or wrong data type")
         self.__actor_templates[actor.__name__] = actor
     
 
-    def register_widget(self, widget):
+    def register_widget(self, widget: Widget):
+        """
+        Registers widget in the engine. You can later access it by its name by widgets property.
+        Args:
+            widget: Widget object. It must be subclass of Widget.
+        Raises:
+            Exception: If widget is already registered or if it is not subclass of Widget.
+        """
         if widget.name in self.__widgets or not isinstance(widget, Widget):
             raise Exception(f"Widget {widget.name} is already registered or wrong data type")
         self.__widgets[widget.name] = widget
 
 
-    def register_background(self, background):
+    def register_background(self, background: Background):
+        """
+        Registers background in the engine.
+        Args:
+            background: Background object. It must be subclass of Background.
+        Raises:
+            Exception: If background is already registered or if it is not subclass of Background.
+        """
         if background.name in self.__backgrounds or not isinstance(background, Background):
             raise Exception(f"Background {background.name} is already registered or wrong data type")
         self.__backgrounds[background.name] = background
     
 
-    def regisrer_network_command(self, cmd, func):
+    def regisrer_network_command(self, cmd: str, func: Callable[[Any], None]):
+        """
+        Registers network command in the engine. It will be called when server sends it to the client.
+        Args:
+            cmd: Command name. It must be unique.
+            func: Function that will be called when server sends the command. It must take one argument - data.
+        Raises:
+            TypeError: If cmd is not string or func is not callable or cmd is already registred.
+        """
         if isinstance(cmd, str) and callable(func) and cmd not in self.__network_commands:
             self.__network_commands[cmd] = func
         else:
             raise TypeError("Command must be a string and function must be a function:", cmd, func)
     
 
-    def connect(self, address, port):
+    def connect(self, address: str, port: int):
+        """
+        Tries to connect to the server.
+        Args:
+            address: Server address. It must be a string.
+            port: Server port. It must be an integer.
+        """
         self.__network = ClientNetwork(address, port)
 
 
-    def join_level(self, level_name):
+    def join_level(self, level_name: str):
+        """
+        Join the level on the server.
+        Args:
+            level_name: Level name. It must be a string.
+        """
         self.network.send("join_level", level_name)
         self.network.send("update_distance", self.__update_distance)
 
 
-    def set_camera_width(self, width):
+    def set_camera_width(self, width: float):
+        """
+        Sets the camera width.
+        Args:
+            width: Camera width in world units. It must be a positive number.
+        """
         self.camera_width = width
         self.__update_distance = self.camera_width // 16 + 1
         if self.network:
@@ -307,6 +428,11 @@ class ClientEngine(Engine, Renderer):
                     self.__tick_widget(delta_time, subwidget)
 
     def tick(self):
+        """
+        Ticks the engine. It handles events, updates actors, renders the screen and handles network.
+        Returns:
+            float - delta_time. The time elapsed since the last tick.
+        """
         self.clear()
 
         delta_time = self.__clock.tick(self.fps) / 1000
@@ -324,7 +450,7 @@ class ClientEngine(Engine, Renderer):
             pygame.quit()
             return delta_time
         
-        self.handle_network()
+        self.network.tick()
         new_actors = self.level.get_new_actors()
         for actor in new_actors:
             self.add_actor_to_draw(actor)
@@ -375,13 +501,6 @@ class ClientEngine(Engine, Renderer):
         self.__stats["widget_render"].pop(0)
 
         return delta_time
-
-
-    def handle_network(self):
-        if not self.network:
-            return
-        
-        self.network.tick()
 
 
     def __handle_network(self):
@@ -493,6 +612,11 @@ class ClientEngine(Engine, Renderer):
 
 #?ifdef SERVER
 class Player:
+    """
+    Player class used to store some data for each connected client. It should be updated only by the engine.
+    """
+
+
     def __init__(self):
         self.level = ""
         self.previous_chunk = Vector()
@@ -508,6 +632,11 @@ class Player:
 
 
 class TPS:
+    """
+    Used to limit the ticks per second of the server.
+    """
+
+
     def __init__(self, max_tps):
         self.max_tps = max_tps
         self.__last_time = time.time()
@@ -525,10 +654,16 @@ class TPS:
 
 
 class ServerEngine(Engine):
+    """
+    Server engine class. It is used to run the game on the server side.
+    It handles all the game logic and physics.
+    """
+
+
     def __init__(self):
         super().__init__()
 
-        self.__max_tps = 30
+        self.__max_tps = 120
 
         self.__network = None
 
@@ -561,11 +696,17 @@ class ServerEngine(Engine):
 
     @property
     def console(self):
+        """
+        Console - Console object. It is used to handle commands from the console.
+        """
         return self.__console
     
 
     @property
     def max_tps(self):
+        """
+        float - Maximum ticks per second. Default is 120.
+        """
         return self.__max_tps
     
 
@@ -580,51 +721,106 @@ class ServerEngine(Engine):
 
     @property
     def network(self):
+        """
+        ServerNetwork - used to handle connection and authentication with clients.
+        """
         return self.__network
     
 
     @property
     def players(self):
+        """
+        dict[int, Player] - Dictionary of all connected players. Key is player id, value is player object.
+        """
         return self.__players
     
 
     @property
     def levels(self):
+        """
+        dict[str, Level] - Dictionary of all registered levels. Key is level name, value is level object.
+        """
         return self.__levels
         
 
-    def register_level(self, level):
+    def register_level(self, level: Level):
+        """
+        Registers level in the engine. You can later access it by its name by levels property.
+        Args:
+            level: Level object. It must be subclass of Level.
+        Raises:
+            Exception: If level is already registered or if it is not subclass of Level.
+        """
         if level.name in self.__levels or not isinstance(level, Level):
             raise Exception(f"Level {level.name} is already registered or wrong data type")
         level.engine_ref = self
         self.__levels[level.name] = level
     
 
-    def register_network_command(self, cmd, func):
+    def register_network_command(self, cmd: str, func: Callable[[int, Any], None]):
+        """
+        Registers network command in the engine. It will be called when client sends it to the server.
+        Args:
+            cmd: Command name. It must be unique.
+            func: Function that will be called when client sends the command. It must take two arguments - id and data.
+        """
         if isinstance(cmd, str) and callable(func):
             self.__network_commands[cmd] = func
         else:
             raise TypeError("Command must be a string and function must be a function:", cmd, func)
         
 
-    def register_key(self, key, press_type, func):
+    def register_key(self, key: Keys, press_type: KeyPressType, func: Callable[['ServerEngine', Level, int], None]):
+        """
+        Registers key in the engine. It will be called based on the press type.
+        Args:
+            key: Key to be registered. It must be subclass of Keys.
+            press_type: Press type. It must be subclass of KeyPressType.
+            func: Function that will be called based on the press type. It must take three arguments - engine_ref, level_ref and player_id.
+        Raises:
+            TypeError: If key is not subclass of Keys or press_type is not subclass of KeyPressType or func is not callable.
+            ValueError: If key is already registered.
+        """
         if key in self.__registered_keys:
-            raise Exception(f"Keys {key} is already registered")
+            raise ValueError(f"Keys {key} is already registered")
         if not key in Keys or press_type not in KeyPressType or not callable(func):
             raise TypeError("Key must be a Keys, press_type must be a KeyPressType and func must be a function:", key, press_type, func)
         self.__registered_keys[key] = (press_type, func)
         
 
-    def start_network(self, address, port, max_connections):
+    def start_network(self, address: str, port: int, max_connections: int):
+        """
+        Starts the server network.
+        Args:
+            address: Server address. It must be a string.
+            port: Server port. It must be a positive integer.
+            max_connections: Maximum number of connections. It must be a positive integer.
+        """
         self.__network = ServerNetwork(address, port, max_connections, self.__on_player_connect)
 
 
-    def get_stat(self, stat_name):
+    def get_stat(self, stat_name: str):
+        """
+        Get the value of the stat.
+        Args:
+            stat_name: Stat name. It must be one of the registered stats.
+        Returns:
+            str - Stat value in ms. If stat name is tps, it will be returned as is.
+        """
+        if stat_name not in self.__stats:
+            raise ValueError(f"Stat {stat_name} is not registered")
         return f"{sum(self.__stats[stat_name]) / len(self.__stats[stat_name]) * 1000:.2f}" + (" ms" if not stat_name == "tps" else "")
     
     
     @staticmethod
-    def package_as_chunks(actors):
+    def package_as_chunks(actors: list[Actor]):
+        """
+        Packages actors in dictionary by their chunk coordinates.
+        Args:
+            actors: List of actors to be packaged.
+        Returns:
+            dict[int, dict[int, list[Actor]]] - Dictionary of actors by their chunk coordinates. Key is chunk x coordinate, value is dictionary of chunk y coordinates and list of actors in that chunk.
+        """
         chunks = {}
         for actor in actors:
             chunk = get_chunk_cords(actor.position)
@@ -637,7 +833,17 @@ class ServerEngine(Engine):
     
 
     @staticmethod
-    def get_actors_from_chk_pkg(chk_pkd, bottom_left, top_right, add_method=lambda a, el: a.extend(el)):
+    def get_actors_from_chk_pkg(chk_pkd: dict[int, dict[int, Actor]], bottom_left: Vector, top_right: Vector, add_method: Callable[[list, Actor], None] = lambda a, el: a.extend(el)):
+        """
+        Retrieves actors from the chunk package based on the given coordinates.
+        Args:
+            chk_pkd: Dictionary of actors by their chunk coordinates.
+            bottom_left: Bottom left corner of the rectangle.
+            top_right: Top right corner of the rectangle.
+            add_method: Method to add actors to the list. Default is to extend the list with the actors.
+        Returns:
+            list[Actor] - List of actors in the given rectangle.
+        """
         actors = []
         for x in range(bottom_left.x, top_right.x + 1):
             if x not in chk_pkd:
@@ -651,6 +857,9 @@ class ServerEngine(Engine):
 
 
     def tick(self):
+        """
+        Ticks the engine. It handles events, updates actors and handles network.
+        """
         delta_time = self.__clock.tick()
 
         self.__stats["tps"].append(1 / delta_time / 1000)
@@ -800,7 +1009,12 @@ class ServerEngine(Engine):
         self.__time_now = time_after
 
 
-    def on_connect(self, id):
+    def on_connect(self, id: int):
+        """
+        Called when player connects to the server.
+        Args:
+            id: Player id.
+        """
         level = self.levels[self.players[id].level]
         self.network.send(id, "background", level.background)
 

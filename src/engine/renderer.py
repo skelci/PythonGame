@@ -25,13 +25,13 @@ class Renderer:
     def __init__(self, width: int, height: int, camera_width: float, title = "Pygame Window", fullscreen = False, windowed = True, camera_position = Vector()):
         """
         Args:
-            width (int): Width of the window.
-            height (int): Height of the window.
-            camera_width (float): Width of the camera in game world units.
-            title (str): Title of the window.
-            fullscreen (bool): If True, the display is in fullscreen mode.
-            windowed (bool): If True, the display is in windowed mode.
-            camera_position (Vector): Position of the camera in the game world.
+            width: Width of the window.
+            height: Height of the window.
+            camera_width: Width of the camera in game world units.
+            title: Title of the window.
+            fullscreen: If True, the display is in fullscreen mode.
+            windowed: If True, the display is in windowed mode.
+            camera_position: Position of the camera in the game world.
         Raises:
             TypeError: If any of the arguments are of incorrect type.
         """
@@ -191,7 +191,7 @@ class Renderer:
         Called only by engine.
         It adds actor to the list of actors to draw.\n
         Args:
-            actor (Actor): Actor to add to the list of actors to draw.
+            actor: Actor to add to the list of actors to draw.
         Raises:
             TypeError: If actor is not a subclass of Actor.
         """
@@ -207,7 +207,7 @@ class Renderer:
         Called only by engine.
         It removes actor from the list of actors to draw.\n
         Args:
-            actor (Actor): Actor to remove from the list of actors to draw.
+            actor: Actor to remove from the list of actors to draw.
         Raises:
             TypeError: If actor is not a subclass of Actor.
             ValueError: If actor is not found in the list of actors to draw.
@@ -225,7 +225,7 @@ class Renderer:
         Called only by engine before rendering begins.
         It adds widget to the list of widgets to draw for current frame.\n
         Args:
-            widget (Widget): Widget to add to the list of widgets to draw.
+            widget: Widget to add to the list of widgets to draw.
         Raises:
             TypeError: If widget is not a subclass of Widget.
         """

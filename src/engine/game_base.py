@@ -37,7 +37,7 @@ class ClientGameBase:
         """
         Ticks the engine.
         Returns:
-            float: delta_time - The time elapsed since the last tick.
+            float - delta_time. The time elapsed since the last tick.
         """
         return self.engine.tick() 
 
@@ -66,7 +66,7 @@ class ServerGameBase:
         """
         Ticks the engine.
         Returns:
-            float: delta_time - The time elapsed since the last tick.
+            float - delta time. The time elapsed since the last tick.
         """
         return self.engine.tick()
 
