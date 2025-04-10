@@ -937,7 +937,7 @@ def breaking_blocks(engine_ref, level_ref, id):
         if actor_position == mouse_pos:
             #print('actor:'+actor_position)
             #print('mouse position'+mouse_pos)
-            engine_ref.levels["Test_Level"].destroy_actor(actor_position)
+            engine_ref.levels["Test_Level"].destroy_actor(actor)
             break
             
 
