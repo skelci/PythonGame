@@ -254,7 +254,7 @@ class Actor:
     #?ifdef CLIENT
     def update_from_net_sync(self, data):
         """
-        Called only inside the engine. This function is used to update the actor from the network sync data.
+        Called only by the engine. This function is used to update the actor from the network sync data.
         """
         for key in data:
             match key:
@@ -270,7 +270,7 @@ class Actor:
     #?ifdef SERVER
     def get_for_net_sync(self):
         """
-        Called only inside the engine. This function is used to get the actor data which changed and needs to be synced with the client.
+        Called only by the engine. This function is used to get the actor data which changed and needs to be synced with the client.
         """
         out = {}
         for key in self.__outdated:

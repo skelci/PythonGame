@@ -1,14 +1,33 @@
 #?attr CLIENT
 
+"""
+This module contains the InputBox class, which is used to create an input box widget.
+"""
+
 from components.text import Text
 
 from components.game_math import *
 from components.datatypes import *
 
+from typing import Callable
+
 
 
 class InputBox(Text):
-    def __init__(self, name, position, size, color, font, layer = 0, visible = False, max_length = 20, action = None):
+    """
+    Represents an input box widget. It allows the user to enter text and provides a cursor for text editing.
+    The input box can be focused and unfocused, and it supports basic text editing operations such as backspace, delete, and cursor movement.
+    The input box can also trigger an action when the user presses the enter key.
+    """
+
+
+    def __init__(self, name: str, position: Vector, size: Vector, color: Color, font: str, layer = 0, visible = False, max_length = 20, action: Callable[[str], None] = None):
+        """
+        Refer to the Text class for more information about the parameters.
+        Args:
+            max_length: Maximum length of the text that can be entered. Default is 20.
+            action: Function to be called when the user presses the enter key. Default is None.
+        """
         self.__original_size = size.copy
         super().__init__(name, position, size, color, font, layer, visible)
 
@@ -28,11 +47,17 @@ class InputBox(Text):
 
     @property
     def current_text(self):
+        """
+        str - The current text in the input box.
+        """
         return self.__current_text
     
 
     @property
     def cursor_position(self):
+        """
+        int - The current position of the cursor in the text.
+        """
         return self.__cursor_position
     
 
@@ -47,6 +72,9 @@ class InputBox(Text):
 
     @property
     def action(self):
+        """
+        Callable[[str], None] - The action to be called when the user presses the enter key.
+        """
         return self.__action
     
 
@@ -60,6 +88,9 @@ class InputBox(Text):
 
     @property
     def screen_rect(self):
+        """
+        tuple[Vector, Vector] - The screen rectangle of the input box. The first element is the top left corner, second elemnent is bottom right corner. 
+        """
         return self.__screen_rect
     
 
@@ -72,7 +103,15 @@ class InputBox(Text):
             raise TypeError("Screen rect must be a tuple of Vector and float:", value)
 
 
-    def tick(self, delta_time, triggered_keys, pressed_keys, mouse_pos):
+    def tick(self, delta_time: float, triggered_keys: set[Keys], pressed_keys: set[Keys], mouse_pos: Vector):
+        """
+        Updates the input box state based on the triggered keys, pressed keys, and mouse position.
+        Args:
+            delta_time: Time since the last frame in seconds.
+            triggered_keys: Set of keys that were pressed in this frame.
+            pressed_keys: Set of keys that are currently pressed.
+            mouse_pos: Position of the mouse cursor.
+        """
         if not self.visible:
             return
 

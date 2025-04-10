@@ -1,5 +1,10 @@
+"""
+This module contains the Level class, which is used to create a level in the game.
+"""
+
 from components.datatypes import *
 from components.actor import Actor
+from components.background import Background
 from components.rigidbody import Rigidbody
 from components.character import Character
 from components.game_math import *
@@ -7,7 +12,22 @@ from components.game_math import *
 
 
 class Level:
-    def __init__(self, name, default_character, actors = [], background = None, simulation_speed = 1, gravity = 1):
+    """
+    This class represents a level in the game. It contains all the actors and handles the physics simulation.
+    It also handles the chunk system for efficient actor management.
+    """
+
+
+    def __init__(self, name: str, default_character: Character, actors: list[Actor] = [], background: Background = None, simulation_speed = 1, gravity = 1):
+        """
+        Args:
+            name: Name of the level.
+            default_character: Default character for the level. It will be used to create a new character when the player spawns in the level.
+            actors: List of actors to be added to the level.
+            background: Background for the level. It will be used to render the background.
+            simulation_speed: Speed of the physics simulation. 1 is normal.
+            gravity: Gravity scale for the level. 1 is normal.
+        """
         self.__engine_ref = None
 
         self.name = name
@@ -27,6 +47,9 @@ class Level:
 
     @property
     def engine_ref(self):
+        """
+        ServerEngine | ClientEngine - Reference to the engine that created this level.
+        """
         return self.__engine_ref
     
 
@@ -40,6 +63,9 @@ class Level:
 
     @property
     def name(self):
+        """
+        str - Name of the level.
+        """
         return self.__name
     
 
@@ -53,6 +79,9 @@ class Level:
 
     @property
     def default_character(self):
+        """
+        Character - Default character for the level. It will be used to create a new character when the player spawns in the level.
+        """
         return self.__default_character
     
 
@@ -67,6 +96,9 @@ class Level:
 
     @property
     def background(self):
+        """
+        Background - Background for the level. It will be used to render the background.
+        """
         return self.__background
     
 
@@ -80,11 +112,17 @@ class Level:
 
     @property
     def actors(self):
+        """
+        dict[str, Actor] - Dictionary of all actors in the level. The key is the actor's name and the value is the actor object.
+        """
         return self.__actors
     
 
     @property
     def simulation_speed(self):
+        """
+        float - Speed of the physics simulation. 1 is normal.
+        """
         return self.__simulation_speed
     
 
@@ -98,6 +136,9 @@ class Level:
 
     @property
     def gravity(self):
+        """
+        float - Gravity scale for the level. 1 is normal.
+        """
         return self.__gravity
     
 
@@ -111,17 +152,34 @@ class Level:
 
     @property
     def chunks(self):
+        """
+        dict[int, dict[int, set[str]]] - Dictionary of all chunks in the level. The key is the chunk's x and y coordinates and the value is a set of actor names in that chunk.
+        """
         return self.__chunks
         
 
-    def register_actor(self, actor):        
+    def register_actor(self, actor: Actor):
+        """
+        Adds an actor to the level. The actor will be added to the level in the next tick.
+        Args:
+            actor: Actor to be added to the level.
+        Raises:
+            TypeError: If the actor is not a subclass of Actor.
+        """
         if isinstance(actor, Actor):
             self.__actors_to_create.add(actor)
         else:
             raise TypeError("Actor must be a subclass of Actor:", actor)
         
 
-    def destroy_actor(self, actor):
+    def destroy_actor(self, actor: Actor):
+        """
+        Marks an actor for destruction. The actor will be removed from the level in the next tick.
+        Args:
+            actor: Actor to be destroyed.
+        Raises:
+            ValueError: If the actor is not in the level.
+        """
         if actor.name in self.actors:
             self.__actors_to_destroy.add(actor)
         else:
@@ -129,6 +187,10 @@ class Level:
 
 
     def get_new_actors(self):
+        """
+        Called only by the engine.
+        Returns a list of actors that were added to the level in the last tick.
+        """
         new_actors = []
         actors_to_create = self.__actors_to_create.copy()
         for actor in actors_to_create:
@@ -144,6 +206,10 @@ class Level:
     
 
     def get_destroyed(self):
+        """
+        Called only by the engine.
+        Returns a list of actors that were destroyed in the last tick.
+        """
         destroyed = []
         actors_to_destroy = self.__actors_to_destroy.copy()
         for actor in actors_to_destroy:
@@ -155,7 +221,14 @@ class Level:
         return destroyed
     
 
-    def get_actors_in_chunks_3x3(self, chunk_pos):
+    def get_actors_in_chunks_3x3(self, chunk_pos: Vector):
+        """
+        Returns a list of actors in the 3x3 chunks around the given chunk position.
+        Args:
+            chunk_pos: Position of the chunk.
+        Returns:
+            list[Actor] - List of actors in the 3x3 chunks around the given chunk position.
+        """
         actors = []
         for x in range(-1, 2):
             for y in range(-1, 2):
@@ -169,6 +242,10 @@ class Level:
     
 
     def add_actor_to_chunk(self, actor):
+        """
+        Called only by the engine.
+        Adds an actor to the chunk system.
+        """
         chunk_x, chunk_y = get_chunk_cords(actor.position)
         if chunk_x not in self.__chunks:
             self.__chunks[chunk_x] = {}
@@ -181,6 +258,10 @@ class Level:
 
     #?ifdef SERVER
     def get_updates(self, players):
+        """
+        Called only by the engine.
+        Returns a dictionary of actors that need to be updated for the given players.
+        """
         chunk_updates = {}
 
         for chunk in self.get_loaded_chunks(players):
@@ -214,7 +295,14 @@ class Level:
         return chunk_updates
         
 
-    def get_loaded_chunks(self, players):
+    def get_loaded_chunks(self, players: list):
+        """
+        Returns a set of chunk positions that are updated for the given players.
+        Args:
+            players: List of players to get the loaded chunks for. Player is an object with a position and previous_different_chunk attributes.
+        Returns:
+            set[Vector] - Set of chunk positions that are updated for the given players.
+        """
         chunks = set()
         for player in players:
             for x in range(-player.update_distance, player.update_distance + 1):
@@ -227,11 +315,15 @@ class Level:
         return chunks
         
 
-    def tick(self, delta_time):
-        self.__physics_step(delta_time * self.simulation_speed)
+    def tick(self, delta_time: float):
+        """
+        Called every tick by the engine.
+        Updates the level and all actors in the level.
+        Args:
+            delta_time: Time since the last engine tick.
+        """
+        delta_time *= self.simulation_speed
         
-
-    def __physics_step(self, delta_time):
         for actor in self.actors.values():
             actor.tick(delta_time)
 
