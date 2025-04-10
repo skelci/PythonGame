@@ -1,6 +1,8 @@
 from components.datatypes import Color
 
-import pygame # type: ignore
+#?ifdef CLIENT
+import pygame
+#?endif
 
 import os
 

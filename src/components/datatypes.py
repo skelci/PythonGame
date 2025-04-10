@@ -201,6 +201,11 @@ class Vector:
     
 
     @property
+    def int(self):
+        return self.floored
+    
+
+    @property
     def tuple(self):
         return (self.x, self.y)
     
@@ -215,6 +220,13 @@ class Vector:
             raise TypeError(f"other must be a Vector, got {other.__class__.__name__}")
         
         return self.x * other.x + self.y * other.y
+    
+
+    def cross(self, other):
+        if not isinstance(other, Vector):
+            raise TypeError(f"other must be a Vector, got {other.__class__.__name__}")
+        
+        return self.x * other.y - self.y * other.x
     
 
     def squared_distance(self, other):

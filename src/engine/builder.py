@@ -1,5 +1,9 @@
 #?attr ENGINE
 
+"""
+Preprocessor for building and packaging server and client files.
+"""
+
 from enum import IntEnum
 
 import os
@@ -15,7 +19,19 @@ class BuildType(IntEnum):
 
 
 class Builder:
+    """
+    Simple python preprocessor for building and packaging server and client files.
+    """
+
+
     def __init__(self, build_dir, package_dir, server_folders, client_folders):
+        """
+        Args:
+            build_dir (str): Directory to put the build cache files in.
+            package_dir (str): Directory to put the package files in.
+            server_folders (list): List of folders to build server files from.
+            client_folders (list): List of folders to build client files from.
+        """
         self.build_dir = build_dir
         self.package_dir = package_dir
         self.server_folders = server_folders
@@ -30,6 +46,9 @@ class Builder:
 
     @property
     def build_dir(self):
+        """
+        str - Directory to put the build cache files in.
+        """
         return self.__build_dir
     
 
@@ -43,6 +62,9 @@ class Builder:
 
     @property
     def package_dir(self):
+        """
+        str - Directory to put the package files in.
+        """
         return self.__package_dir
     
 
@@ -56,6 +78,9 @@ class Builder:
 
     @property
     def server_folders(self):
+        """
+        list - List of folders to build server files from.
+        """
         return self.__server_folders
     
 
@@ -69,6 +94,9 @@ class Builder:
 
     @property
     def client_folders(self):
+        """
+        list - List of folders to build client files from.
+        """
         return self.__client_folders
     
 
@@ -81,6 +109,9 @@ class Builder:
 
 
     def build_server(self):
+        """
+        Builds and packages the server files.
+        """
         print("Building server...")
         build_start = time.time()
 
@@ -108,6 +139,9 @@ class Builder:
 
 
     def build_client(self):
+        """
+        Builds and packages the client files.
+        """
         print("Building client...")
         build_start = time.time()
 
@@ -135,6 +169,11 @@ class Builder:
 
 
     def clear_build(self, build_type = BuildType.COMBINED):
+        """
+        Clears files from package and build directories.
+        Args:
+            build_type (BuildType): Type of build to clear.
+        """
         dir_suffix = ("/server", "/client", "")[build_type]
         if os.path.exists(self.build_dir + dir_suffix):
             shutil.rmtree(self.build_dir + dir_suffix)
@@ -177,7 +216,7 @@ class Builder:
         f = open(file_name, "w")
 
         should_skip = 0
-        prev_def = ""
+        prev_def = []
         
         for line in lines:
             if line.strip().startswith("#?"):
@@ -189,30 +228,33 @@ class Builder:
                 if build_type == BuildType.SERVER:
                     match line[2:7]:
                         case "ifdef":
-                            prev_def = line[8:]
-                            if prev_def == "CLIENT" or prev_def == "ENGINE":
+                            prev_def.append(line[8:])
+                            if prev_def[-1] == "CLIENT" or prev_def[-1] == "ENGINE":
                                 should_skip += 1
 
                         case "endif":
-                            if prev_def == "SERVER":
+                            if prev_def[-1] == "SERVER":
                                 continue
                             should_skip -= 1
+                            prev_def.pop()
                         
                 if build_type == BuildType.CLIENT:
                     match line[2:7]:
                         case "ifdef":
-                            prev_def = line[8:]
-                            if prev_def == "SERVER" or prev_def == "ENGINE":
+                            prev_def.append(line[8:])
+                            if prev_def[-1] == "SERVER" or prev_def[-1] == "ENGINE":
                                 should_skip += 1
 
                         case "endif":
-                            if prev_def == "CLIENT":
+                            if prev_def[-1] == "CLIENT":
                                 continue
                             should_skip -= 1
+                            prev_def.pop()
 
             else:
                 if not should_skip:
-                    if line.strip() == "":
+                    stripped_line = line.strip()
+                    if not stripped_line or stripped_line.startswith("#"):
                         continue
                     f.write(line)
 
