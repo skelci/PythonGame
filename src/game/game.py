@@ -137,7 +137,7 @@ class ClientGame(ClientGameBase):
         eng = self.engine
 
         eng.set_camera_width(16 * 4)
-        eng.resolution = Vector(1600, 900)
+        eng.resolution = Vector(800, 600)
 
         # eng.fullscreen=True
 
@@ -805,7 +805,10 @@ def breaking_blocks(engine_ref, level_ref, id):
     #print('breaking_blocks')
     # Get the player's position
     player = level_ref.actors[engine_ref.get_player_actor(id)].position
-    chunk_x, chunk_y=engine_ref.players[id].previous_chunk
+    chunk_x, chunk_y=engine_ref.players[id].previous_chunk.rounded
+
+    function_3x3=level_ref.get_actors_in_chunks_3x3(get_chunk_cords(player))
+    #print(function_3x3)
 
     # Get the chunk name and position
     chunk_Actor_name=tuple(engine_ref.levels["Test_Level"].chunks[chunk_x][chunk_y])
@@ -819,25 +822,22 @@ def breaking_blocks(engine_ref, level_ref, id):
     #print(mouse_pos)   
 
     #allowed to break this blocks
-    allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves"))
+    #allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves", "Leaves", "LEAVES"))
 
-    for actor_name in chunk_Actor_name:
+    for actor in function_3x3:
         #actor=engine_ref.levels["Test_Level"].actors[actor_name]
         #print(actor_name)
-        try:
-            block_type_, actor_x, actor_y = actor_name.split("_")
-            actor_position = Vector(int(actor_x), int(actor_y))
-        except ValueError:
-            continue
+        actor_position = actor.position.floored
+        #print(actor_position)
 
-        if actor_position == mouse_pos and block_type_ in allowed_blocks:
-            actor=engine_ref.levels["Test_Level"].actors.get(actor_name)
-            #print(actor)
-            
-            if not actor:
-                print(f"Actor {actor_name} not found in level.")
+        #print('actor:',actor_position)
+        print('mouse position',mouse_pos)
 
-            engine_ref.levels["Test_Level"].destroy_actor(actor)
+
+        if actor_position == mouse_pos:
+            #print('actor:'+actor_position)
+            #print('mouse position'+mouse_pos)
+            engine_ref.levels["Test_Level"].destroy_actor(actor_position)
             break
             
 
