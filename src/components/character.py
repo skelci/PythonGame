@@ -1,11 +1,27 @@
+"""
+This module defines the Character class, which is used to create a character object in the game.
+"""
+
 from components.rigidbody import Rigidbody
 
 from components.datatypes import *
+from components.material import Material
 
 
 
 class Character(Rigidbody):
-    def __init__(self, name, position = Vector(), half_size = Vector(0.4, 0.8), generate_overlap_events = True, collidable = True, simulate_physics = True, visible = True, material = None, render_layer = 1, restitution = 0, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 70, gravity_scale = 1, air_resistance = 0.1, deceleration = 10, jump_velocity = 6, walk_speed = 3, acceleration = 6, air_control = 0.2):
+    """
+    This class represents a character in the game. It inherits from the Rigidbody class and adds functionality for character movement and jumping.
+    """
+    def __init__(self, name: str, position = Vector(), half_size = Vector(0.4, 0.8), generate_overlap_events = True, collidable = True, simulate_physics = True, visible = True, material: Material = None, render_layer = 1, restitution = 0, initial_velocity = Vector(), min_velocity = KINDA_SMALL_NUMBER, mass = 70, gravity_scale = 1, air_resistance = 0.1, deceleration = 10, jump_velocity = 6, walk_speed = 3, acceleration = 6, air_control = 0.2):
+        """
+        Refer to the Rigidbody class for more information about the parameters.
+        Args:
+            jump_velocity: Y velocity when jumping. Default is 6.
+            walk_speed: Maximum X velocity when walking. Default is 3.
+            acceleration: Acceleration when moving. Default is 6.
+            air_control: Precentage of walk speed that can be controlled in the air. Default is 0.2.
+        """
         super().__init__(name, position, half_size, generate_overlap_events, collidable, simulate_physics, visible, material, render_layer, restitution, initial_velocity, min_velocity, mass, gravity_scale, air_resistance, deceleration)
         
         self.jump_velocity = jump_velocity
@@ -17,6 +33,9 @@ class Character(Rigidbody):
 
     @property
     def jump_velocity(self):
+        """
+        float - Y velocity when jumping.
+        """
         return self.__jump_velocity
     
 
@@ -30,6 +49,9 @@ class Character(Rigidbody):
 
     @property
     def walk_speed(self):
+        """
+        float - Maximum X velocity when walking.
+        """
         return self.__walk_speed
     
 
@@ -43,6 +65,9 @@ class Character(Rigidbody):
 
     @property
     def acceleration(self):
+        """
+        float - Acceleration when moving.
+        """
         return self.__acceleration
     
 
@@ -56,6 +81,9 @@ class Character(Rigidbody):
 
     @property
     def air_control(self):
+        """
+        float - Percentage of walk speed that can be controlled in the air.
+        """
         return self.__air_control
     
 
@@ -69,6 +97,9 @@ class Character(Rigidbody):
 
     @property
     def move_direction(self):
+        """
+        int - Direction of movement. -1 for left, 0 for no movement, 1 for right.
+        """
         return self.__move_direction
     
 
@@ -82,10 +113,16 @@ class Character(Rigidbody):
 
     @property
     def is_grounded(self):
+        """
+        bool - Whether the character is on the ground or not.
+        """
         return self.collided_sides[3] != 0
         
 
     def jump(self):
+        """
+        Makes the character jump. The character can only jump if it is on the ground.
+        """
         if self.is_grounded:
             self.velocity.y = self.jump_velocity
 
@@ -108,11 +145,15 @@ class Character(Rigidbody):
                     if self.velocity.abs.x < wa:
                         self.velocity.x = direction * wa
 
-
         self.move_direction = 0
 
 
-    def tick(self, delta_time):
+    def tick(self, delta_time: float):
+        """
+        Updates the character's velocity
+        Args:
+            delta_time: Time since the last tick.
+        """
         # Min velocity
         if self.velocity.abs.x < self.min_velocity:
             self.velocity.x = 0
@@ -121,7 +162,7 @@ class Character(Rigidbody):
 
         # Gravity
         if not self.is_grounded:
-            self.velocity.y += gravity * self.gravity_scale * delta_time
+            self.velocity.y += GRAVITY * self.gravity_scale * delta_time
 
         # Air resistance
         v_change = self.velocity * self.air_resistance * delta_time

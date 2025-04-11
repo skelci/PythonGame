@@ -386,7 +386,7 @@ class Level:
                 if actor2 is actor1 or not actor2.collidable:
                     continue
 
-                actor1.half_size += kinda_small_number
+                actor1.half_size += KINDA_SMALL_NUMBER
                 direction = actor1.collision_response_direction(actor2)
                 if actor1.name not in collided_actors_directions:
                     collided_actors_directions[actor1.name] = [0, 0, 0, 0]
@@ -399,7 +399,7 @@ class Level:
                     collided_actors_directions[actor1.name][2] = 1
                 if direction.y > 0:
                     collided_actors_directions[actor1.name][3] = 1
-                actor1.half_size -= kinda_small_number
+                actor1.half_size -= KINDA_SMALL_NUMBER
 
         for name, direction in collided_actors_directions.items():
             self.actors[name].collided_sides = direction
@@ -409,7 +409,7 @@ class Level:
             if not actor1.generate_overlap_events:
                 continue
 
-            actor1.half_size += kinda_small_number
+            actor1.half_size += KINDA_SMALL_NUMBER
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                 if actor1 is actor2 or not is_overlapping_rect(actor1, actor2):
                     continue
@@ -418,7 +418,7 @@ class Level:
                     overlaped_actors[actor2.name] = set()
                 overlaped_actors[actor2.name].add(actor1)
 
-            actor1.half_size -= kinda_small_number
+            actor1.half_size -= KINDA_SMALL_NUMBER
 
         for actor_name, overlaped_set in overlaped_actors.items():
             for actor in overlaped_set - self.actors[actor_name].previously_collided:

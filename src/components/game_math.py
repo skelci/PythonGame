@@ -88,5 +88,5 @@ def get_chunk_cords(pos: Vector) -> Vector:
     Returns:
         Vector - Chunk coordinates of the position.
     """
-    return pos // chunk_size
+    return pos // CHUNK_SIZE
 

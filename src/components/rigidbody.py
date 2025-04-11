@@ -15,7 +15,7 @@ class Rigidbody(Actor):
     """
 
     
-    def __init__(self, name: str, position: Vector, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, simulate_physics = True, visible = True, material: Material = None, render_layer = 0, restitution = 0.5, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 1, gravity_scale = 1, air_resistance = 0.1, deceleration = 10):
+    def __init__(self, name: str, position: Vector, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, simulate_physics = True, visible = True, material: Material = None, render_layer = 0, restitution = 0.5, initial_velocity = Vector(), min_velocity = KINDA_SMALL_NUMBER, mass = 1, gravity_scale = 1, air_resistance = 0.1, deceleration = 10):
         """
         Refer to the Actor class for more information about the parameters.
         Args:
@@ -193,7 +193,7 @@ class Rigidbody(Actor):
 
         # Gravity
         if self.collided_sides[3] == 0:
-            self.velocity.y += gravity * self.gravity_scale * delta_time
+            self.velocity.y += GRAVITY * self.gravity_scale * delta_time
 
         # Air resistance
         v_change = self.velocity * self.air_resistance * delta_time
