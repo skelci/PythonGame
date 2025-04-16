@@ -19,8 +19,10 @@ class Network(ABC):
     """
     Common network class for the client and server.
     """
+
+    
     def __init__(self, address, port):
-        self._packet_size = 65504
+        self._packet_size = 1024
 
         self.port = port
         self.address = address
