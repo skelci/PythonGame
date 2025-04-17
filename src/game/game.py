@@ -941,7 +941,7 @@ def breaking_blocks(engine_ref, level_ref, id):
 
     #Get the mouse position 
     mouse_pos = engine_ref.players[id].world_mouse_pos
-    mouse_pos = mouse_pos.floored
+    mouse_pos = mouse_pos.rounded
     print(mouse_pos)   
 
     #allowed to break this blocks
@@ -950,7 +950,7 @@ def breaking_blocks(engine_ref, level_ref, id):
     for actor in function_3x3:
         #actor=engine_ref.levels["Test_Level"].actors[actor_name]
         #print(actor_name)
-        actor_position = actor.position.floored
+        actor_position = actor.position.rounded
         #print(actor_position)
 
         #print('actor:',actor_position)
