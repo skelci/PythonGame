@@ -19,8 +19,10 @@ class Network(ABC):
     """
     Common network class for the client and server.
     """
+
+    
     def __init__(self, address, port):
-        self._packet_size = 65504
+        self._packet_size = 1024
 
         self.port = port
         self.address = address
@@ -391,7 +393,7 @@ class ServerNetwork(Network):
                 for i in range(0, len(data), self._packet_size):
                     conn.send(data[i:i+self._packet_size])
                     if i > 0:
-                        time.sleep(0.01)
+                        time.sleep(0.001)
             except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError) as e:
                 self.__id_to_conn.pop(id)
                 self.__conn_to_id.pop(conn)

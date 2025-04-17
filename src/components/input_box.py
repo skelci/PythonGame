@@ -1,14 +1,33 @@
 #?attr CLIENT
 
+"""
+This module contains the InputBox class, which is used to create an input box widget.
+"""
+
 from components.text import Text
 
 from components.game_math import *
 from components.datatypes import *
 
+from typing import Callable
+
 
 
 class InputBox(Text):
-    def __init__(self, name, position, size, color, font, layer = 0, visible = False, max_length = 20, action = None):
+    """
+    Represents an input box widget. It allows the user to enter text and provides a cursor for text editing.
+    The input box can be focused and unfocused, and it supports basic text editing operations such as backspace, delete, and cursor movement.
+    The input box can also trigger an action when the user presses the enter key.
+    """
+
+
+    def __init__(self, name: str, position: Vector, size: Vector, color: Color, font: str, layer = 0, visible = False, max_length = 20, action: Callable[[str], None] = None):
+        """
+        Refer to the Text class for more information about the parameters.
+        Args:
+            max_length: Maximum length of the text that can be entered. Default is 20.
+            action: Function to be called when the user presses the enter key. Default is None.
+        """
         self.__original_size = size.copy
         super().__init__(name, position, size, color, font, layer, visible)
 
@@ -21,18 +40,51 @@ class InputBox(Text):
         self.__is_in_focus = False
         self.__is_cursor_visible = True
         self.__cursor_blink_time = 0.5
-        self.__cursor_blink_timer = 0
+        self.__cursor_blink_timer = self.__cursor_blink_time
 
         self.screen_rect = (Vector(), 0)
 
 
     @property
     def current_text(self):
+        """
+        str - The current text in the input box.
+        """
         return self.__current_text
     
 
     @property
+    def is_cursor_visible(self):
+        """
+        bool - Whether the cursor is currently visible.
+        """
+        return self.__is_cursor_visible
+    
+
+    @property
+    def is_in_focus(self):
+        """
+        bool - Whether the input box is currently in focus.
+        """
+        return self.__is_in_focus
+    
+
+    @is_in_focus.setter
+    def is_in_focus(self, value: bool):
+        if isinstance(value, bool):
+            self.__is_in_focus = value
+            if value:
+                self.__cursor_position = len(self.__current_text)
+                self.__is_cursor_visible = True
+        else:
+            raise TypeError("Is in focus must be a boolean:", value)
+    
+
+    @property
     def cursor_position(self):
+        """
+        int - The current position of the cursor in the text.
+        """
         return self.__cursor_position
     
 
@@ -47,6 +99,9 @@ class InputBox(Text):
 
     @property
     def action(self):
+        """
+        Callable[[str], None] - The action to be called when the user presses the enter key.
+        """
         return self.__action
     
 
@@ -60,6 +115,9 @@ class InputBox(Text):
 
     @property
     def screen_rect(self):
+        """
+        tuple[Vector, Vector] - The screen rectangle of the input box. The first element is the top left corner, second elemnent is bottom right corner. 
+        """
         return self.__screen_rect
     
 
@@ -72,17 +130,22 @@ class InputBox(Text):
             raise TypeError("Screen rect must be a tuple of Vector and float:", value)
 
 
-    def tick(self, delta_time, triggered_keys, pressed_keys, mouse_pos):
+    def tick(self, delta_time: float, triggered_keys: set[Keys], pressed_keys: set[Keys], mouse_pos: Vector):
+        """
+        Updates the input box state based on the triggered keys, pressed keys, and mouse position.
+        Args:
+            delta_time: Time since the last frame in seconds.
+            triggered_keys: Set of keys that were pressed in this frame.
+            pressed_keys: Set of keys that are currently pressed.
+            mouse_pos: Position of the mouse cursor.
+        """
         if not self.visible:
             return
 
         if Keys.MOUSE_LEFT in triggered_keys:
-            if is_in_screen_rect(*self.screen_rect, mouse_pos):
-                self.__is_in_focus = True
-            else:
-                self.__is_in_focus = False
+            self.is_in_focus = is_in_screen_rect(*self.screen_rect, mouse_pos)
         
-        if self.__is_in_focus:
+        if self.is_in_focus:
             for key in triggered_keys:
                 match key:
                     case Keys.BACKSPACE:
@@ -113,29 +176,35 @@ class InputBox(Text):
                         self.__is_cursor_visible = False
                         self.action(self.__current_text) if self.action else None
 
-                    case Keys.DOT:
-                        char = "."
-                        if Keys.LEFT_SHIFT in pressed_keys or Keys.RIGHT_SHIFT in pressed_keys:
-                            char = ":"    
-                        self.__current_text = self.__current_text[:self.__cursor_position] + char + self.__current_text[self.__cursor_position:]
-                        self.__cursor_position += 1
-
                     case _:
                         if 32 <= key <= 126 and len(self.__current_text) < self.max_length:
-                            self.__current_text = self.__current_text[:self.__cursor_position] + chr(key) + self.__current_text[self.__cursor_position:]
+                            base_char = chr(key)
+                            if Keys.LEFT_SHIFT in pressed_keys or Keys.RIGHT_SHIFT in pressed_keys:
+                                shifted_map = { # Slovenian keyboard layout
+                                    '1': '!', '2': '"', '3': '#', '4': '$', '5': '%',
+                                    '6': '&', '7': '/', '8': '(', '9': ')', '0': '=',
+                                    '\'': '?', '+': '*', ',': ';', '.': ':', '-': '_',
+                                    '<': '>'
+                                }
+                                char = shifted_map.get(base_char, base_char.upper())
+                            else:
+                                char = base_char
+
+                            self.__current_text = self.__current_text[:self.cursor_position] + char + self.current_text[self.cursor_position:]
                             self.__cursor_position += 1
 
-        if self.__is_cursor_visible:
-            self.text = self.__current_text[:self.__cursor_position] + "|" + self.__current_text[self.__cursor_position:]
+        if self.is_cursor_visible:
+            self.text = self.current_text[:self.cursor_position] + "|" + self.current_text[self.cursor_position:]
         else:
-            self.text = self.__current_text[:self.__cursor_position] + " " + self.__current_text[self.__cursor_position:]
+            self.text = self.current_text[:self.cursor_position] + " " + self.current_text[self.cursor_position:]
 
-        if self.__is_in_focus:
+        if self.is_in_focus:
             self.__cursor_blink_timer += delta_time
             if self.__cursor_blink_timer >= self.__cursor_blink_time:
                 self.__cursor_blink_timer = 0
-                self.__is_cursor_visible = not self.__is_cursor_visible
+                self.__is_cursor_visible = not self.is_cursor_visible
         else:
             self.__is_cursor_visible = False
+            self.__cursor_blink_timer = 0
 
 

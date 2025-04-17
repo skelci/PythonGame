@@ -1,11 +1,32 @@
+"""
+This module contains the Rigidbody class, which is used to create a rigid body physics object.
+"""
+
 from components.actor import Actor
 
+from components.material import Material
 from components.datatypes import *
 
 
 
 class Rigidbody(Actor):
-    def __init__(self, name, position, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, simulate_physics = True, visible = True, material = None, render_layer = 0, restitution = 0.5, initial_velocity = Vector(), min_velocity = kinda_small_number, mass = 1, gravity_scale = 1, air_resistance = 0.1, deceleration = 10):
+    """
+    This class represents a rigid body physics object. It is used to create a physics object that can be moved and collided with other objects.
+    """
+
+    
+    def __init__(self, name: str, position: Vector, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, simulate_physics = True, visible = True, material: Material = None, render_layer = 0, restitution = 0.5, initial_velocity = Vector(), min_velocity = KINDA_SMALL_NUMBER, mass = 1, gravity_scale = 1, air_resistance = 0.1, deceleration = 10):
+        """
+        Refer to the Actor class for more information about the parameters.
+        Args:
+            simulate_physics: Whether to simulate physics or not. If not, the object will not be affected by gravity, velocity or collisions.
+            initial_velocity: Initial velocity of the object. This is a vector that represents the speed and direction of the object.
+            min_velocity: Minimum velocity of the object. This is a float that represents the minimum length of the velocity vector. If the length of the velocity vector is less than this value, the velocity will be set to 0.
+            mass: Mass of the object. This represents the mass of the object. It is used to calculate new velocity after collision.
+            gravity_scale: Gravity scale of the object. This represents the scale of the gravity applied to the object.
+            air_resistance: Air resistance of the object. This represents the air resistance applied to the object.
+            deceleration: Friction of the object. This represents the friction applied to the object.
+        """
         super().__init__(name, position, half_size, generate_overlap_events, collidable, visible, material, render_layer, restitution)
 
         self.simulate_physics = simulate_physics
@@ -21,6 +42,9 @@ class Rigidbody(Actor):
 
     @property
     def simulate_physics(self):
+        """
+        bool - Whether to simulate physics or not. If not, the object will not be affected by gravity, velocity or collisions.
+        """
         return self.__simulate_physics
     
 
@@ -34,6 +58,9 @@ class Rigidbody(Actor):
 
     @property
     def velocity(self):
+        """
+        Vector - Velocity of the object. This is a vector that represents the speed and direction of the object.
+        """
         return self.__velocity
     
 
@@ -47,6 +74,9 @@ class Rigidbody(Actor):
 
     @property
     def min_velocity(self):
+        """
+        Vector - Minimum velocity of the object. This is a float that represents the minimum length of the velocity vector. If the length of the velocity vector is less than this value, the velocity will be set to 0.
+        """
         return self.__min_velocity
     
 
@@ -60,6 +90,9 @@ class Rigidbody(Actor):
 
     @property
     def mass(self):
+        """
+        float - Mass of the object. It is used to calculate new velocity after collision.
+        """
         return self.__mass
     
 
@@ -73,6 +106,9 @@ class Rigidbody(Actor):
 
     @property
     def gravity_scale(self):
+        """
+        float - Gravity scale of the object.
+        """
         return self.__gravity_scale
     
 
@@ -86,6 +122,9 @@ class Rigidbody(Actor):
 
     @property
     def air_resistance(self):
+        """
+        float - Air resistance of the object. This represents the percentage of the velocity that is removed each second.
+        """
         return self.__air_resistance
     
 
@@ -99,6 +138,9 @@ class Rigidbody(Actor):
 
     @property
     def deceleration(self):
+        """
+        float - Friction of the object. This represents the value of the x-axis velocity that is removed each second.
+        """
         return self.__deceleration
     
 
@@ -112,6 +154,9 @@ class Rigidbody(Actor):
 
     @property
     def collided_sides(self):
+        """
+        list[int] - List of collided sides. This is a list of 4 integers that represent the distance to the collided side. The order is right, left, top, bottom. If the distance is 0, it means that the object is not colliding with that side.
+        """
         return self.__collided_sides
     
 
@@ -124,6 +169,10 @@ class Rigidbody(Actor):
         
 
     def on_collision(self, collision_data):
+        """
+        Refer to the Actor class for more information.
+        Calculates the new velocity of the object after a collision.
+        """
         # Bounce based on formula: j = v_rel * -(1 + e) / (1 / m1 + 1 / m2)
         v_rel = self.velocity - collision_data.velocity
         e = self.restitution * collision_data.restitution
@@ -132,6 +181,12 @@ class Rigidbody(Actor):
         
 
     def tick(self, delta_time):
+        """
+        Refer to the Actor class for more information.
+        Updates the velocity of the object based on the physics simulation.
+        """
+        self.position += self.velocity * delta_time
+
         # Min velocity
         if self.velocity.abs.x < self.min_velocity:
             self.velocity.x = 0
@@ -140,7 +195,7 @@ class Rigidbody(Actor):
 
         # Gravity
         if self.collided_sides[3] == 0:
-            self.velocity.y += gravity * self.gravity_scale * delta_time
+            self.velocity.y += GRAVITY * self.gravity_scale * delta_time
 
         # Air resistance
         v_change = self.velocity * self.air_resistance * delta_time
@@ -158,7 +213,15 @@ class Rigidbody(Actor):
                 self.velocity.x -= v_change * math.ceil(self.velocity.abs.x)
 
 
-    def is_colliding(self, collided_actor):
+    def is_colliding(self, collided_actor: Actor):
+        """
+        Checks if the object is colliding with another object.
+        Args:
+            collided_actor: The actor to check for collision with.
+        Returns:
+            bool - Whether the object is colliding with the other object or not.
+            list[float] - List of distances to the collided side. The order is right, left, top, bottom.
+        """
         distances = self.get_edge_distances(collided_actor)
         return (
             all(d > 0 for d in distances),
@@ -166,7 +229,14 @@ class Rigidbody(Actor):
         )
 
 
-    def collision_response_direction(self, collided_actor):
+    def collision_response_direction(self, collided_actor: Actor):
+        """
+        Calculates the direction to push the object away from the collided object.
+        Args:
+            collided_actor: The actor to check for collision with.
+        Returns:
+            Vector - Direction to push the object away from the collided object.
+        """
         is_colliding, distances = self.is_colliding(collided_actor)
         if not is_colliding:
             return Vector(0, 0)
@@ -188,7 +258,14 @@ class Rigidbody(Actor):
         return direction
         
 
-    def get_edge_distances(self, collided_actor):
+    def get_edge_distances(self, collided_actor: Actor):
+        """
+        Calculates the distances to the collided sides.
+        Args:
+            collided_actor: The actor to check for collision with.
+        Returns:
+            list[float] - List of distances to the collided side. The order is right, left, top, bottom. Negative value means that the object is colliding with that side.
+        """
         # right, left, top, bottom
         return (
             self.position.x + self.half_size.x - (collided_actor.position.x - collided_actor.half_size.x),

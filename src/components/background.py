@@ -1,4 +1,9 @@
+"""
+This module contains the Background and BackgroundLayer classes.
+"""
+
 from components.datatypes import *
+from components.material import Material
 
 #?ifdef CLIENT
 import pygame
@@ -7,7 +12,18 @@ import pygame
 
 
 class BackgroundLayer:
-    def __init__(self, material, width, scroll_speed):
+    """
+    Represents a layer in the background. It is a material that can be scrolled at a specific speed.
+    The layer can be used to create a parallax effect in the background.
+    """
+    
+    def __init__(self, material: Material, width: float, scroll_speed: float):
+        """
+        Args:
+            material: Material to be used for the layer.
+            width: Width of the material in world units.
+            scroll_speed: Speed at which the layer scrolls. A value of 1 means it scrolls at the same speed as the camera.
+        """
         self.material = material
         self.width = width
         self.scroll_speed = scroll_speed
@@ -18,6 +34,9 @@ class BackgroundLayer:
 
     @property
     def material(self):
+        """
+        Material - Material to be used for the layer.
+        """
         return self.__material
     
 
@@ -32,6 +51,9 @@ class BackgroundLayer:
 
     @property
     def width(self):
+        """
+        float - Width of the material in world units.
+        """
         return self.__width
     
 
@@ -45,6 +67,9 @@ class BackgroundLayer:
 
     @property
     def scroll_speed(self):
+        """
+        float - Speed at which the layer scrolls. A value of 1 means it scrolls at the same speed as the camera.
+        """
         return self.__scroll_speed
     
 
@@ -79,7 +104,16 @@ class BackgroundLayer:
         self.__bg_surface = bg_surface
 
 
-    def get_bg_surface(self, _camera_pos, screen_res, camera_width):
+    def get_bg_surface(self, _camera_pos: Vector, screen_res: Vector, camera_width: float):
+        """
+        Returns the background surface for the layer.
+        Args:
+            _camera_pos: Position of the camera in world units.
+            screen_res: Resolution of the screen in pixels.
+            camera_width: Width of the camera in world units.
+        Returns:
+            pygame.Surface - Background surface for the layer.
+        """
         if not screen_res == self.__buffered_screen_res or not camera_width == self.__buffered_camera_width:
             self.__set_buffer(screen_res, camera_width)
             self.__create_bg_surface(screen_res, camera_width)
@@ -100,7 +134,18 @@ class BackgroundLayer:
 
 
 class Background:
-    def __init__(self, name, layers):
+    """
+    Represents the background of the game. It is a collection of BackgroundLayer instances.
+    The layers are drawn in the order they are added, with the first layer being drawn first.
+    """
+
+
+    def __init__(self, name: str, layers: list[BackgroundLayer]):
+        """
+        Args:
+            name: Name of the background.
+            layers: List of BackgroundLayer instances to be used in the background.
+        """
         self.name = name
         self.__layers = []
 
@@ -110,6 +155,9 @@ class Background:
 
     @property
     def name(self):
+        """
+        str - Name of the background.
+        """
         return self.__name
     
 
@@ -123,17 +171,37 @@ class Background:
 
     @property
     def layers(self):
+        """
+        list[BackgroundLayer] - List of BackgroundLayer instances in the background.
+        """
         return self.__layers
     
 
-    def add_layer(self, background_layer, index):
+    def add_layer(self, background_layer: BackgroundLayer, index: int):
+        """
+        Adds a BackgroundLayer instance to the background at the specified index.
+        Args:
+            background_layer: BackgroundLayer instance to be added.
+            index: Index at which to add the layer.
+        Raises:
+            Exception: If background_layer is not a BackgroundLayer instance or index is not an integer or index is out of range.
+        """
         if isinstance(background_layer, BackgroundLayer) and isinstance(index, int) and 0 <= index < len(self.__layers) + 1:
             self.__layers.insert(index, background_layer)
         else:
-            raise TypeError("Layer must be a BackgroundLayer instance and index must be an integer in range:", background_layer, index)
+            raise Exception("Layer must be a BackgroundLayer instance and index must be an integer in range:", background_layer, index)
 
 
-    def get_bg_surface(self, camera_pos, screen_res, camera_width):
+    def get_bg_surface(self, camera_pos: Vector, screen_res: Vector, camera_width: float):
+        """
+        Returns the background surface for the entire background.
+        Args:
+            camera_pos: Position of the camera in world units.
+            screen_res: Resolution of the screen in pixels.
+            camera_width: Width of the camera in world units.
+        Returns:
+            pygame.Surface - Background surface for the entire background.
+        """
         bg_surface = self.__layers[0].get_bg_surface(camera_pos, screen_res, camera_width)
 
         for layer in self.__layers[1:]:
