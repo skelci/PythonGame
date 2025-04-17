@@ -926,34 +926,38 @@ def breaking_blocks(engine_ref, level_ref, id):
     #print('breaking_blocks')
     # Get the player's position
     player = level_ref.actors[engine_ref.get_player_actor(id)].position
-    chunk_x, chunk_y=engine_ref.players[id].previous_chunk
+    #chunk_x, chunk_y=engine_ref.players[id].previous_chunk.rounded
+
+    function_3x3=level_ref.get_actors_in_chunks_3x3(get_chunk_cords(player))
+    #print(function_3x3)
 
     # Get the chunk name and position
-    chunk_Actor_name=tuple(engine_ref.levels["Test_Level"].chunks[chunk_x][chunk_y])
+    #chunk_Actor_name=tuple(engine_ref.levels["Test_Level"].chunks[chunk_x][chunk_y])
 
     # Get the positions of actors in the current chunk
 
 
     #Get the mouse position 
     mouse_pos = engine_ref.players[id].world_mouse_pos
-    mouse_pos = mouse_pos.floored
-    #print(mouse_pos)   
+    mouse_pos = mouse_pos.rounded
+    print(mouse_pos)   
 
-    for actor_name in chunk_Actor_name:
+    #allowed to break this blocks
+    #allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves", "Leaves", "LEAVES"))
+
+    for actor in function_3x3:
         #actor=engine_ref.levels["Test_Level"].actors[actor_name]
         #print(actor_name)
-        try:
-            _, actor_x, actor_y = actor_name.split("_")
-            actor_position = Vector(int(actor_x), int(actor_y))
-        except ValueError:
-            continue
+        actor_position = actor.position.rounded
+        #print(actor_position)
+
+        #print('actor:',actor_position)
+        #print('mouse position',mouse_pos)
+
 
         if actor_position == mouse_pos:
-            actor=engine_ref.levels["Test_Level"].actors.get(actor_name)
-            
-            if not actor:
-                print(f"Actor {actor_name} not found in level.")
-
+            #print('actor:'+actor_position)
+            #print('mouse position'+mouse_pos)
             engine_ref.levels["Test_Level"].destroy_actor(actor)
             break
             
