@@ -136,8 +136,8 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 2)
-        eng.resolution = Vector(800, 600)
+        eng.set_camera_width(16 * 4)
+        eng.resolution = Vector(1900, 900)
 
         # eng.fullscreen=True
 
