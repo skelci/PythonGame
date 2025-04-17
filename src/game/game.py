@@ -36,7 +36,7 @@ class Log(Actor):
 
 class Leaf(Actor):
     def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), collidable=False, material = Material(Color(34, 139, 34)))
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), collidable=False, material = Material(Color(34, 139, 34)), render_layer=1)
         self.position = position
 
 class Grass(Actor):
@@ -70,7 +70,7 @@ class Gold(Actor):
 
 class DebugTunnel(Actor):
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.5, 0.5), collidable=False, material=Material(Color(255, 0, 0)))  # Bright red
+        super().__init__(name, position=position, half_size=Vector(0.5, 0.5), collidable=False, material=Material(Color(255, 0, 0)), render_layer=1)  # Bright red
         self.position = position
 
 class TestPlayer(Character):
@@ -136,7 +136,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 4)
+        eng.set_camera_width(16 * 10)
         eng.resolution = Vector(1600, 900)
 
         # eng.fullscreen=True
@@ -597,7 +597,7 @@ class ServerGame(ServerGameBase):
     def generate_chunk(self, x, y):
         chunk_data = []
         chunk_origin = Vector(x, y) * CHUNK_SIZE
-        tree_threshold = 0.03
+        tree_threshold = 0.06
         
         # Noise parameters
         terrain_scale = 0.035
@@ -804,9 +804,7 @@ class ServerGame(ServerGameBase):
                         rx = 3.25
                         ry = 4.5
                         top_leaf_pos = top + Vector(0, 5)
-                        bottom_leaf_pos = top + Vector(0, 0)
                         chunk_data.append([(top_leaf_pos.x, top_leaf_pos.y), "leaf"])
-                        chunk_data.append([(bottom_leaf_pos.x, bottom_leaf_pos.y), "leaf"])
                         for dy in range(0, int(ry) + 1):
                             for dx in range(-int(rx), int(rx) + 1):
                                 if (dx*dx)/(rx*rx) + (dy*dy)/(ry*ry) <= 1:
