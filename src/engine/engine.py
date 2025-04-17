@@ -525,7 +525,8 @@ class ClientEngine(Engine, Renderer):
         self.__screen_mouse_pos = screen_pos
         if self.check_network():
             scr_world_pos = screen_pos - self.resolution / 2
-            world_mouse_pos = (screen_pos - self.resolution / 2) * self.camera_width / self.resolution.x + self.camera_position
+            scr_world_pos.y = -scr_world_pos.y
+            world_mouse_pos = scr_world_pos * self.camera_width / self.resolution.x + self.camera_position
             self.network.send("world_mouse_pos", world_mouse_pos)
 
 
