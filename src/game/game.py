@@ -136,7 +136,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 4)
+        eng.set_camera_width(16 * 2)
         eng.resolution = Vector(800, 600)
 
         # eng.fullscreen=True
@@ -905,13 +905,13 @@ def breaking_blocks(engine_ref, level_ref, id):
     #print('breaking_blocks')
     # Get the player's position
     player = level_ref.actors[engine_ref.get_player_actor(id)].position
-    chunk_x, chunk_y=engine_ref.players[id].previous_chunk.rounded
+    #chunk_x, chunk_y=engine_ref.players[id].previous_chunk.rounded
 
     function_3x3=level_ref.get_actors_in_chunks_3x3(get_chunk_cords(player))
     #print(function_3x3)
 
     # Get the chunk name and position
-    chunk_Actor_name=tuple(engine_ref.levels["Test_Level"].chunks[chunk_x][chunk_y])
+    #chunk_Actor_name=tuple(engine_ref.levels["Test_Level"].chunks[chunk_x][chunk_y])
 
     # Get the positions of actors in the current chunk
 
@@ -919,7 +919,7 @@ def breaking_blocks(engine_ref, level_ref, id):
     #Get the mouse position 
     mouse_pos = engine_ref.players[id].world_mouse_pos
     mouse_pos = mouse_pos.floored
-    #print(mouse_pos)   
+    print(mouse_pos)   
 
     #allowed to break this blocks
     #allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves", "Leaves", "LEAVES"))
@@ -931,7 +931,7 @@ def breaking_blocks(engine_ref, level_ref, id):
         #print(actor_position)
 
         #print('actor:',actor_position)
-        print('mouse position',mouse_pos)
+        #print('mouse position',mouse_pos)
 
 
         if actor_position == mouse_pos:
