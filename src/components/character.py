@@ -154,6 +154,8 @@ class Character(Rigidbody):
         Args:
             delta_time: Time since the last tick.
         """
+        self.position += self.velocity * delta_time
+        
         # Min velocity
         if self.velocity.abs.x < self.min_velocity:
             self.velocity.x = 0

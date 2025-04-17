@@ -37,6 +37,7 @@ class Level:
         self.gravity = gravity
 
         self.__actors = {}
+        self.__rigidbodies = {}
         self.__chunks = {}
         self.__actors_to_destroy = set()
         self.__actors_to_create = set()
@@ -119,6 +120,14 @@ class Level:
     
 
     @property
+    def rigidbodies(self):
+        """
+        dict[str, Rigidbody] - Dictionary of all rigidbodies in the level. The key is the actor's name and the value is the actor object.
+        """
+        return self.__rigidbodies
+    
+
+    @property
     def simulation_speed(self):
         """
         float - Speed of the physics simulation. 1 is normal.
@@ -197,6 +206,8 @@ class Level:
             actor.engine_ref = self.engine_ref
             actor.level_ref = self
             self.actors[actor.name] = actor
+            if isinstance(actor, Rigidbody):
+                self.rigidbodies[actor.name] = actor
             if actor.visible:
                 new_actors.append(actor)
             self.add_actor_to_chunk(actor)
@@ -214,6 +225,8 @@ class Level:
         actors_to_destroy = self.__actors_to_destroy.copy()
         for actor in actors_to_destroy:
             destroyed.append(self.actors.pop(actor.name))
+            if isinstance(actor, Rigidbody):
+                self.rigidbodies.pop(actor.name)
             chk_x, chk_y = actor.chunk
             self.chunks[chk_x][chk_y].remove(actor.name)
         
@@ -326,11 +339,7 @@ class Level:
         
         for actor in self.actors.values():
             actor.tick(delta_time)
-
-        for actor in self.actors.values():
-            if isinstance(actor, Rigidbody):
-                actor.position += actor.velocity * delta_time
-
+                
         max_iterations = 8
         collisions_not_resolved = True
         collided_actors = {}
@@ -339,8 +348,8 @@ class Level:
             collisions_not_resolved = False
             corrected_actors = {}
 
-            for actor1 in self.actors.values():
-                if not isinstance(actor1, Rigidbody) or not actor1.simulate_physics:
+            for actor1 in self.rigidbodies.values():
+                if not actor1.simulate_physics:
                     continue
 
                 for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
@@ -378,8 +387,8 @@ class Level:
             self.actors[name].on_collision(collided_actors[name][0])
 
         collided_actors_directions = {}
-        for actor1 in self.actors.values():
-            if not isinstance(actor1, Rigidbody) or not actor1.simulate_physics:
+        for actor1 in self.rigidbodies.values():
+            if not actor1.simulate_physics:
                 continue
 
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):

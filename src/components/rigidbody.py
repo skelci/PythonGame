@@ -185,6 +185,8 @@ class Rigidbody(Actor):
         Refer to the Actor class for more information.
         Updates the velocity of the object based on the physics simulation.
         """
+        self.position += self.velocity * delta_time
+
         # Min velocity
         if self.velocity.abs.x < self.min_velocity:
             self.velocity.x = 0
