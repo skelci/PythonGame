@@ -523,8 +523,10 @@ class ClientEngine(Engine, Renderer):
 
     def __update_mouse_pos(self, screen_pos):
         self.__screen_mouse_pos = screen_pos
-        if self.network and self.network.id > 1:
-            world_mouse_pos = (screen_pos - self.resolution / 2) * self.camera_width / self.resolution.x + self.camera_position
+        if self.check_network():
+            scr_world_pos = screen_pos - self.resolution / 2
+            scr_world_pos.y = -scr_world_pos.y
+            world_mouse_pos = scr_world_pos * self.camera_width / self.resolution.x + self.camera_position
             self.network.send("world_mouse_pos", world_mouse_pos)
 
 
