@@ -130,7 +130,7 @@ class ClientEngine(Engine, Renderer):
         Engine.__init__(self)
         Renderer.__init__(self, 1600, 900, 10, "Game", False, True, Vector())
 
-        self.__update_distance = self.camera_width // (chunk_size * 2)
+        self.__update_distance = self.camera_width // (CHUNK_SIZE * 2)
 
         self.fps = 120
         self.tps = 20
@@ -334,7 +334,7 @@ class ClientEngine(Engine, Renderer):
         """
         Adds actor template to the engine. It is used to create new actors in the level when server sends them.
         Args:
-            actor: Actor class. It must be subclass of Actor.
+            actor: Actor class. It must be subclass of Actor. It should have next parameters in __init__; name: str, pos: Vector.
         Raises:
             Exception: If actor class is already registered or if it is not subclass of Actor.
         """

@@ -254,7 +254,7 @@ class Renderer:
         
         time_start = time.time()
 
-        magic_scale = camera_ratio * 2 * (1.0005 ** self.camera_width) # Magic number to prevent gaps between tiles
+        magic_scale = camera_ratio * 2 * 1.0005 ** self.camera_width * 1.003 ** ((1600 / self.resolution.y) ** 1.8 - 1) # Magic number to prevent gaps between tiles
         layers = sorted(self.actors_to_draw.keys())
         for layer in layers:
             actors = self.actors_to_draw[layer]

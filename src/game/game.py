@@ -232,11 +232,23 @@ class ClientGame(ClientGameBase):
 
         eng.regisrer_network_command("register_outcome", register_outcome)
 
+        class CredentialsInputBox(InputBox):
+            def tick(self, delta_time, triggered_keys, pressed_keys, mouse_pos):
+                super().tick(delta_time, triggered_keys, pressed_keys, mouse_pos)
+                if self.is_in_focus:
+                    if Keys.TAB in triggered_keys:
+                        mmcs = eng.widgets["main_menu-credentials"].subwidgets
+                        mmcs_username = mmcs["prompt_field-username"].subwidgets["input_box"]
+                        mmcs_password = mmcs["prompt_field-password"].subwidgets["input_box"]
+                        mmcs_username.is_in_focus = not mmcs_username.is_in_focus
+                        mmcs_password.is_in_focus = not mmcs_password.is_in_focus
+                        triggered_keys.remove(Keys.TAB)
+
         class PromptField(Border):
             def __init__(self, name, action = None):
                 super().__init__(name, Vector(0, 0), Vector(500, 50), 0, Color(204, 255, 102), Color(255, 255, 153), True, 5,
                     subwidgets={
-                        "input_box": InputBox("input_box", Vector(0, 0), Vector(490, 40), Color(), "res/fonts/arial.ttf", 0, True, 22, action),
+                        "input_box": CredentialsInputBox("input_box", Vector(0, 0), Vector(490, 40), Color(), "res/fonts/arial.ttf", 0, True, 22, action),
                     },
                     subwidget_offsets={
                         "input_box": Vector(7, -7),
@@ -245,6 +257,17 @@ class ClientGame(ClientGameBase):
                         "input_box": Alignment.CENTER_LEFT,
                     }
                 )
+
+        class PasswordInputBox(CredentialsInputBox):
+            def tick(self, delta_time, triggered_keys, pressed_keys, mouse_pos):
+                super().tick(delta_time, triggered_keys, pressed_keys, mouse_pos)
+                cursor_char = "|" if self.is_cursor_visible else " "
+                self.text = "*" * len(self.current_text[:self.cursor_position]) + cursor_char + "*" * len(self.current_text[self.cursor_position:])
+
+        class PasswordField(PromptField):
+            def __init__(self, name, action = None):
+                super().__init__(name, action)
+                self.subwidgets["input_box"] = PasswordInputBox("input_box", Vector(0, 0), Vector(490, 40), Color(), "res/fonts/arial.ttf", 0, True, 22, action)
 
         class PromptText(Text):
             def __init__(self, name, text):
@@ -286,7 +309,7 @@ class ClientGame(ClientGameBase):
             subwidgets={
                 "prompt_field-username": PromptField("prompt_field-username"),
                 "prompt_text-username": PromptText("prompt_text-username", "Username:"),
-                "prompt_field-password": PromptField("prompt_field-password"),
+                "prompt_field-password": PasswordField("prompt_field-password"),
                 "prompt_text-password": PromptText("prompt_text-password", "Password:"),
                 "prompt_button-login": PromptButton("prompt_button-login", "Login", login),
                 "prompt_button-register": PromptButton("prompt_button-register", "Register", register),
@@ -381,7 +404,7 @@ class KeyHandler:
 class TunnelGenerator:
     def __init__(self):
         self.width = 1.5
-        self.curvature = 0.6# 0 = straight, 1 = very curved
+        self.curvature = 0.7# 0 = straight, 1 = very curved
         self.max_tunnel_length = 15
         
 
@@ -475,7 +498,7 @@ class TunnelGenerator:
                 for j in range(len(regions)):
                     if j not in connected:
                         dist = self._distance(centers[i], centers[j])
-                        if dist < min_dist : #and dist < self.max_tunnel_length
+                        if dist < min_dist:  # and dist < self.max_tunnel_length:
                             min_dist = dist
                             closest = (i, j)
             
@@ -593,27 +616,27 @@ class ServerGame(ServerGameBase):
                 "threshold": 0.72,   # Lower threshold = more common
                 "base": 1000,        # Unique noise pattern
                 "min_depth": 5,      # Shallowest depth
-                "vein_size": (4, 8), # Larger veins (now represents potential blocks)
+                "vein_size": (2, 4), # Larger veins (now represents potential blocks)
                 "spread": 1,         # Wider spread
-                "density": 0.85      # Higher density
+                "density": 0.8     # Higher density
             },
             "iron": {
                 "scale": 0.04,
                 "threshold": 0.76,
                 "base": 2000,
                 "min_depth": 10,
-                "vein_size": (3, 5),
+                "vein_size": (2, 3),
                 "spread": 1,
-                "density": 0.85
+                "density": 0.75
             },
             "gold": {
                 "scale": 0.03,       # Smaller scale = tighter veins
                 "threshold": 0.8,    # Slightly higher threshold = slightly rarer
                 "base": 3000,
                 "min_depth": 10,
-                "vein_size": (2, 4),  # Smaller veins
+                "vein_size": (1, 2),  # Smaller veins
                 "spread": 1,          # Tighter clusters
-                "density": 0.84
+                "density": 0.7
             }
         }
         
@@ -669,7 +692,7 @@ class ServerGame(ServerGameBase):
                     for x_pos in range(CHUNK_SIZE):
                         pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                         if is_tunnel:
-                            chunk_data.append([(pos.x, pos.y), "tunnel_debug"])
+                            chunk_data.append([(pos.x, pos.y), None])
         
         # Generate ore veins with flood-fill approach for better connectivity
         ore_positions = set()

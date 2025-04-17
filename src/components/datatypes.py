@@ -1,3 +1,7 @@
+"""
+This module contains various data types, utility classes, enums, and constants used in the game.
+"""
+
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Iterator
@@ -9,6 +13,10 @@ import threading
 
 @dataclass
 class Vector:
+    """
+    Represents a 2D vector with x and y coordinates.
+    Provides various mathematical operations and properties for vector manipulation.
+    """
     x: float = 0
     y: float = 0
 
@@ -32,7 +40,6 @@ class Vector:
                 y=self.y + other.y
             )
 
-        
         elif isinstance(other, (int, float)):
             return Vector(
                 x=self.x + other,
@@ -192,21 +199,33 @@ class Vector:
 
     @property
     def max(self):
+        """
+        float - The maximum value of the vector's x and y components.
+        """
         return max(self.x, self.y)
     
 
     @property
     def min(self):
+        """
+        float - The minimum value of the vector's x and y components.
+        """
         return min(self.x, self.y)
     
 
     @property
     def int(self):
+        """
+        Vector - The vector with x and y components converted to integers.
+        """
         return self.floored
     
 
     @property
     def tuple(self):
+        """
+        tuple[float, float] - The vector as a tuple of x and y components.
+        """
         return (self.x, self.y)
     
 
@@ -250,6 +269,9 @@ class Vector:
 
 @dataclass
 class Color:
+    """
+    Represents a color with red, green, blue, and alpha channels.
+    """
     r: int = 0
     g: int = 0
     b: int = 0
@@ -257,13 +279,13 @@ class Color:
 
 
     def __post_init__(self):
-        if not isinstance(self.r, (int, float)) and self.r < 0:
+        if not isinstance(self.r, (int, float)) and not 255 >= self.r >= 0:
             raise TypeError(f"r must be a positive float, got {self.r}")
-        if not isinstance(self.g, (int, float)) and self.g < 0:
+        if not isinstance(self.g, (int, float)) and not 255 >= self.g >= 0:
             raise TypeError(f"g must be a positive float, got {self.g}")
-        if not isinstance(self.b, (int, float)) and self.b < 0:
+        if not isinstance(self.b, (int, float)) and not 255 >= self.b >= 0:
             raise TypeError(f"b must be a positive float, got {self.b}")
-        if not isinstance(self.a, (int, float)) and self.a < 0:
+        if not isinstance(self.a, (int, float)) and not 255 >= self.a >= 0:
             raise TypeError(f"a must be a positive float, got {self.a}")
         
 
@@ -280,6 +302,9 @@ class Color:
 
     @property
     def tuple(self):
+        """
+        tuple[int, int, int, int] - The color as a tuple of red, green, blue, and alpha channels.
+        """
         return (self.r, self.g, self.b, self.a)
     
 
@@ -301,6 +326,9 @@ class Color:
 
 @dataclass
 class CollisionData:
+    """
+    Represents collision data for a physics engine.
+    """
     normal: Vector
     velocity: Vector
     restitution: float
@@ -309,10 +337,12 @@ class CollisionData:
 
 
 
-"""
-A deque implementatio with a fast way to get all data from/to the buffer.
-"""
 class AdvancedDeque:
+    """
+    A deque implementation with a fast way to get more than one element at a time.
+    """
+
+
     def __init__(self):
         self.__front_buffer = deque()
         self.__back_buffer = deque()
@@ -388,6 +418,9 @@ class KeyPressType(IntEnum):
 
 
 class Keys(IntEnum):
+    """
+    Integer values representing various keyboard and mouse keys as defined by pygame.
+    """
     MOUSE_LEFT =            1
     MOUSE_MIDDLE =          2
     MOUSE_RIGHT =           3
@@ -502,10 +535,10 @@ class Keys(IntEnum):
 
 
 
-pi = math.pi
-gravity = -9.80665
-kinda_small_number = 0.001
-chunk_size = 8
+PI = math.pi
+GRAVITY = -9.80665
+KINDA_SMALL_NUMBER = 0.001
+CHUNK_SIZE = 8
 
 
 

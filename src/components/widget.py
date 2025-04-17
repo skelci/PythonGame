@@ -1,5 +1,9 @@
 #?attr CLIENT
 
+"""
+This module contains the Widget class, which is core to the GUI system.
+"""
+
 from components.datatypes import *
 
 import pygame
@@ -7,7 +11,27 @@ import pygame
 
 
 class Widget:
-    def __init__(self, name, position, size, color, layer=0, visible = True, subwidgets={}, subwidget_offsets={}, subwidget_alignments={}):
+    """
+    Core widget class for the GUI system. All positions and sizes are in pixels, based on resolution = Vector(1600, 900).
+    This class is used to create a widget that can be displayed on the screen.
+    It can be also used to easily position subwidgets relative to the parent widget.
+    This widget is a colored rectangle.
+    """
+    
+    
+    def __init__(self, name: str, position: Vector, size: Vector, color: Color, layer = 0, visible = True, subwidgets: dict[str, 'Widget'] = {}, subwidget_offsets: dict[str, Vector] = {}, subwidget_alignments: dict[str, Alignment] = {}):
+        """
+        Args:
+            name: Name of the widget.
+            position: Position of the top left corner of the widget. Vector(0, 0) is the top left corner of the screen.
+            size: Size of the widget.
+            color: Color of the rectangle.
+            layer: Layer of the widget. Higher layers are drawn on top of lower layers.
+            visible: Whether the widget is visible or not. If not, it won't process even subwidgets.
+            subwidgets: Dictionary of subwidgets. The key is the name of the subwidget and the value is the widget itself.
+            subwidget_offsets: Dictionary of subwidget offsets. The key is the name of the subwidget and the value is offset, which tells where the subwidget is positioned relative to the parent widget and alignment.
+            subwidget_alignments: Dictionary of subwidget alignments. The key is the name of the subwidget and the value is the alignment, which tells how the subwidget is aligned relative to the parent widget and offset (where will Vector(0, 0) be positioned).
+        """
         self.name = name
         self.position = position
         self.size = size
@@ -21,6 +45,9 @@ class Widget:
 
     @property
     def name(self):
+        """
+        str - Name of the widget.
+        """
         return self.__name
     
 
@@ -34,6 +61,9 @@ class Widget:
 
     @property
     def position(self):
+        """
+        Vector - Position of the top left corner of the widget.
+        """
         return self.__position
     
 
@@ -47,6 +77,9 @@ class Widget:
 
     @property
     def size(self):
+        """
+        Vector - Size of the widget.
+        """
         return self.__size
     
 
@@ -61,6 +94,9 @@ class Widget:
 
     @property
     def layer(self):
+        """
+        int - Layer of the widget. Higher layers are drawn on top of lower layers.
+        """
         return self.__layer
     
 
@@ -74,6 +110,9 @@ class Widget:
 
     @property
     def color(self):
+        """
+        Color - Color of the widget rectangle.
+        """
         return self.__color
     
 
@@ -88,6 +127,9 @@ class Widget:
 
     @property
     def visible(self):
+        """
+        bool - Whether the widget is visible or not. If not, it won't process even subwidgets.
+        """
         return self.__visible
     
 
@@ -101,6 +143,9 @@ class Widget:
 
     @property
     def subwidgets(self):
+        """
+        dict[str, Widget] - Dictionary of subwidgets. The key is the name of the subwidget and the value is the widget itself.
+        """
         self._subwidget_updated = False
         return self.__subwidget
     
@@ -115,6 +160,9 @@ class Widget:
 
     @property
     def subwidget_offsets(self):
+        """
+        dict[str, Vector] - Dictionary of subwidget offsets. The key is the name of the subwidget and the value is offset, which tells where the subwidget is positioned relative to the parent widget and alignment.
+        """
         self._subwidget_updated = False
         return self.__subwidget_offset
 
@@ -129,6 +177,9 @@ class Widget:
 
     @property
     def subwidget_alignments(self):
+        """
+        dict[str, Alignment] - Dictionary of subwidget alignments. The key is the name of the subwidget and the value is the alignment, which tells how the subwidget is aligned relative to the parent widget and offset (where will Vector(0, 0) be positioned).
+        """
         self._subwidget_updated = False
         return self.__subwidget_alignment
     
@@ -143,6 +194,9 @@ class Widget:
 
     @property
     def surface(self):
+        """
+        pygame.Surface - Surface of the widget. This is a colored rectangle.
+        """
         if self._updated and self._subwidget_updated:
             return self.__combined_surface
         
@@ -167,7 +221,14 @@ class Widget:
         return self.__combined_surface
     
 
-    def subwidget_pos(self, widget):
+    def subwidget_pos(self, widget: str) -> Vector:
+        """
+        Calculate the position of a subwidget relative to the parent widget.
+        Args:
+            widget: Name of the subwidget.
+        Returns:
+            Vector - Position of the top left corner of the subwidget relative to the parent widget.
+        """
         offset, alignment = self.subwidget_offsets[widget], self.subwidget_alignments[widget]
         subwidget = self.subwidgets[widget]
         subwidget_offset = offset.copy

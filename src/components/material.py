@@ -1,4 +1,8 @@
-from components.datatypes import Color
+"""
+This module contains the Material class, which is used to create a material for rendering.
+"""
+
+from components.datatypes import *
 
 #?ifdef CLIENT
 import pygame
@@ -9,13 +13,20 @@ import os
 
 
 class Material:
+    """
+    Represents a material for rendering.
+    """
     #?ifdef CLIENT
     __textures = {}
     __scaled_textures = {}
     #?endif
 
 
-    def __init__(self, texture_str):
+    def __init__(self, texture_str: str | Color):
+        """
+        Args:
+            texture_str: Path to the texture file or a Color object.
+        """
         self.texture_str = texture_str
         #?ifdef CLIENT
         self.__load_texture()
@@ -24,6 +35,9 @@ class Material:
 
     @property
     def texture_str(self):
+        """
+        str | Color - Path to the texture file or a Color object.
+        """
         return self.__texture_str
     
 
@@ -41,6 +55,9 @@ class Material:
 
     @property
     def texture(self):
+        """
+        pygame.Surface - The original texture surface.
+        """
         return Material.__textures[self.texture_str]
 
 
@@ -60,7 +77,14 @@ class Material:
                 print("Texture file not found:", self.texture_str)
 
 
-    def get_surface(self, size):
+    def get_surface(self, size: Vector) -> pygame.Surface:
+        """
+        Gets the scaled pygame surface.
+        Args:
+            size: Width and Height of the surface to scale to.
+        Returns:
+            pygame.Surface - Scaled surface texture.
+        """
         if size not in self.__scaled_textures[self.texture_str]:
             self.__scaled_textures[self.texture_str][size] = pygame.transform.scale(self.texture, size.tuple)
 
