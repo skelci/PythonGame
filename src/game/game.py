@@ -597,7 +597,7 @@ class ServerGame(ServerGameBase):
     def generate_chunk(self, x, y):
         chunk_data = []
         chunk_origin = Vector(x, y) * CHUNK_SIZE
-        tree_threshold = 0.06
+        tree_threshold = 0.03
         
         # Noise parameters
         terrain_scale = 0.035
