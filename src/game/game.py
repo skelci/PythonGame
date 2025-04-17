@@ -75,7 +75,7 @@ class DebugTunnel(Actor):
 
 class TestPlayer(Character):
     def __init__(self, name, position):
-        super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7)
+        super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
 
 
 #?ifdef CLIENT
@@ -613,30 +613,30 @@ class ServerGame(ServerGameBase):
         ore_parameters = {
             "coal": {
                 "scale": 0.05,       # Larger scale = bigger, spread-out veins
-                "threshold": 0.72,   # Lower threshold = more common
+                "threshold": 0.7,   # Lower threshold = more common
                 "base": 1000,        # Unique noise pattern
                 "min_depth": 5,      # Shallowest depth
                 "vein_size": (2, 4), # Larger veins (now represents potential blocks)
                 "spread": 1,         # Wider spread
-                "density": 0.8     # Higher density
+                "density": 0.7   # Higher density
             },
             "iron": {
                 "scale": 0.04,
-                "threshold": 0.76,
+                "threshold": 0.74,
                 "base": 2000,
                 "min_depth": 10,
                 "vein_size": (2, 3),
                 "spread": 1,
-                "density": 0.75
+                "density": 0.65
             },
             "gold": {
                 "scale": 0.03,       # Smaller scale = tighter veins
-                "threshold": 0.8,    # Slightly higher threshold = slightly rarer
+                "threshold": 0.78,    # Slightly higher threshold = slightly rarer
                 "base": 3000,
                 "min_depth": 10,
                 "vein_size": (1, 2),  # Smaller veins
                 "spread": 1,          # Tighter clusters
-                "density": 0.7
+                "density": 0.6
             }
         }
         
