@@ -404,7 +404,7 @@ class KeyHandler:
 class TunnelGenerator:
     def __init__(self):
         self.width = 1.5
-        self.curvature = 0.6# 0 = straight, 1 = very curved
+        self.curvature = 0.7# 0 = straight, 1 = very curved
         self.max_tunnel_length = 15
         
 
@@ -498,7 +498,7 @@ class TunnelGenerator:
                 for j in range(len(regions)):
                     if j not in connected:
                         dist = self._distance(centers[i], centers[j])
-                        if dist < min_dist : #and dist < self.max_tunnel_length
+                        if dist < min_dist:  # and dist < self.max_tunnel_length:
                             min_dist = dist
                             closest = (i, j)
             
@@ -616,27 +616,27 @@ class ServerGame(ServerGameBase):
                 "threshold": 0.72,   # Lower threshold = more common
                 "base": 1000,        # Unique noise pattern
                 "min_depth": 5,      # Shallowest depth
-                "vein_size": (4, 8), # Larger veins (now represents potential blocks)
+                "vein_size": (2, 4), # Larger veins (now represents potential blocks)
                 "spread": 1,         # Wider spread
-                "density": 0.85      # Higher density
+                "density": 0.8     # Higher density
             },
             "iron": {
                 "scale": 0.04,
                 "threshold": 0.76,
                 "base": 2000,
                 "min_depth": 10,
-                "vein_size": (3, 5),
+                "vein_size": (2, 3),
                 "spread": 1,
-                "density": 0.85
+                "density": 0.75
             },
             "gold": {
                 "scale": 0.03,       # Smaller scale = tighter veins
                 "threshold": 0.8,    # Slightly higher threshold = slightly rarer
                 "base": 3000,
                 "min_depth": 10,
-                "vein_size": (2, 4),  # Smaller veins
+                "vein_size": (1, 2),  # Smaller veins
                 "spread": 1,          # Tighter clusters
-                "density": 0.84
+                "density": 0.7
             }
         }
         
@@ -692,7 +692,7 @@ class ServerGame(ServerGameBase):
                     for x_pos in range(CHUNK_SIZE):
                         pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                         if is_tunnel:
-                            chunk_data.append([(pos.x, pos.y), "tunnel_debug"])
+                            chunk_data.append([(pos.x, pos.y), None])
         
         # Generate ore veins with flood-fill approach for better connectivity
         ore_positions = set()
