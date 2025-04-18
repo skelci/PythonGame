@@ -136,7 +136,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 10)
+        eng.set_camera_width(16 * 15)
         eng.resolution = Vector(1600, 900)
 
         # eng.fullscreen=True
@@ -404,7 +404,7 @@ class KeyHandler:
 class TunnelGenerator:
     def __init__(self):
         self.width = 1.5
-        self.curvature = 0.7# 0 = straight, 1 = very curved
+        self.curvature = 0.6# 0 = straight, 1 = very curved
         self.max_tunnel_length = 15
         
 
@@ -612,31 +612,32 @@ class ServerGame(ServerGameBase):
         # Enhanced ore generation parameters - different for each type
         ore_parameters = {
             "coal": {
-                "scale": 0.05,       # Larger scale = bigger, spread-out veins
+                "scale": 0.036,       # Larger scale = bigger, spread-out veins
                 "threshold": 0.7,   # Lower threshold = more common
                 "base": 1000,        # Unique noise pattern
                 "min_depth": 5,      # Shallowest depth
-                "vein_size": (2, 4), # Larger veins (now represents potential blocks)
+                "vein_size": (3, 4), # Larger veins (now represents potential blocks)
                 "spread": 1,         # Wider spread
-                "density": 0.7   # Higher density
+                "density": 0.75   # Higher density
             },
             "iron": {
-                "scale": 0.04,
-                "threshold": 0.74,
-                "base": 2000,
+            
+                "scale": 0.042,
+                "threshold": 0.76,
+                "base": 2500,
                 "min_depth": 10,
                 "vein_size": (2, 3),
                 "spread": 1,
-                "density": 0.65
+                "density": 0.7
             },
             "gold": {
                 "scale": 0.03,       # Smaller scale = tighter veins
                 "threshold": 0.78,    # Slightly higher threshold = slightly rarer
-                "base": 3000,
+                "base": 4500,
                 "min_depth": 10,
                 "vein_size": (1, 2),  # Smaller veins
                 "spread": 1,          # Tighter clusters
-                "density": 0.6
+                "density": 0.66
             }
         }
         
@@ -714,13 +715,13 @@ class ServerGame(ServerGameBase):
                             pos.y * parameters["scale"],
                             octaves=2,
                             persistence=0.5,
-                            lacunarity=2.0,
+                            lacunarity=2.5,
                             base=parameters["base"]
                         )
                         
                         if ore_noise > parameters["threshold"]:
-                            potential_starts.append((x_pos, y_pos))
-            
+                            chunk_data.append([(pos.x, pos.y), ore_type])
+            """
             # Second pass - generate connected veins from starts
             for start_x, start_y in potential_starts:
                 if (chunk_origin.x + start_x, chunk_origin.y + start_y) in ore_positions:
@@ -779,7 +780,7 @@ class ServerGame(ServerGameBase):
                                 
                                 if n_ore_noise > parameters["threshold"] * 0.8:  # Slightly lower threshold for neighbors
                                     visited.add((nx, ny))
-                                    queue.append((nx, ny))
+                                    queue.append((nx, ny))"""
         
         # Rest of terrain generation (unchanged)
         for y_pos in range(CHUNK_SIZE):
