@@ -351,6 +351,8 @@ class Level:
         collisions_not_resolved = True
         collided_actors = {}
 
+        not_should_colide_with = lambda actor1, actor2: actor2 is actor1 or not actor2.collidable or (not actor1.collidable and isinstance(actor2, Rigidbody))
+
         while collisions_not_resolved and max_iterations > 0:
             collisions_not_resolved = False
             corrected_actors = {}
@@ -360,7 +362,7 @@ class Level:
                     continue
 
                 for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
-                    if actor2 is actor1 or not actor2.collidable:
+                    if not_should_colide_with(actor1, actor2):
                         continue
 
                     if actor1.position.distance(actor2.position) > actor1.half_size.abs.max + actor2.half_size.abs.max:
@@ -399,7 +401,7 @@ class Level:
                 continue
 
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
-                if actor2 is actor1 or not actor2.collidable:
+                if not_should_colide_with(actor1, actor2):
                     continue
 
                 actor1.half_size += KINDA_SMALL_NUMBER
