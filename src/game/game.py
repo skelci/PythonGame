@@ -596,8 +596,9 @@ class ServerGame(ServerGameBase):
 
     def generate_chunk(self, x, y):
         chunk_data = []
+        tree_positions = [] 
         chunk_origin = Vector(x, y) * CHUNK_SIZE
-        tree_threshold = 0.03
+        tree_threshold = 0.04
         
         # Noise parameters
         terrain_scale = 0.035
@@ -612,32 +613,22 @@ class ServerGame(ServerGameBase):
         # Enhanced ore generation parameters - different for each type
         ore_parameters = {
             "coal": {
-                "scale": 0.036,       # Larger scale = bigger, spread-out veins
-                "threshold": 0.7,   # Lower threshold = more common
+                "scale": 0.04,       # smaller scale = bigger, spread-out veins
+                "threshold": 0.72,   # Lower threshold = more common
                 "base": 1000,        # Unique noise pattern
-                "min_depth": 5,      # Shallowest depth
-                "vein_size": (3, 4), # Larger veins (now represents potential blocks)
-                "spread": 1,         # Wider spread
-                "density": 0.75   # Higher density
+                "min_depth": 25,      # Shallowest depth
             },
             "iron": {
-            
-                "scale": 0.042,
-                "threshold": 0.76,
+                "scale": 0.046,       # Smaller scale = tighter veins
+                "threshold": 0.78,
                 "base": 2500,
-                "min_depth": 10,
-                "vein_size": (2, 3),
-                "spread": 1,
-                "density": 0.7
+                "min_depth": 45,
             },
             "gold": {
-                "scale": 0.03,       # Smaller scale = tighter veins
-                "threshold": 0.78,    # Slightly higher threshold = slightly rarer
+                "scale": 0.052,    
+                "threshold": 0.82,    # Slightly higher threshold = slightly rarer
                 "base": 4500,
-                "min_depth": 10,
-                "vein_size": (1, 2),  # Smaller veins
-                "spread": 1,          # Tighter clusters
-                "density": 0.66
+                "min_depth": 90,
             }
         }
         
@@ -698,8 +689,6 @@ class ServerGame(ServerGameBase):
         # Generate ore veins with flood-fill approach for better connectivity
         ore_positions = set()
         for ore_type, parameters in ore_parameters.items():
-            # First pass - find potential vein starts
-            potential_starts = []
             for y_pos in range(CHUNK_SIZE):
                 for x_pos in range(CHUNK_SIZE):
                     pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
@@ -721,67 +710,7 @@ class ServerGame(ServerGameBase):
                         
                         if ore_noise > parameters["threshold"]:
                             chunk_data.append([(pos.x, pos.y), ore_type])
-            """
-            # Second pass - generate connected veins from starts
-            for start_x, start_y in potential_starts:
-                if (chunk_origin.x + start_x, chunk_origin.y + start_y) in ore_positions:
-                    continue
-                    
-                min_vein, max_vein = parameters["vein_size"]
-                target_size = r.randint(min_vein, max_vein)
-                current_size = 0
-                queue = []
-                visited = set()
-                
-                start_pos = chunk_origin + Vector(start_x, start_y)
-                queue.append((start_x, start_y))
-                visited.add((start_x, start_y))
-                
-                while queue and current_size < target_size:
-                    x_pos, y_pos = queue.pop(0)
-                    pos = chunk_origin + Vector(x_pos, y_pos)
-                    
-                    # Only place ore if it meets conditions
-                    ground_level = ground_levels[x_pos]
-                    depth = ground_level - pos.y
-                    if (not noise_data[y_pos][x_pos][1] and  # Not a cave
-                        not noise_data[y_pos][x_pos][2] and  # Not a tunnel
-                        depth > parameters["min_depth"] and
-                        (pos.x, pos.y) not in ore_positions and
-                        r.random() < parameters["density"]):
-                        
-                        chunk_data.append([(pos.x, pos.y), ore_type])
-                        ore_positions.add((pos.x, pos.y))
-                        current_size += 1
-                    
-                    # Add neighbors to queue if they're good candidates
-                    for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
-                        nx, ny = x_pos + dx, y_pos + dy
-                        if (0 <= nx < CHUNK_SIZE and 0 <= ny < CHUNK_SIZE and
-                            (nx, ny) not in visited):
-                            
-                            # Check if neighbor has good ore potential
-                            n_pos = chunk_origin + Vector(nx, ny)
-                            n_ground_level = ground_levels[nx]
-                            n_depth = n_ground_level - n_pos.y
-                            
-                            if (n_depth > parameters["min_depth"] and
-                                not noise_data[ny][nx][1] and
-                                not noise_data[ny][nx][2]):
-                                
-                                n_ore_noise = noise.snoise2(
-                                    n_pos.x * parameters["scale"],
-                                    n_pos.y * parameters["scale"],
-                                    octaves=2,
-                                    persistence=0.5,
-                                    lacunarity=2.0,
-                                    base=parameters["base"]
-                                )
-                                
-                                if n_ore_noise > parameters["threshold"] * 0.8:  # Slightly lower threshold for neighbors
-                                    visited.add((nx, ny))
-                                    queue.append((nx, ny))"""
-        
+           
         # Rest of terrain generation (unchanged)
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
@@ -795,22 +724,31 @@ class ServerGame(ServerGameBase):
                     continue
                 elif pos.y == ground_level:
                     chunk_data.append([(pos.x, pos.y), "grass"])
+                    # Only attempt to spawn a tree if no tree is near (minimum 4 blocks away)
                     if r.random() < tree_threshold:
-                        tree_height = r.randint(4, 7)
-                        top = pos + Vector(0, tree_height)
-                        for h in range(1, tree_height + 1):
-                            trunk_pos = pos + Vector(0, h)
-                            if trunk_pos.y >= chunk_origin.y:
-                                chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
-                        rx = 3.25
-                        ry = 4.5
-                        top_leaf_pos = top + Vector(0, 5)
-                        chunk_data.append([(top_leaf_pos.x, top_leaf_pos.y), "leaf"])
-                        for dy in range(0, int(ry) + 1):
-                            for dx in range(-int(rx), int(rx) + 1):
-                                if (dx*dx)/(rx*rx) + (dy*dy)/(ry*ry) <= 1:
-                                    leaf_pos = top + Vector(dx, dy)
-                                    chunk_data.append([(leaf_pos.x, leaf_pos.y), "leaf"])
+                        can_spawn = True
+                        for tree_pos in tree_positions:
+                            # Using Euclidean distance or Manhattan distance; here we use Manhattan for simplicity
+                            if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
+                                can_spawn = False
+                                break
+                        if can_spawn:
+                            tree_positions.append(pos)
+                            tree_height = r.randint(4, 7)
+                            top = pos + Vector(0, tree_height)
+                            for h in range(1, tree_height + 1):
+                                trunk_pos = pos + Vector(0, h)
+                                if trunk_pos.y >= chunk_origin.y:
+                                    chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
+                            rx = 3.25
+                            ry = 4.5
+                            top_leaf_pos = top + Vector(0, 5)
+                            chunk_data.append([(top_leaf_pos.x, top_leaf_pos.y), "leaf"])
+                            for dy in range(0, int(ry) + 1):
+                                for dx in range(-int(rx), int(rx) + 1):
+                                    if (dx*dx)/(rx*rx) + (dy*dy)/(ry*ry) <= 1:
+                                        leaf_pos = top + Vector(dx, dy)
+                                        chunk_data.append([(leaf_pos.x, leaf_pos.y), "leaf"])
                 elif pos.y < ground_level and pos.y > ground_level - 5:
                     chunk_data.append([(pos.x, pos.y), "dirt"])
                 elif pos.y <= ground_level - 5:
