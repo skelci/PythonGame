@@ -563,6 +563,7 @@ class TunnelGenerator:
             x1, y1 = path[i]
             x2, y2 = path[i+1]
             self._dig_line(cave_data, x1, y1, x2, y2)
+            
 
 
 class ServerGame(ServerGameBase):
@@ -697,13 +698,13 @@ class ServerGame(ServerGameBase):
 
     @staticmethod
     def tunnel_generation_worker(tunnel_gen, noise_data, y_range):
-        # Process only the rows in the given y_range
+        """# Process only the rows in the given y_range
         for y_pos in y_range:
             for x_pos in range(CHUNK_SIZE):
                 pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                 if is_cave:  # Only process cave tiles
-                    # Modify the noise_data directly to mark tunnels
-                    tunnel_gen.generate_tunnels(noise_data)
+                    # Modify the noise_data directly to mark tunnels"""
+        tunnel_gen.generate_tunnels(noise_data)
 
     def generate_chunk(self, x, y):
         chunk_data = []
@@ -835,15 +836,17 @@ class ServerGame(ServerGameBase):
         target_chunk = f"{chunk_x};{chunk_y}"
         
         # Generate this chunk and immediate neighbors
-        for dy in [-1, 0, 1]:
+        """for dy in [-1, 0, 1]:
             for dx in [-1, 0, 1]:
                 nx, ny = chunk_x + dx, chunk_y + dy
                 neighbor_chunk = f"{nx};{ny}"
                 if neighbor_chunk not in self.game_map:
-                    self.game_map[neighbor_chunk] = self.generate_chunk(nx, ny)
+                    self.game_map[neighbor_chunk] = self.generate_chunk(nx, ny)"""
+        if target_chunk not in self.game_map:
+            self.game_map[target_chunk] = self.generate_chunk(chunk_x, chunk_y)
         
         # Load the chunk if not already loaded
-        if target_chunk not in self.loaded_chunks:
+        #if target_chunk not in self.loaded_chunks:
             actors_to_add = []
             for tile in self.game_map.get(target_chunk, []):
                 pos, tile_type = tile
@@ -875,7 +878,7 @@ class ServerGame(ServerGameBase):
             for actor in actors_to_add:
                 level.register_actor(actor)
             
-            self.loaded_chunks.add(target_chunk)
+            #self.loaded_chunks.add(target_chunk)
 
 
     def tick(self):
