@@ -879,7 +879,7 @@ def breaking_blocks(engine_ref, level_ref, id):
     #Get the mouse position 
     mouse_pos = engine_ref.players[id].world_mouse_pos
     mouse_pos = mouse_pos.rounded
-    print(mouse_pos)   
+    # print(mouse_pos)   
 
     #allowed to break this blocks
     #allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves", "Leaves", "LEAVES"))
