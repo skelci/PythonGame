@@ -658,7 +658,7 @@ class ServerGame(ServerGameBase):
         result_list.extend(local_ores)
 
     @staticmethod
-    def generate_noise_rows(y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+    def generate_caves(y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
                             surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, smoothstep_func):
         for y_index in y_range:
             row = []
@@ -724,13 +724,13 @@ class ServerGame(ServerGameBase):
         # Enhanced ore generation parameters - different for each type
         ore_parameters = {
             "coal": {
-                "scale": 0.04,       # smaller scale = bigger, spread-out veins
-                "threshold": 0.7,   # Lower threshold = more common
+                "scale": 0.042,       # smaller scale = bigger, spread-out veins
+                "threshold": 0.72,   # Lower threshold = more common
                 "base": 1000,        # Unique noise pattern
                 "min_depth": 8,      # Shallowest depth
             },
             "iron": {
-                "scale": 0.046,       # Smaller scale = tighter veins
+                "scale": 0.048,       # Smaller scale = tighter veins
                 "threshold": 0.76,
                 "base": 2500,
                 "min_depth": 40,
@@ -754,7 +754,7 @@ class ServerGame(ServerGameBase):
        # Single-threaded cave generation
         result_rows = [None] * CHUNK_SIZE  # Pre-allocate rows
         y_range = range(CHUNK_SIZE)  # Process all rows in one range
-        self.generate_noise_rows(
+        self.generate_caves(
             y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
             surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, ServerGame.smoothstep
         )
@@ -911,23 +911,22 @@ class ServerGame(ServerGameBase):
 
             base_chunk_vector = self.current_base_chunk.floored
         
-        # Load chunks in radius
-        chunks_to_load = []
-        ud = 0
-        if self.engine.players:
-            for player in self.engine.players.values():
-                ud += player.update_distance
-        ud //= len(self.engine.players)
-        ud = (ud // DEVIDER) + 1
-        for offset_y in range(-ud - 2, ud + 3):
-            for offset_x in range(-ud - 2, ud + 3):
-                chunks_to_load.append((
-                    base_chunk_vector.x + offset_x, 
-                    base_chunk_vector.y + offset_y
-                ))
+            # Load chunks in radius
+            chunks_to_load = []
+            ud = 0
+            if self.engine.players:
+                for player in self.engine.players.values():
+                    ud += player.update_distance
+                    ud = (ud // DEVIDER) + 1
+                    for offset_y in range(-ud - 2, ud + 3):
+                        for offset_x in range(-ud - 2, ud + 3):
+                            chunks_to_load.append((
+                                base_chunk_vector.x + offset_x, 
+                                base_chunk_vector.y + offset_y
+                            ))
 
-        for base_chunk_x, base_chunk_y in chunks_to_load:
-            self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
+            for base_chunk_x, base_chunk_y in chunks_to_load:
+                self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
 
 
 def breaking_blocks(engine_ref, level_ref, id):
