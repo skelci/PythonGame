@@ -934,7 +934,7 @@ class ServerGame(ServerGameBase):
         for base_chunk_x, base_chunk_y in chunks_to_load:
             self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
 
-
+EntityPosition=set()
 def breaking_blocks(engine_ref, level_ref, id):
     #print('breaking_blocks')
     # Get the player's position
@@ -956,25 +956,26 @@ def breaking_blocks(engine_ref, level_ref, id):
     # print(mouse_pos)   
 
     #allowed to break this blocks
-    allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves", "Leaves", "LEAVES", "leaf", "Leaf", "LEAF", "Coal", "Iron", "Gold"))
-
-    #entity_position
-    EntityPosition=set()
+    #allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves", "Leaves", "LEAVES", "leaf", "Leaf", "LEAF", "Coal", "Iron", "Gold"))
 
     for actor in function_3x3:
-        #actor=engine_ref.levels["Test_Level"].actors[actor_name]
-        #print(actor_name)
+        #print(actor)
         actor_position = actor.position.rounded
         #print(actor_position)
 
-        if actor_position == mouse_pos and not (actor_position in EntityPosition):
-            #print('actor:'+actor_position)
-            if actor.position in EntityPosition:
+        if actor_position == mouse_pos:
+            #print('actor:', actor_position)
+            print(EntityPosition)
+            if actor_position in EntityPosition:
+                print('break')
                 break
             if actor.name.startswith("__Player_"):
                 break
-            engine_ref.levels["Test_Level"].destroy_actor(actor)  
-            EntityPosition.add(actor_position)        
+            
+
+            engine_ref.levels["Test_Level"].destroy_actor(actor) 
+            EntityPosition.add(actor_position)
+            print(EntityPosition)         
             break
             
 
