@@ -38,6 +38,7 @@ class Level:
 
         self.__actors = {}
         self.__rigidbodies = {}
+        self.__actors_with_overlap_events = {}
         self.__chunks = {}
         self.__actors_to_destroy = set()
         self.__actors_to_create = set()
@@ -176,6 +177,8 @@ class Level:
             TypeError: If the actor is not a subclass of Actor.
         """
         if isinstance(actor, Actor):
+            actor.engine_ref = self.engine_ref
+            actor.level_ref = self
             self.__actors_to_create.add(actor)
         else:
             raise TypeError("Actor must be a subclass of Actor:", actor)
@@ -208,6 +211,8 @@ class Level:
             self.actors[actor.name] = actor
             if isinstance(actor, Rigidbody):
                 self.rigidbodies[actor.name] = actor
+            if actor.generate_overlap_events:
+                self.__actors_with_overlap_events[actor.name] = actor
             if actor.visible:
                 new_actors.append(actor)
             self.add_actor_to_chunk(actor)
@@ -227,6 +232,8 @@ class Level:
             destroyed.append(self.actors.pop(actor.name))
             if isinstance(actor, Rigidbody):
                 self.rigidbodies.pop(actor.name)
+            if actor.name in self.__actors_with_overlap_events:
+                self.__actors_with_overlap_events.pop(actor.name)
             chk_x, chk_y = actor.chunk
             self.chunks[chk_x][chk_y].remove(actor.name)
         
@@ -344,6 +351,8 @@ class Level:
         collisions_not_resolved = True
         collided_actors = {}
 
+        not_should_colide_with = lambda actor1, actor2: actor2 is actor1 or not actor2.collidable or (not actor1.collidable and isinstance(actor2, Rigidbody))
+
         while collisions_not_resolved and max_iterations > 0:
             collisions_not_resolved = False
             corrected_actors = {}
@@ -353,7 +362,7 @@ class Level:
                     continue
 
                 for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
-                    if actor2 is actor1 or not actor2.collidable:
+                    if not_should_colide_with(actor1, actor2):
                         continue
 
                     if actor1.position.distance(actor2.position) > actor1.half_size.abs.max + actor2.half_size.abs.max:
@@ -392,7 +401,7 @@ class Level:
                 continue
 
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
-                if actor2 is actor1 or not actor2.collidable:
+                if not_should_colide_with(actor1, actor2):
                     continue
 
                 actor1.half_size += KINDA_SMALL_NUMBER
@@ -414,10 +423,7 @@ class Level:
             self.actors[name].collided_sides = direction
 
         overlaped_actors = {}
-        for actor1 in self.actors.values():
-            if not actor1.generate_overlap_events:
-                continue
-
+        for actor1 in self.__actors_with_overlap_events.values():
             actor1.half_size += KINDA_SMALL_NUMBER
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                 if actor1 is actor2 or not is_overlapping_rect(actor1, actor2):

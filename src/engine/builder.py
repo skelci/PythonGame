@@ -254,7 +254,7 @@ class Builder:
             else:
                 if not should_skip:
                     stripped_line = line.strip()
-                    if not stripped_line or stripped_line.startswith("#"):
+                    if not stripped_line:
                         continue
                     f.write(line)
 

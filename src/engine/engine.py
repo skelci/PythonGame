@@ -979,7 +979,7 @@ class ServerEngine(Engine):
             for key in self.__players[id].released_keys:
                 if key in self.__registered_keys:
                     press_type, func = self.__registered_keys[key]
-                    if press_type == KeyPressType.TRIGGER:
+                    if press_type == KeyPressType.RELEASE:
                         func(self, self.levels[self.players[id].level], id)
 
             self.__players[id].released_keys.clear()
