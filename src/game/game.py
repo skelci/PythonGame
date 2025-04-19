@@ -113,35 +113,35 @@ class TestPlayer(Character):
 
 class LogEntity(Rigidbody):
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(139, 69, 19)), restitution=0)   
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(139, 69, 19)), restitution=0)   
 
 class LeafEntity(Rigidbody):    
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(34, 139, 34)), restitution=0)             
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(34, 139, 34)), restitution=0)             
 
 class DirtEntity(Rigidbody):        
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(0, 255, 0)), restitution=0)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 255, 0)), restitution=0)
 
 class GrassEntity(Rigidbody):        
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(255, 0, 0)), restitution=0)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 0, 0)), restitution=0)
 
 class StoneEntity(Rigidbody):    
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(128, 128, 128)), restitution=0)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(128, 128, 128)), restitution=0)
 
 class CoalEntity(Rigidbody):    
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(0, 0, 0)), restitution=0)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 0, 0)), restitution=0)
 
 class IronEntity(Rigidbody):    
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(192, 192, 192)), restitution=0)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(192, 192, 192)), restitution=0)
 
 class GoldEntity(Rigidbody):    
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(255, 215, 0)), restitution=0)                                
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 215, 0)), restitution=0)                                
 
         
 
@@ -1029,18 +1029,23 @@ def breaking_blocks(engine_ref, level_ref, id):
     #allowed to break this blocks
     allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves", "Leaves", "LEAVES", "leaf", "Leaf", "LEAF", "Coal", "Iron", "Gold"))
 
+    #entity_position
+    EntityPosition=set()
+
     for actor in function_3x3:
         #actor=engine_ref.levels["Test_Level"].actors[actor_name]
         #print(actor_name)
         actor_position = actor.position.rounded
         #print(actor_position)
 
-        if actor_position == mouse_pos:
+        if actor_position == mouse_pos and not (actor_position in EntityPosition):
             #print('actor:'+actor_position)
+            if actor.position in EntityPosition:
+                break
             if actor.name.startswith("__Player_"):
                 break
-            #if 
-            engine_ref.levels["Test_Level"].destroy_actor(actor)          
+            engine_ref.levels["Test_Level"].destroy_actor(actor)  
+            EntityPosition.add(actor_position)        
             break
             
 
