@@ -137,7 +137,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 15)
+        eng.set_camera_width(16 * 10)
         eng.resolution = Vector(1600, 900)
 
         # eng.fullscreen=True
@@ -789,6 +789,7 @@ class ServerGame(ServerGameBase):
                                 args=(ore_type, parameters, noise_data, ground_levels, set(), ore_results))
             ore_threads.append(t)
             t.start()
+            
 
         for t in ore_threads:
             t.join()
@@ -894,24 +895,21 @@ class ServerGame(ServerGameBase):
         if not positions:
             return
         
-        # Calculate average position
-        avg_x = sum(p.x for p in positions) / len(positions)
-        avg_y = sum(p.y for p in positions) / len(positions)
-        avg_pos = Vector(avg_x, avg_y)
 
-        # Calculate new base chunk with smoothing
-        new_base_chunk = Vector(
-            math.floor((avg_pos.x + CHUNK_SIZE/2) / CHUNK_SIZE),
-            math.floor((avg_pos.y + CHUNK_SIZE/2) / CHUNK_SIZE)
-        )
+        for pos in positions:
+            # Calculate new base chunk with smoothing
+            new_base_chunk = Vector(
+                math.floor((pos.x + CHUNK_SIZE/2) / CHUNK_SIZE),
+                math.floor((pos.y + CHUNK_SIZE/2) / CHUNK_SIZE)
+            )
         
-        if not hasattr(self, "current_base_chunk"):
-            self.current_base_chunk = new_base_chunk
-        else:
-            smoothing_factor = 0.5
-            self.current_base_chunk += (new_base_chunk - self.current_base_chunk) * smoothing_factor
+            if not hasattr(self, "current_base_chunk"):
+                self.current_base_chunk = new_base_chunk
+            else:
+                smoothing_factor = 0.5
+                self.current_base_chunk += (new_base_chunk - self.current_base_chunk) * smoothing_factor
 
-        base_chunk_vector = self.current_base_chunk.floored
+            base_chunk_vector = self.current_base_chunk.floored
         
         # Load chunks in radius
         chunks_to_load = []
