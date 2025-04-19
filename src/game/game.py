@@ -16,6 +16,7 @@ from components.border import Border
 #?endif
 from collections import defaultdict
 
+import threading
 import random as r
 import math
 import noise
@@ -593,6 +594,67 @@ class ServerGame(ServerGameBase):
         t = max(0.0, min((val - edge0) / (edge1 - edge0), 1.0))
         return t * t * (3 - 2 * t)
 
+    @staticmethod
+    def ore_generation_thread(ore_type, parameters, noise_data, ground_levels, ore_positions, result_list):
+        local_ores = []
+    
+        for y_pos in range(CHUNK_SIZE):
+            for x_pos in range(CHUNK_SIZE):
+                pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
+                ground_level = ground_levels[x_pos]
+
+                if (not is_cave and not is_tunnel and 
+                pos.y <= ground_level - parameters["min_depth"] and 
+                (pos.x, pos.y) not in ore_positions):
+                    
+                    ore_noise = noise.snoise2(
+                        pos.x * parameters["scale"],
+                        pos.y * parameters["scale"],
+                        octaves=2,
+                        persistence=0.5,
+                        lacunarity=2.5,
+                        base=parameters["base"]
+                    )
+                    
+                    if ore_noise > parameters["threshold"]:
+                        local_ores.append([(pos.x, pos.y), ore_type])
+        result_list.extend(local_ores)
+
+    @staticmethod
+    def generate_noise_row(y_index, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+                            surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, smoothstep_func):
+            row = []
+            for x_pos in range(CHUNK_SIZE):
+                pos = chunk_origin + Vector(x_pos, y_index)
+                ground_level = ground_levels[x_pos]
+                
+                base_val = noise.snoise2(
+                    pos.x * cave_scale_x,
+                    pos.y * cave_scale_y,
+                    octaves=cave_octaves,
+                    persistence=cave_persistence,
+                    lacunarity=2.0
+                )
+                detail = noise.snoise2(
+                    pos.x * cave_scale_x * 3,
+                    pos.y * cave_scale_y * 3,
+                    octaves=1
+                ) * 0.2
+                combined_noise = base_val + detail
+                
+                depth = ground_level - pos.y
+                if depth < 6:
+                    effective_threshold = surface_threshold
+                elif 6 <= depth < 16:
+                    effective_threshold = surface_threshold - (surface_threshold - mid_threshold) * smoothstep_func(depth, 6, 16)
+                elif 16 <= depth < 30:
+                    effective_threshold = mid_threshold - (mid_threshold - deep_threshold) * smoothstep_func(depth, 16, 30)
+                else:
+                    effective_threshold = deep_threshold
+                
+                is_cave = combined_noise > effective_threshold and pos.y < ground_level
+                row.append((pos, is_cave, False))
+            result_rows[y_index] = row
 
     def generate_chunk(self, x, y):
         chunk_data = []
@@ -614,21 +676,21 @@ class ServerGame(ServerGameBase):
         ore_parameters = {
             "coal": {
                 "scale": 0.04,       # smaller scale = bigger, spread-out veins
-                "threshold": 0.72,   # Lower threshold = more common
+                "threshold": 0.7,   # Lower threshold = more common
                 "base": 1000,        # Unique noise pattern
-                "min_depth": 25,      # Shallowest depth
+                "min_depth": 8,      # Shallowest depth
             },
             "iron": {
                 "scale": 0.046,       # Smaller scale = tighter veins
-                "threshold": 0.78,
+                "threshold": 0.76,
                 "base": 2500,
-                "min_depth": 45,
+                "min_depth": 40,
             },
             "gold": {
                 "scale": 0.052,    
-                "threshold": 0.82,    # Slightly higher threshold = slightly rarer
+                "threshold": 0.8,    # Slightly higher threshold = slightly rarer
                 "base": 4500,
-                "min_depth": 90,
+                "min_depth": 70,
             }
         }
         
@@ -639,46 +701,40 @@ class ServerGame(ServerGameBase):
             height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=0)
             ground_levels.append(16 - math.floor(height_noise * 10))
         
-        # Generate initial noise data
-        noise_data = []
-        for y_pos in range(CHUNK_SIZE):
-            row = []
-            for x_pos in range(CHUNK_SIZE):
-                pos = chunk_origin + Vector(x_pos, y_pos)
-                ground_level = ground_levels[x_pos]
-                
-                # Cave generation
-                base_val = noise.snoise2(
-                    pos.x * cave_scale_x,
-                    pos.y * cave_scale_y,
-                    octaves=cave_octaves,
-                    persistence=cave_persistence,
-                    lacunarity=2.0
-                )
-                combined_noise = base_val + (noise.snoise2(
-                    pos.x * cave_scale_x * 3,
-                    pos.y * cave_scale_y * 3,
-                    octaves=1
-                ) * 0.2)
-                
-                # Depth-based thresholds
-                depth = ground_level - pos.y
-                if depth < 6:
-                    effective_threshold = surface_threshold
-                elif 6 <= depth < 16:
-                    effective_threshold = surface_threshold - (surface_threshold - mid_threshold) * self.smoothstep(depth, 6, 16)
-                elif 16 <= depth < 30:
-                    effective_threshold = mid_threshold - (mid_threshold - deep_threshold) * self.smoothstep(depth, 16, 30)
-                else:
-                    effective_threshold = deep_threshold
+        result_rows = [None] * CHUNK_SIZE  # pre-allocate rows
+        threads = []
+        for y_idx in range(CHUNK_SIZE):
+            t = threading.Thread(target=self.generate_noise_row, args=(
+                y_idx, 
+                chunk_origin, 
+                cave_scale_x, 
+                cave_scale_y, 
+                cave_octaves, 
+                cave_persistence, 
+                surface_threshold, 
+                mid_threshold, 
+                deep_threshold, 
+                ground_levels, 
+                result_rows, 
+                ServerGame.smoothstep  # pass the static smoothstep function
+            ))
+            threads.append(t)
+            t.start()
 
-                is_cave = combined_noise > effective_threshold and pos.y < ground_level
-                row.append((pos, is_cave, False))
-            noise_data.append(row)
-        
+        for t in threads:
+            t.join()
+
+        noise_data = result_rows[:]  # Assemble the rows in order
+                
         # Generate tunnels
         if y <= 0:
-            tunnel_gen = TunnelGenerator()
+            if y <= 0:
+                tunnel_gen = TunnelGenerator()
+                # Wrap tunnel generation into a thread:
+                tunnel_thread = threading.Thread(target=tunnel_gen.generate_tunnels, args=(noise_data,))
+                tunnel_thread.start()
+                # Optionally wait for tunnel generation to finish before adding tunnel tiles:
+                """tunnel_thread.join()""" #upajmo da dela brez tega
             if tunnel_gen.generate_tunnels(noise_data):
                 for y_pos in range(CHUNK_SIZE):
                     for x_pos in range(CHUNK_SIZE):
@@ -686,30 +742,19 @@ class ServerGame(ServerGameBase):
                         if is_tunnel:
                             chunk_data.append([(pos.x, pos.y), None])
         
-        # Generate ore veins with flood-fill approach for better connectivity
-        ore_positions = set()
+        # Generate ores in parallel threads
+        ore_results = []  # shared list for ores (could use a lock if needed)
+        ore_threads = []
         for ore_type, parameters in ore_parameters.items():
-            for y_pos in range(CHUNK_SIZE):
-                for x_pos in range(CHUNK_SIZE):
-                    pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
-                    ground_level = ground_levels[x_pos]
-                    depth = ground_level - pos.y
-                    
-                    if (not is_cave and not is_tunnel and 
-                        depth > parameters["min_depth"] and 
-                        (pos.x, pos.y) not in ore_positions):
-                        
-                        ore_noise = noise.snoise2(
-                            pos.x * parameters["scale"],
-                            pos.y * parameters["scale"],
-                            octaves=2,
-                            persistence=0.5,
-                            lacunarity=2.5,
-                            base=parameters["base"]
-                        )
-                        
-                        if ore_noise > parameters["threshold"]:
-                            chunk_data.append([(pos.x, pos.y), ore_type])
+            t = threading.Thread(target=self.ore_generation_thread,
+                                args=(ore_type, parameters, noise_data, ground_levels, set(), ore_results))
+            ore_threads.append(t)
+            t.start()
+
+        for t in ore_threads:
+            t.join()
+
+        chunk_data.extend(ore_results)
            
         # Rest of terrain generation (unchanged)
         for y_pos in range(CHUNK_SIZE):
@@ -898,6 +943,4 @@ def breaking_blocks(engine_ref, level_ref, id):
             #print('actor:'+actor_position)
             #print('mouse position'+mouse_pos)
             engine_ref.levels["Test_Level"].destroy_actor(actor)
-            break
-            
-
+            break           
