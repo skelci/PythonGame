@@ -658,13 +658,14 @@ class ServerGame(ServerGameBase):
         result_list.extend(local_ores)
 
     @staticmethod
-    def generate_noise_row(y_index, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+    def generate_noise_rows(y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
                             surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, smoothstep_func):
+        for y_index in y_range:
             row = []
             for x_pos in range(CHUNK_SIZE):
                 pos = chunk_origin + Vector(x_pos, y_index)
                 ground_level = ground_levels[x_pos]
-                
+
                 base_val = noise.snoise2(
                     pos.x * cave_scale_x,
                     pos.y * cave_scale_y,
@@ -678,7 +679,7 @@ class ServerGame(ServerGameBase):
                     octaves=1
                 ) * 0.2
                 combined_noise = base_val + detail
-                
+
                 depth = ground_level - pos.y
                 if depth < 6:
                     effective_threshold = surface_threshold
@@ -688,10 +689,21 @@ class ServerGame(ServerGameBase):
                     effective_threshold = mid_threshold - (mid_threshold - deep_threshold) * smoothstep_func(depth, 16, 30)
                 else:
                     effective_threshold = deep_threshold
-                
+
                 is_cave = combined_noise > effective_threshold and pos.y < ground_level
                 row.append((pos, is_cave, False))
             result_rows[y_index] = row
+
+
+    @staticmethod
+    def tunnel_generation_worker(tunnel_gen, noise_data, y_range):
+        # Process only the rows in the given y_range
+        for y_pos in y_range:
+            for x_pos in range(CHUNK_SIZE):
+                pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
+                if is_cave:  # Only process cave tiles
+                    # Modify the noise_data directly to mark tunnels
+                    tunnel_gen.generate_tunnels(noise_data)
 
     def generate_chunk(self, x, y):
         chunk_data = []
@@ -738,46 +750,45 @@ class ServerGame(ServerGameBase):
             height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=0)
             ground_levels.append(16 - math.floor(height_noise * 10))
         
-        result_rows = [None] * CHUNK_SIZE  # pre-allocate rows
-        threads = []
-        for y_idx in range(CHUNK_SIZE):
-            t = threading.Thread(target=self.generate_noise_row, args=(
-                y_idx, 
-                chunk_origin, 
-                cave_scale_x, 
-                cave_scale_y, 
-                cave_octaves, 
-                cave_persistence, 
-                surface_threshold, 
-                mid_threshold, 
-                deep_threshold, 
-                ground_levels, 
-                result_rows, 
-                ServerGame.smoothstep  # pass the static smoothstep function
+        result_rows = [None] * CHUNK_SIZE  # Pre-allocate rows
+        num_threads = 8  # Number of threads for cave generation
+        section_size = CHUNK_SIZE // num_threads  # Divide the chunk into 8 sections
+
+        cave_threads = []
+        for i in range(num_threads):
+            y_range = range(i * section_size, (i + 1) * section_size)
+            t = threading.Thread(target=self.generate_noise_rows, args=(
+                y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+                surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, ServerGame.smoothstep
             ))
-            threads.append(t)
+            cave_threads.append(t)
             t.start()
 
-        for t in threads:
+        for t in cave_threads:
             t.join()
 
         noise_data = result_rows[:]  # Assemble the rows in order
                 
-        # Generate tunnels
+        # Generate tunnels using 8 threads
         if y <= 0:
-            if y <= 0:
-                tunnel_gen = TunnelGenerator()
-                # Wrap tunnel generation into a thread:
-                tunnel_thread = threading.Thread(target=tunnel_gen.generate_tunnels, args=(noise_data,))
-                tunnel_thread.start()
-                # Optionally wait for tunnel generation to finish before adding tunnel tiles:
-                """tunnel_thread.join()""" #upajmo da dela brez tega
-            if tunnel_gen.generate_tunnels(noise_data):
-                for y_pos in range(CHUNK_SIZE):
-                    for x_pos in range(CHUNK_SIZE):
-                        pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
-                        if is_tunnel:
-                            chunk_data.append([(pos.x, pos.y), None])
+            tunnel_gen = TunnelGenerator()
+            tunnel_threads = []
+            section_size = CHUNK_SIZE // 8  # Divide the chunk into 8 sections
+            for i in range(8):
+                y_range = range(i * section_size, (i + 1) * section_size)
+                t = threading.Thread(target=self.tunnel_generation_worker, args=(tunnel_gen, noise_data, y_range))
+                tunnel_threads.append(t)
+                t.start()
+
+            for t in tunnel_threads:
+                t.join()
+
+            # Add tunnel tiles to chunk_data
+            for y_pos in range(CHUNK_SIZE):
+                for x_pos in range(CHUNK_SIZE):
+                    pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
+                    if is_tunnel:
+                        chunk_data.append([(pos.x, pos.y), None])
         
         # Generate ores in parallel threads
         ore_results = []
