@@ -593,6 +593,43 @@ class ServerGame(ServerGameBase):
     def smoothstep(val, edge0, edge1):
         t = max(0.0, min((val - edge0) / (edge1 - edge0), 1.0))
         return t * t * (3 - 2 * t)
+    
+
+    @staticmethod
+    def tree_generation_worker(x_range, chunk_origin, ground_levels, tree_threshold, shared_tree_positions, tree_lock, tree_results):
+        local_results = []
+        for x_pos in x_range:
+            ground_level = ground_levels[x_pos]
+            pos = chunk_origin + Vector(x_pos, ground_level)
+
+            # Only attempt to spawn a tree if no tree is near (minimum 4 blocks away)
+            if r.random() < tree_threshold and pos.y == ground_level:
+                can_spawn = True
+                with tree_lock:
+                    for tree_pos in shared_tree_positions:
+                        if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
+                            can_spawn = False
+                            break
+                if can_spawn:
+                    with tree_lock:
+                        shared_tree_positions.append(pos)
+                    tree_height = r.randint(4, 7)
+                    top = pos + Vector(0, tree_height)
+                    for h in range(1, tree_height + 1):
+                        trunk_pos = pos + Vector(0, h)
+                        if trunk_pos.y >= chunk_origin.y:
+                            local_results.append([(trunk_pos.x, trunk_pos.y), "log"])
+                    rx = 3.25
+                    ry = 4.5
+                    top_leaf_pos = top + Vector(0, 5)
+                    local_results.append([(top_leaf_pos.x, top_leaf_pos.y), "leaf"])
+                    for dy in range(0, int(ry) + 1):
+                        for dx in range(-int(rx), int(rx) + 1):
+                            if (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1:
+                                leaf_pos = top + Vector(dx, dy)
+                                local_results.append([(leaf_pos.x, leaf_pos.y), "leaf"])
+        tree_results.extend(local_results)
+
 
     @staticmethod
     def ore_generation_thread(ore_type, parameters, noise_data, ground_levels, ore_positions, result_list):
@@ -743,7 +780,7 @@ class ServerGame(ServerGameBase):
                             chunk_data.append([(pos.x, pos.y), None])
         
         # Generate ores in parallel threads
-        ore_results = []  # shared list for ores (could use a lock if needed)
+        ore_results = []
         ore_threads = []
         for ore_type, parameters in ore_parameters.items():
             t = threading.Thread(target=self.ore_generation_thread,
@@ -755,50 +792,44 @@ class ServerGame(ServerGameBase):
             t.join()
 
         chunk_data.extend(ore_results)
-           
+
+
+        # Multithreaded tree generation
+        tree_results = []
+        tree_lock = threading.Lock()
+        threads = []
+        section_size = CHUNK_SIZE // 8  # Divide the chunk into 4 sections
+        for i in range(8):
+            x_range = range(i * section_size, (i + 1) * section_size)
+            t = threading.Thread(target=self.tree_generation_worker, args=(
+                x_range, chunk_origin, ground_levels, tree_threshold, tree_positions, tree_lock, tree_results
+            ))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        chunk_data.extend(tree_results)
+            
         # Rest of terrain generation (unchanged)
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
                 pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                 ground_level = ground_levels[x_pos]
-                
+
                 if any(block[0] == (pos.x, pos.y) for block in chunk_data):
                     continue
-                    
+
                 if is_cave:
                     continue
                 elif pos.y == ground_level:
                     chunk_data.append([(pos.x, pos.y), "grass"])
-                    # Only attempt to spawn a tree if no tree is near (minimum 4 blocks away)
-                    if r.random() < tree_threshold:
-                        can_spawn = True
-                        for tree_pos in tree_positions:
-                            # Using Euclidean distance or Manhattan distance; here we use Manhattan for simplicity
-                            if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
-                                can_spawn = False
-                                break
-                        if can_spawn:
-                            tree_positions.append(pos)
-                            tree_height = r.randint(4, 7)
-                            top = pos + Vector(0, tree_height)
-                            for h in range(1, tree_height + 1):
-                                trunk_pos = pos + Vector(0, h)
-                                if trunk_pos.y >= chunk_origin.y:
-                                    chunk_data.append([(trunk_pos.x, trunk_pos.y), "log"])
-                            rx = 3.25
-                            ry = 4.5
-                            top_leaf_pos = top + Vector(0, 5)
-                            chunk_data.append([(top_leaf_pos.x, top_leaf_pos.y), "leaf"])
-                            for dy in range(0, int(ry) + 1):
-                                for dx in range(-int(rx), int(rx) + 1):
-                                    if (dx*dx)/(rx*rx) + (dy*dy)/(ry*ry) <= 1:
-                                        leaf_pos = top + Vector(dx, dy)
-                                        chunk_data.append([(leaf_pos.x, leaf_pos.y), "leaf"])
                 elif pos.y < ground_level and pos.y > ground_level - 5:
                     chunk_data.append([(pos.x, pos.y), "dirt"])
                 elif pos.y <= ground_level - 5:
                     chunk_data.append([(pos.x, pos.y), "stone"])
-        
+
         return chunk_data
 
     def generate_and_load_chunks(self, chunk_x, chunk_y):
