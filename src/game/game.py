@@ -637,6 +637,7 @@ class TunnelGenerator:
             x1, y1 = path[i]
             x2, y2 = path[i+1]
             self._dig_line(cave_data, x1, y1, x2, y2)
+            
 
 
 class ServerGame(ServerGameBase):
@@ -732,7 +733,7 @@ class ServerGame(ServerGameBase):
         result_list.extend(local_ores)
 
     @staticmethod
-    def generate_noise_rows(y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+    def generate_caves(y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
                             surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, smoothstep_func):
         for y_index in y_range:
             row = []
@@ -771,13 +772,13 @@ class ServerGame(ServerGameBase):
 
     @staticmethod
     def tunnel_generation_worker(tunnel_gen, noise_data, y_range):
-        # Process only the rows in the given y_range
+        """# Process only the rows in the given y_range
         for y_pos in y_range:
             for x_pos in range(CHUNK_SIZE):
                 pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                 if is_cave:  # Only process cave tiles
-                    # Modify the noise_data directly to mark tunnels
-                    tunnel_gen.generate_tunnels(noise_data)
+                    # Modify the noise_data directly to mark tunnels"""
+        tunnel_gen.generate_tunnels(noise_data)
 
     def generate_chunk(self, x, y):
         chunk_data = []
@@ -798,13 +799,13 @@ class ServerGame(ServerGameBase):
         # Enhanced ore generation parameters - different for each type
         ore_parameters = {
             "coal": {
-                "scale": 0.04,       # smaller scale = bigger, spread-out veins
-                "threshold": 0.7,   # Lower threshold = more common
+                "scale": 0.042,       # smaller scale = bigger, spread-out veins
+                "threshold": 0.72,   # Lower threshold = more common
                 "base": 1000,        # Unique noise pattern
                 "min_depth": 8,      # Shallowest depth
             },
             "iron": {
-                "scale": 0.046,       # Smaller scale = tighter veins
+                "scale": 0.048,       # Smaller scale = tighter veins
                 "threshold": 0.76,
                 "base": 2500,
                 "min_depth": 40,
@@ -828,7 +829,7 @@ class ServerGame(ServerGameBase):
        # Single-threaded cave generation
         result_rows = [None] * CHUNK_SIZE  # Pre-allocate rows
         y_range = range(CHUNK_SIZE)  # Process all rows in one range
-        self.generate_noise_rows(
+        self.generate_caves(
             y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
             surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, ServerGame.smoothstep
         )
@@ -863,6 +864,7 @@ class ServerGame(ServerGameBase):
                                 args=(ore_type, parameters, noise_data, ground_levels, set(), ore_results))
             ore_threads.append(t)
             t.start()
+            
 
         for t in ore_threads:
             t.join()
@@ -908,15 +910,17 @@ class ServerGame(ServerGameBase):
         target_chunk = f"{chunk_x};{chunk_y}"
         
         # Generate this chunk and immediate neighbors
-        for dy in [-1, 0, 1]:
+        """for dy in [-1, 0, 1]:
             for dx in [-1, 0, 1]:
                 nx, ny = chunk_x + dx, chunk_y + dy
                 neighbor_chunk = f"{nx};{ny}"
                 if neighbor_chunk not in self.game_map:
-                    self.game_map[neighbor_chunk] = self.generate_chunk(nx, ny)
+                    self.game_map[neighbor_chunk] = self.generate_chunk(nx, ny)"""
+        if target_chunk not in self.game_map:
+            self.game_map[target_chunk] = self.generate_chunk(chunk_x, chunk_y)
         
         # Load the chunk if not already loaded
-        if target_chunk not in self.loaded_chunks:
+        #if target_chunk not in self.loaded_chunks:
             actors_to_add = []
             for tile in self.game_map.get(target_chunk, []):
                 pos, tile_type = tile
@@ -948,7 +952,7 @@ class ServerGame(ServerGameBase):
             for actor in actors_to_add:
                 level.register_actor(actor)
             
-            self.loaded_chunks.add(target_chunk)
+            #self.loaded_chunks.add(target_chunk)
 
 
     def tick(self):
@@ -968,42 +972,38 @@ class ServerGame(ServerGameBase):
         if not positions:
             return
         
-        # Calculate average position
-        avg_x = sum(p.x for p in positions) / len(positions)
-        avg_y = sum(p.y for p in positions) / len(positions)
-        avg_pos = Vector(avg_x, avg_y)
 
-        # Calculate new base chunk with smoothing
-        new_base_chunk = Vector(
-            math.floor((avg_pos.x + CHUNK_SIZE/2) / CHUNK_SIZE),
-            math.floor((avg_pos.y + CHUNK_SIZE/2) / CHUNK_SIZE)
-        )
+        for pos in positions:
+            # Calculate new base chunk with smoothing
+            new_base_chunk = Vector(
+                math.floor((pos.x + CHUNK_SIZE/2) / CHUNK_SIZE),
+                math.floor((pos.y + CHUNK_SIZE/2) / CHUNK_SIZE)
+            )
         
-        if not hasattr(self, "current_base_chunk"):
-            self.current_base_chunk = new_base_chunk
-        else:
-            smoothing_factor = 0.5
-            self.current_base_chunk += (new_base_chunk - self.current_base_chunk) * smoothing_factor
+            if not hasattr(self, "current_base_chunk"):
+                self.current_base_chunk = new_base_chunk
+            else:
+                smoothing_factor = 0.5
+                self.current_base_chunk += (new_base_chunk - self.current_base_chunk) * smoothing_factor
 
-        base_chunk_vector = self.current_base_chunk.floored
+            base_chunk_vector = self.current_base_chunk.floored
         
-        # Load chunks in radius
-        chunks_to_load = []
-        ud = 0
-        if self.engine.players:
-            for player in self.engine.players.values():
-                ud += player.update_distance
-        ud //= len(self.engine.players)
-        ud = (ud // DEVIDER) + 1
-        for offset_y in range(-ud - 2, ud + 3):
-            for offset_x in range(-ud - 2, ud + 3):
-                chunks_to_load.append((
-                    base_chunk_vector.x + offset_x, 
-                    base_chunk_vector.y + offset_y
-                ))
+            # Load chunks in radius
+            chunks_to_load = []
+            ud = 0
+            if self.engine.players:
+                for player in self.engine.players.values():
+                    ud += player.update_distance
+                    ud = (ud // DEVIDER) + 1
+                    for offset_y in range(-ud - 2, ud + 3):
+                        for offset_x in range(-ud - 2, ud + 3):
+                            chunks_to_load.append((
+                                base_chunk_vector.x + offset_x, 
+                                base_chunk_vector.y + offset_y
+                            ))
 
-        for base_chunk_x, base_chunk_y in chunks_to_load:
-            self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
+            for base_chunk_x, base_chunk_y in chunks_to_load:
+                self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
 
 
 def breaking_blocks(engine_ref, level_ref, id):
