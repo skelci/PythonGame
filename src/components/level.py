@@ -176,6 +176,8 @@ class Level:
             TypeError: If the actor is not a subclass of Actor.
         """
         if isinstance(actor, Actor):
+            actor.engine_ref = self.engine_ref
+            actor.level_ref = self
             self.__actors_to_create.add(actor)
         else:
             raise TypeError("Actor must be a subclass of Actor:", actor)
