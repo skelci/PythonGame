@@ -38,6 +38,7 @@ class Level:
 
         self.__actors = {}
         self.__rigidbodies = {}
+        self.__actors_with_overlap_events = {}
         self.__chunks = {}
         self.__actors_to_destroy = set()
         self.__actors_to_create = set()
@@ -210,6 +211,8 @@ class Level:
             self.actors[actor.name] = actor
             if isinstance(actor, Rigidbody):
                 self.rigidbodies[actor.name] = actor
+            if actor.generate_overlap_events:
+                self.__actors_with_overlap_events[actor.name] = actor
             if actor.visible:
                 new_actors.append(actor)
             self.add_actor_to_chunk(actor)
@@ -229,6 +232,8 @@ class Level:
             destroyed.append(self.actors.pop(actor.name))
             if isinstance(actor, Rigidbody):
                 self.rigidbodies.pop(actor.name)
+            if actor.name in self.__actors_with_overlap_events:
+                self.__actors_with_overlap_events.pop(actor.name)
             chk_x, chk_y = actor.chunk
             self.chunks[chk_x][chk_y].remove(actor.name)
         
@@ -416,10 +421,7 @@ class Level:
             self.actors[name].collided_sides = direction
 
         overlaped_actors = {}
-        for actor1 in self.actors.values():
-            if not actor1.generate_overlap_events:
-                continue
-
+        for actor1 in self.__actors_with_overlap_events.values():
             actor1.half_size += KINDA_SMALL_NUMBER
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                 if actor1 is actor2 or not is_overlapping_rect(actor1, actor2):
