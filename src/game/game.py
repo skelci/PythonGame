@@ -33,40 +33,73 @@ class Log(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material("res/textures/log.png"))
         self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        self.level_ref.register_actor(LogEntity(self.name, self.position))    
 
 class Leaf(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), collidable=False, material = Material(Color(34, 139, 34)))
         self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        self.level_ref.register_actor(LeafEntity(self.name, self.position))    
 
 class Grass(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass_block.png"))
         self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        self.level_ref.register_actor(GrassEntity(self.name, self.position))
 
 class Dirt(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/dirt.png"))
         self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        self.level_ref.register_actor(DirtEntity(self.name, self.position))
+ 
 class Stone(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/stone.png"))
         self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        self.level_ref.register_actor(StoneEntity(self.name, self.position))        
 
 class Coal(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/coal_ore.png"))
         self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        self.level_ref.register_actor(CoalEntity(self.name, self.position))    
 
 class Iron(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/iron_ore.png"))
         self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        self.level_ref.register_actor(IronEntity(self.name, self.position))    
 
 class Gold(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/gold_ore.png"))
         self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        self.level_ref.register_actor(GoldEntity(self.name, self.position))    
 
 class DebugTunnel(Actor):
     def __init__(self, name, position):
@@ -77,6 +110,39 @@ class TestPlayer(Character):
     def __init__(self, name, position):
         super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7)
 
+class LogEntity(Rigidbody):
+    def __init__(self, name, position):
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(139, 69, 19)), restitution=0)   
+
+class LeafEntity(Rigidbody):    
+    def __init__(self, name, position):
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(34, 139, 34)), restitution=0)             
+
+class DirtEntity(Rigidbody):        
+    def __init__(self, name, position):
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(0, 255, 0)), restitution=0)
+
+class GrassEntity(Rigidbody):        
+    def __init__(self, name, position):
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(255, 0, 0)), restitution=0)
+
+class StoneEntity(Rigidbody):    
+    def __init__(self, name, position):
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(128, 128, 128)), restitution=0)
+
+class CoalEntity(Rigidbody):    
+    def __init__(self, name, position):
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(0, 0, 0)), restitution=0)
+
+class IronEntity(Rigidbody):    
+    def __init__(self, name, position):
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(192, 192, 192)), restitution=0)
+
+class GoldEntity(Rigidbody):    
+    def __init__(self, name, position):
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=True, material=Material(Color(255, 215, 0)), restitution=0)                                
+
+        
 
 #?ifdef CLIENT
 #* This class was made by skelci
@@ -154,6 +220,14 @@ class ClientGame(ClientGameBase):
         eng.add_actor_template(Iron)
         eng.add_actor_template(Gold)
         eng.add_actor_template(DebugTunnel)
+        eng.add_actor_template(GrassEntity)
+        eng.add_actor_template(DirtEntity)
+        eng.add_actor_template(LogEntity)
+        eng.add_actor_template(LeafEntity)
+        eng.add_actor_template(StoneEntity)
+        eng.add_actor_template(CoalEntity)
+        eng.add_actor_template(IronEntity)
+        eng.add_actor_template(GoldEntity)
     
         eng.register_background(Background("sky", (BackgroundLayer(Material(Color(100, 175, 255)), 20, 0.25), )))
 
@@ -942,10 +1016,10 @@ def breaking_blocks(engine_ref, level_ref, id):
     #Get the mouse position 
     mouse_pos = engine_ref.players[id].world_mouse_pos
     mouse_pos = mouse_pos.rounded
-    print(mouse_pos)   
+    #print(mouse_pos)   
 
     #allowed to break this blocks
-    #allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves", "Leaves", "LEAVES"))
+    allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves", "Leaves", "LEAVES", "leaf", "Leaf", "LEAF", "Coal", "Iron", "Gold"))
 
     for actor in function_3x3:
         #actor=engine_ref.levels["Test_Level"].actors[actor_name]
@@ -953,14 +1027,12 @@ def breaking_blocks(engine_ref, level_ref, id):
         actor_position = actor.position.rounded
         #print(actor_position)
 
-        #print('actor:',actor_position)
-        #print('mouse position',mouse_pos)
-
-
         if actor_position == mouse_pos:
             #print('actor:'+actor_position)
-            #print('mouse position'+mouse_pos)
-            engine_ref.levels["Test_Level"].destroy_actor(actor)
+            if actor.name.startswith("__Player_"):
+                break
+            #if 
+            engine_ref.levels["Test_Level"].destroy_actor(actor)          
             break
             
 
