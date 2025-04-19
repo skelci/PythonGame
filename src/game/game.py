@@ -578,8 +578,8 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
-        self.game_map = {}
-        self.loaded_chunks = set()
+        self.game_map = set()
+        #self.loaded_chunks = set()
         self.current_base_chunk = Vector(0, 0)
         self.tunnel_generator = TunnelGenerator()
     
@@ -695,10 +695,6 @@ class ServerGame(ServerGameBase):
                 row.append((pos, is_cave, False))
             result_rows[y_index] = row
 
-
-
-    """def tunnel_generation_worker(tunnel_gen, noise_data):
-        tunnel_gen.generate_tunnels(noise_data)"""
 
     def generate_chunk(self, x, y):
         chunk_data = []
@@ -822,6 +818,7 @@ class ServerGame(ServerGameBase):
                     chunk_data.append([(pos.x, pos.y), "stone"])
 
         return chunk_data
+    
 
     def generate_and_load_chunks(self, chunk_x, chunk_y):
         level = self.engine.levels.get("Test_Level")
@@ -830,13 +827,15 @@ class ServerGame(ServerGameBase):
 
         target_chunk = f"{chunk_x};{chunk_y}"
         
-        if target_chunk not in self.game_map:
-            self.game_map[target_chunk] = self.generate_chunk(chunk_x, chunk_y)
         
-        # Load the chunk if not already loaded
-        #if target_chunk not in self.loaded_chunks:
+        if target_chunk not in self.game_map:
+            self.game_map.add(target_chunk)
+
+            chunk_data = self.generate_chunk(chunk_x, chunk_y)
+        
+       
             actors_to_add = []
-            for tile in self.game_map.get(target_chunk, []):
+            for tile in chunk_data:
                 pos, tile_type = tile
                 actor_name = f"{tile_type}_{pos[0]}_{pos[1]}"
                 new_actor = None
@@ -866,7 +865,7 @@ class ServerGame(ServerGameBase):
             for actor in actors_to_add:
                 level.register_actor(actor)
             
-            #self.loaded_chunks.add(target_chunk)
+            
 
 
     def tick(self):
@@ -921,6 +920,7 @@ class ServerGame(ServerGameBase):
 
 
 def breaking_blocks(engine_ref, level_ref, id):
+    
     #print('breaking_blocks')
     # Get the player's position
     player = level_ref.actors[engine_ref.get_player_actor(id)].position
