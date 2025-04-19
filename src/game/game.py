@@ -749,39 +749,30 @@ class ServerGame(ServerGameBase):
             pos_x = chunk_origin.x + x_pos
             height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=0)
             ground_levels.append(16 - math.floor(height_noise * 10))
+           
         
+       # Single-threaded cave generation
         result_rows = [None] * CHUNK_SIZE  # Pre-allocate rows
-        num_threads = 8  # Number of threads for cave generation
-        section_size = CHUNK_SIZE // num_threads  # Divide the chunk into 8 sections
-
-        cave_threads = []
-        for i in range(num_threads):
-            y_range = range(i * section_size, (i + 1) * section_size)
-            t = threading.Thread(target=self.generate_noise_rows, args=(
-                y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
-                surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, ServerGame.smoothstep
-            ))
-            cave_threads.append(t)
-            t.start()
-
-        for t in cave_threads:
-            t.join()
+        y_range = range(CHUNK_SIZE)  # Process all rows in one range
+        self.generate_noise_rows(
+            y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+            surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, ServerGame.smoothstep
+        )
 
         noise_data = result_rows[:]  # Assemble the rows in order
-                
-        # Generate tunnels using 8 threads
+                        
+        # Generate tunnels using thread
         if y <= 0:
             tunnel_gen = TunnelGenerator()
-            tunnel_threads = []
-            section_size = CHUNK_SIZE // 8  # Divide the chunk into 8 sections
-            for i in range(8):
-                y_range = range(i * section_size, (i + 1) * section_size)
-                t = threading.Thread(target=self.tunnel_generation_worker, args=(tunnel_gen, noise_data, y_range))
-                tunnel_threads.append(t)
-                t.start()
+            y_range = range(CHUNK_SIZE)  # Process all rows in one range
+            self.tunnel_generation_worker(tunnel_gen, noise_data, y_range)
 
-            for t in tunnel_threads:
-                t.join()
+            # Add tunnel tiles to chunk_data
+            for y_pos in range(CHUNK_SIZE):
+                for x_pos in range(CHUNK_SIZE):
+                    pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
+                    if is_tunnel:
+                        chunk_data.append([(pos.x, pos.y), None])
 
             # Add tunnel tiles to chunk_data
             for y_pos in range(CHUNK_SIZE):
@@ -807,19 +798,11 @@ class ServerGame(ServerGameBase):
 
         # Multithreaded tree generation
         tree_results = []
-        tree_lock = threading.Lock()
-        threads = []
-        section_size = CHUNK_SIZE // 8  # Divide the chunk into 4 sections
-        for i in range(8):
-            x_range = range(i * section_size, (i + 1) * section_size)
-            t = threading.Thread(target=self.tree_generation_worker, args=(
-                x_range, chunk_origin, ground_levels, tree_threshold, tree_positions, tree_lock, tree_results
-            ))
-            threads.append(t)
-            t.start()
-
-        for t in threads:
-            t.join()
+        tree_lock = threading.Lock()  # Lock is not necessary for single-threaded execution
+        x_range = range(CHUNK_SIZE)  # Process all x positions in one range
+        self.tree_generation_worker(
+            x_range, chunk_origin, ground_levels, tree_threshold, tree_positions, tree_lock, tree_results
+        )
 
         chunk_data.extend(tree_results)
             
@@ -896,6 +879,7 @@ class ServerGame(ServerGameBase):
 
     def tick(self):
         delta_time = super().tick()
+        
         
         current_level = self.engine.levels.get("Test_Level")
         if not current_level:
