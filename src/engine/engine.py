@@ -602,7 +602,8 @@ class ClientEngine(Engine, Renderer):
 
 
     def __destroy_actor(self, data):
-        self.level.destroy_actor(self.level.actors[data])
+        if data in self.level.actors:
+            self.level.destroy_actor(self.level.actors[data])
 
 
     def __background(self, data):

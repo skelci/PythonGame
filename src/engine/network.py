@@ -383,17 +383,31 @@ class ServerNetwork(Network):
                 data_buffer_by_id[id] = []
             data_buffer_by_id[id].append(data)
 
-        sep = chr(30)
-        end_sep = chr(31)
+        sep = chr(30).encode("ascii")
+        end_sep = chr(31).encode("ascii")
         for id, data_list in data_buffer_by_id.items():
-            data = (sep.join(data_list) + end_sep).encode("ascii")
+            short_data_list = []
+            data_len = 0
+            current_data = b""
+            for data in data_list:
+                data_len += len(data) + 1
+                if data_len < 4 * self._packet_size or data_len == len(data) + 1:
+                    current_data += data.encode("ascii") + sep
+                else:
+                    short_data_list.append(current_data[:-1] + end_sep)
+                    current_data = data.encode("ascii") + sep
+                    data_len = len(data) + 1
+            if current_data:
+                short_data_list.append(current_data[:-1] + end_sep)
+                    
             conn = self.__id_to_conn[id]
 
             try:
-                for i in range(0, len(data), self._packet_size):
-                    conn.send(data[i:i+self._packet_size])
-                    if i > 0:
-                        time.sleep(0.001)
+                for data in short_data_list:
+                    for i in range(0, len(data), self._packet_size):
+                        if i > 0:
+                            time.sleep(0.001)
+                        conn.send(data[i:i+self._packet_size])
             except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError) as e:
                 self.__id_to_conn.pop(id)
                 self.__conn_to_id.pop(conn)
