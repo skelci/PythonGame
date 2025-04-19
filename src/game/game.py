@@ -570,6 +570,7 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
         self.engine.max_tps = 60
+        self.engine.start_network("0.0.0.0", 5555, 10)
 
         self.engine.register_level(TestLevel())
 
@@ -577,8 +578,8 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
-        self.game_map = set()
-        #self.loaded_chunks = set()
+        self.game_map = {}
+        self.loaded_chunks = set()
         self.current_base_chunk = Vector(0, 0)
         self.tunnel_generator = TunnelGenerator()
     
@@ -587,15 +588,7 @@ class ServerGame(ServerGameBase):
         self.engine.console.handle_cmd("build_server")
         self.engine.console.handle_cmd("build_client")
         #?endif
-        
-        for x in range(-1, 2):
-            for y in range(-1, 2):
-                self.generate_and_load_chunks(x, y)
-                
-  
 
-        self.engine.start_network("0.0.0.0", 5555, 10)
-       
 
     @staticmethod
     def smoothstep(val, edge0, edge1):
@@ -703,15 +696,9 @@ class ServerGame(ServerGameBase):
             result_rows[y_index] = row
 
 
-    @staticmethod
-    def     tunnel_generation_worker(tunnel_gen, noise_data, y_range):
-        """# Process only the rows in the given y_range
-        for y_pos in y_range:
-            for x_pos in range(CHUNK_SIZE):
-                pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
-                if is_cave:  # Only process cave tiles
-                    # Modify the noise_data directly to mark tunnels"""
-        tunnel_gen.generate_tunnels(noise_data)
+
+    """def tunnel_generation_worker(tunnel_gen, noise_data):
+        tunnel_gen.generate_tunnels(noise_data)"""
 
     def generate_chunk(self, x, y):
         chunk_data = []
@@ -772,8 +759,9 @@ class ServerGame(ServerGameBase):
         # Generate tunnels using thread
         if y <= 0:
             tunnel_gen = TunnelGenerator()
-            y_range = range(CHUNK_SIZE)  # Process all rows in one range
-            self.tunnel_generation_worker(tunnel_gen, noise_data, y_range)
+            tunnel = threading.Thread(target=tunnel_gen.generate_tunnels, args=(noise_data,))
+            tunnel.start()
+
 
             # Add tunnel tiles to chunk_data
             for y_pos in range(CHUNK_SIZE):
@@ -782,12 +770,12 @@ class ServerGame(ServerGameBase):
                     if is_tunnel:
                         chunk_data.append([(pos.x, pos.y), None])
 
-            """# Add tunnel tiles to chunk_data
+            # Add tunnel tiles to chunk_data
             for y_pos in range(CHUNK_SIZE):
                 for x_pos in range(CHUNK_SIZE):
                     pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                     if is_tunnel:
-                        chunk_data.append([(pos.x, pos.y), None])"""
+                        chunk_data.append([(pos.x, pos.y), None])
         
         # Generate ores in parallel threads
         ore_results = []
@@ -834,57 +822,51 @@ class ServerGame(ServerGameBase):
                     chunk_data.append([(pos.x, pos.y), "stone"])
 
         return chunk_data
-    
-    def load_chunk(self, target_chunk):
-        chunk_x, chunk_y = map(int, target_chunk.split(";"))
-        chunk = self.generate_chunk(chunk_x, chunk_y)
+
+    def generate_and_load_chunks(self, chunk_x, chunk_y):
         level = self.engine.levels.get("Test_Level")
         if level is None:
             return
 
-        actors_to_add = []
-        for tile in chunk:
-            pos, tile_type = tile
-            actor_name = f"{tile_type}_{pos[0]}_{pos[1]}"
-            new_actor = None
-            
-            if tile_type == "grass":
-                new_actor = Grass(actor_name, Vector(pos[0], pos[1]))
-            elif tile_type == "log":
-                new_actor = Log(actor_name, Vector(pos[0], pos[1]))
-            elif tile_type == "leaf":
-                new_actor = Leaf(actor_name, Vector(pos[0], pos[1]))
-            elif tile_type == "dirt":
-                new_actor = Dirt(actor_name, Vector(pos[0], pos[1]))
-            elif tile_type == "stone":
-                new_actor = Stone(actor_name, Vector(pos[0], pos[1]))
-            elif tile_type == "coal":
-                new_actor = Coal(actor_name, Vector(pos[0], pos[1]))
-            elif tile_type == "gold":
-                new_actor = Gold(actor_name, Vector(pos[0], pos[1]))
-            elif tile_type == "iron":
-                new_actor = Iron(actor_name, Vector(pos[0], pos[1]))
-            elif tile_type == "tunnel_debug":
-                new_actor = DebugTunnel(actor_name, Vector(pos[0], pos[1]))
-            if new_actor is not None:
-                actors_to_add.append(new_actor)
-        # Register all actors at once
-        for actor in actors_to_add:
-            level.register_actor(actor)
-    
-    
-
-
-        #self.loaded_chunks.add(target_chunk)
-
-    def generate_and_load_chunks(self, chunk_x, chunk_y):
-
         target_chunk = f"{chunk_x};{chunk_y}"
         
         if target_chunk not in self.game_map:
-            self.game_map.add(target_chunk)
-        thread = threading.Thread(target=self.load_chunk, args=(target_chunk,))
-        thread.start()
+            self.game_map[target_chunk] = self.generate_chunk(chunk_x, chunk_y)
+        
+        # Load the chunk if not already loaded
+        #if target_chunk not in self.loaded_chunks:
+            actors_to_add = []
+            for tile in self.game_map.get(target_chunk, []):
+                pos, tile_type = tile
+                actor_name = f"{tile_type}_{pos[0]}_{pos[1]}"
+                new_actor = None
+                
+                if tile_type == "grass":
+                    new_actor = Grass(actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "log":
+                    new_actor = Log(actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "leaf":
+                    new_actor = Leaf(actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "dirt":
+                    new_actor = Dirt(actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "stone":
+                    new_actor = Stone(actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "coal":
+                    new_actor = Coal(actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "gold":
+                    new_actor = Gold(actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "iron":
+                    new_actor = Iron(actor_name, Vector(pos[0], pos[1]))
+                elif tile_type == "tunnel_debug":
+                    new_actor = DebugTunnel(actor_name, Vector(pos[0], pos[1]))
+
+                if new_actor is not None:
+                    actors_to_add.append(new_actor)
+            # Register all actors at once
+            for actor in actors_to_add:
+                level.register_actor(actor)
+            
+            #self.loaded_chunks.add(target_chunk)
 
 
     def tick(self):
