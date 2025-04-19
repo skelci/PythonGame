@@ -944,11 +944,6 @@ def breaking_blocks(engine_ref, level_ref, id):
     function_3x3=level_ref.get_actors_in_chunks_3x3(get_chunk_cords(player))
     #print(function_3x3)
 
-    # Get the chunk name and position
-    #chunk_Actor_name=tuple(engine_ref.levels["Test_Level"].chunks[chunk_x][chunk_y])
-
-    # Get the positions of actors in the current chunk
-
 
     #Get the mouse position 
     mouse_pos = engine_ref.players[id].world_mouse_pos
@@ -967,15 +962,14 @@ def breaking_blocks(engine_ref, level_ref, id):
             #print('actor:', actor_position)
             print(EntityPosition)
             if actor_position in EntityPosition:
-                print('break')
+                #print('break')
                 break
             if actor.name.startswith("__Player_"):
                 break
             
-
             engine_ref.levels["Test_Level"].destroy_actor(actor) 
             EntityPosition.add(actor_position)
-            print(EntityPosition)         
+            #print(EntityPosition)         
             break
             
 
