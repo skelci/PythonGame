@@ -54,7 +54,9 @@ class Leaf(Actor):
         #print(r)
         for i in range(r):
             self.level_ref.register_actor(StickEntity(self.name, self.position))
-            #print("stick iz leaf")   
+            #print("stick iz leaf") 
+        for j in range(8):
+            self.level_ref.register_actor(LeafEntity(self.name, self.position)) 
 
 class Grass(Actor):
     def __init__(self, name, position):
@@ -103,10 +105,12 @@ class Coal(Actor):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         self.level_ref.register_actor(CoalEntity(self.name, self.position))  
-        r=random.randint(2,5)
-        for i in range(r):
+        r=random.randint(1,2)
+        for i in range(2):
             self.level_ref.register_actor(StoneEntity(self.name, self.position))  
             #print("rock iz coala")
+        if r==1:
+             self.level_ref.register_actor(StoneEntity(self.name, self.position))   
 
 class Iron(Actor):
     def __init__(self, name, position):
@@ -117,10 +121,12 @@ class Iron(Actor):
             return
         for i in range(3):
             self.level_ref.register_actor(IronEntity(self.name, self.position))   
-        r=random.randint(2,5)
-        for i in range(r):
+        r=random.randint(1,2)
+        for i in range(2):
             self.level_ref.register_actor(StoneEntity(self.name, self.position))  
-            print("rock iz irona") 
+            #print("rock iz irona") 
+        if r==1:
+            self.level_ref.register_actor(StoneEntity(self.name, self.posiiton))    
 
 class Gold(Actor):
     def __init__(self, name, position):
@@ -131,10 +137,12 @@ class Gold(Actor):
             return
         for i in range(3):
             self.level_ref.register_actor(GoldEntity(self.name, self.position)) 
-        r=random.randint(2,5)
-        for i in range(r):
+        r=random.randint(1,2)
+        for i in range(2):
             self.level_ref.register_actor(StoneEntity(self.name, self.position))  
             #print("rock iz golda")
+        if r==1:
+            self.level_ref.register_actor(StoneEntity(self.name, self.position))    
 
 class DebugTunnel(Actor):
     def __init__(self, name, position):
@@ -151,7 +159,7 @@ class LogEntity(Rigidbody):
 
 class StickEntity(Rigidbody):    
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(34, 139, 34)), restitution=0)             
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(145, 69, 34)), restitution=0)             
 
 class DirtEntity(Rigidbody):        
     def __init__(self, name, position):
@@ -175,7 +183,11 @@ class IronEntity(Rigidbody):
 
 class GoldEntity(Rigidbody):    
     def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 215, 0)), restitution=0)                                
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 215, 0)), restitution=0)
+
+class LeafEntity(Rigidbody):
+    def __init__(self, name, position):
+            super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 215, 0)), restitution=0)                                
 
         
 
@@ -263,6 +275,7 @@ class ClientGame(ClientGameBase):
         eng.add_actor_template(CoalEntity)
         eng.add_actor_template(IronEntity)
         eng.add_actor_template(GoldEntity)
+        eng.add_actor_template(LeafEntity)
     
         eng.register_background(Background("sky", (BackgroundLayer(Material(Color(100, 175, 255)), 20, 0.25), )))
 
