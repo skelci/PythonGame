@@ -203,7 +203,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 2)
+        eng.set_camera_width(16 * 8)
         eng.resolution = Vector(1600, 900)
 
         # eng.fullscreen=True
@@ -941,19 +941,9 @@ class ServerGame(ServerGameBase):
         
 
         for pos in positions:
-            # Calculate new base chunk with smoothing
-            new_base_chunk = Vector(
-                math.floor((pos.x + CHUNK_SIZE/2) / CHUNK_SIZE),
-                math.floor((pos.y + CHUNK_SIZE/2) / CHUNK_SIZE)
-            )
+            new_base_chunk = ((pos + CHUNK_SIZE/2) / CHUNK_SIZE).floored
         
-            if not hasattr(self, "current_base_chunk"):
-                self.current_base_chunk = new_base_chunk
-            else:
-                smoothing_factor = 0.5
-                self.current_base_chunk += (new_base_chunk - self.current_base_chunk) * smoothing_factor
 
-            base_chunk_vector = self.current_base_chunk.floored
         
             # Load chunks in radius
             chunks_to_load = []
@@ -965,8 +955,8 @@ class ServerGame(ServerGameBase):
                     for offset_y in range(-ud - 2, ud + 3):
                         for offset_x in range(-ud - 2, ud + 3):
                             chunks_to_load.append((
-                                base_chunk_vector.x + offset_x, 
-                                base_chunk_vector.y + offset_y
+                                new_base_chunk.x + offset_x, 
+                                new_base_chunk.y + offset_y
                             ))
 
             for base_chunk_x, base_chunk_y in chunks_to_load:
