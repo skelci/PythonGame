@@ -808,7 +808,7 @@ class ServerGame(ServerGameBase):
             self.game_map.add(target_chunk)
             chunk_thread = threading.Thread(target=self.load_chunk, args=(chunk_x, chunk_y, level))
             chunk_thread.start()
-            print()
+
 
 
     def load_chunk(self, chunk_x, chunk_y, level):
