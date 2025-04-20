@@ -21,6 +21,7 @@ import random as r
 import math
 import noise
 import os
+import random
 
 
 CHUNK_SIZE = 32
@@ -37,7 +38,10 @@ class Log(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        self.level_ref.register_actor(LogEntity(self.name, self.position))    
+        r=random.randint(3,5)
+        for i in range(r):
+            self.level_ref.register_actor(LogEntity(self.name, self.position))    
+            #print('wood iz log')
 
 class Leaf(Actor):
     def __init__(self, name, position):
@@ -46,7 +50,11 @@ class Leaf(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        self.level_ref.register_actor(LeafEntity(self.name, self.position))    
+        r=random.randint(0,5)
+        #print(r)
+        for i in range(r):
+            self.level_ref.register_actor(StickEntity(self.name, self.position))
+            #print("stick iz leaf")   
 
 class Grass(Actor):
     def __init__(self, name, position):
@@ -55,7 +63,9 @@ class Grass(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        self.level_ref.register_actor(GrassEntity(self.name, self.position))
+        for i in range(4):
+            self.level_ref.register_actor(DirtEntity(self.name, self.position))
+            #print("entity dirt iz grasa")
 
 class Dirt(Actor):
     def __init__(self, name, position):
@@ -64,7 +74,14 @@ class Dirt(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        self.level_ref.register_actor(DirtEntity(self.name, self.position))
+        r=random.randint(3,5)
+        for i in range(r):
+            self.level_ref.register_actor(DirtEntity(self.name, self.position))
+            #print('dirt iz dirta')
+        chance=random.randint(1,4)
+        if chance==1:
+            self.level_ref.register_actor(StoneEntity(self.name, self.position))
+            #print('stone iz dirta')    
  
 class Stone(Actor):
     def __init__(self, name, position):
@@ -73,7 +90,10 @@ class Stone(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        self.level_ref.register_actor(StoneEntity(self.name, self.position))        
+        r=random.randint(3,5)
+        for i in range(r):
+            self.level_ref.register_actor(StoneEntity(self.name, self.position))   
+            #print('rock iz stone')     
 
 class Coal(Actor):
     def __init__(self, name, position):
@@ -82,7 +102,11 @@ class Coal(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        self.level_ref.register_actor(CoalEntity(self.name, self.position))    
+        self.level_ref.register_actor(CoalEntity(self.name, self.position))  
+        r=random.randint(2,5)
+        for i in range(r):
+            self.level_ref.register_actor(StoneEntity(self.name, self.position))  
+            #print("rock iz coala")
 
 class Iron(Actor):
     def __init__(self, name, position):
@@ -91,7 +115,12 @@ class Iron(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        self.level_ref.register_actor(IronEntity(self.name, self.position))    
+        for i in range(3):
+            self.level_ref.register_actor(IronEntity(self.name, self.position))   
+        r=random.randint(2,5)
+        for i in range(r):
+            self.level_ref.register_actor(StoneEntity(self.name, self.position))  
+            print("rock iz irona") 
 
 class Gold(Actor):
     def __init__(self, name, position):
@@ -100,7 +129,12 @@ class Gold(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        self.level_ref.register_actor(GoldEntity(self.name, self.position))    
+        for i in range(3):
+            self.level_ref.register_actor(GoldEntity(self.name, self.position)) 
+        r=random.randint(2,5)
+        for i in range(r):
+            self.level_ref.register_actor(StoneEntity(self.name, self.position))  
+            #print("rock iz golda")
 
 class DebugTunnel(Actor):
     def __init__(self, name, position):
@@ -115,7 +149,7 @@ class LogEntity(Rigidbody):
     def __init__(self, name, position):
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(139, 69, 19)), restitution=0)   
 
-class LeafEntity(Rigidbody):    
+class StickEntity(Rigidbody):    
     def __init__(self, name, position):
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(34, 139, 34)), restitution=0)             
 
@@ -224,7 +258,7 @@ class ClientGame(ClientGameBase):
         eng.add_actor_template(GrassEntity)
         eng.add_actor_template(DirtEntity)
         eng.add_actor_template(LogEntity)
-        eng.add_actor_template(LeafEntity)
+        eng.add_actor_template(StickEntity)
         eng.add_actor_template(StoneEntity)
         eng.add_actor_template(CoalEntity)
         eng.add_actor_template(IronEntity)
@@ -1006,6 +1040,7 @@ class ServerGame(ServerGameBase):
                 self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
 
 EntityPosition=set()
+
 def breaking_blocks(engine_ref, level_ref, id):
     #print('breaking_blocks')
     # Get the player's position
@@ -1031,10 +1066,12 @@ def breaking_blocks(engine_ref, level_ref, id):
 
         if actor_position == mouse_pos:
             #print('actor:', actor_position)
-            print(EntityPosition)
+            #print(EntityPosition)
             if actor_position in EntityPosition:
                 #print('break')
                 break
+            block_type = getattr(actor, "type", None) or getattr(actor, "name", "").split("_")[0]
+
             if actor.name.startswith("__Player_"):
                 break
             
