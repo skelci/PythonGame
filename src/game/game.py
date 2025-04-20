@@ -1031,7 +1031,7 @@ def breaking_blocks(engine_ref, level_ref, id):
 
         if actor_position == mouse_pos:
             #print('actor:', actor_position)
-            print(EntityPosition)
+            # print(EntityPosition)
             if actor_position in EntityPosition:
                 #print('break')
                 break
