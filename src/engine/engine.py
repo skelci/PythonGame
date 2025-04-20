@@ -411,7 +411,7 @@ class ClientEngine(Engine, Renderer):
             width: Camera width in world units. It must be a positive number.
         """
         self.camera_width = width
-        self.__update_distance = self.camera_width // 16 + 1
+        self.__update_distance = self.camera_width // (CHUNK_SIZE * 2)
         if self.network:
             self.network.send("update_distance", self.__update_distance)
 
