@@ -472,13 +472,11 @@ class ClientEngine(Engine, Renderer):
             bl_chk_pos = player_chunk - self.__update_distance - 2
             tr_chk_pos = player_chunk + self.__update_distance + 2
 
-            for chk_x, chk_column in self.level.chunks.items():
-                for chk_y, chk_actors in chk_column.items():
-                    if is_in_rect(bl_chk_pos, tr_chk_pos, Vector(chk_x, chk_y)):
-                        continue
-
-                    for actor in chk_actors:
-                        self.level.destroy_actor(actor)
+            for chk, chk_actors in self.level.chunks.items():
+                if is_in_rect(bl_chk_pos, tr_chk_pos, chk):
+                    continue
+                for actor in chk_actors:
+                    self.level.destroy_actor(actor)
 
         self.__time("render_regs")
 
@@ -593,11 +591,10 @@ class ClientEngine(Engine, Renderer):
 
             if "position" not in data[1]:
                 return
-
-            chk_x, chk_y = get_chunk_cords(actor.position)
-            a_chk_x, a_chk_y = actor.chunk
-            if a_chk_x != chk_x or a_chk_y != chk_y:
-                self.level.chunks[a_chk_x][a_chk_y].remove(actor)
+            chk = get_chunk_cords(actor.position)
+            a_chk = actor.chunk
+            if a_chk.x != chk.x or a_chk.y != chk.y:
+                self.level.chunks[a_chk].remove(actor)
                 self.level.add_actor_to_chunk(actor)
 
 
@@ -823,39 +820,36 @@ class ServerEngine(Engine):
         Args:
             actors: List of actors to be packaged.
         Returns:
-            dict[int, dict[int, list[Actor]]] - Dictionary of actors by their chunk coordinates. Key is chunk x coordinate, value is dictionary of chunk y coordinates and list of actors in that chunk.
+            dict[Vector, list[Actor]] - Dictionary of actors by their chunk coordinates. Key is chunk Vector with chunk's coordinates and  value is list of actors in that chunk.
         """
         chunks = {}
         for actor in actors:
             chunk = get_chunk_cords(actor.position)
-            if chunk.x not in chunks:
-                chunks[chunk.x] = {}
-            if chunk.y not in chunks[chunk.x]:
-                chunks[chunk.x][chunk.y] = []
-            chunks[chunk.x][chunk.y].append(actor)
+            if chunk not in chunks:
+                chunks[chunk] = []
+            chunks[chunk].append(actor)
         return chunks
     
 
     @staticmethod
-    def get_actors_from_chk_pkg(chk_pkd: dict[int, dict[int, Actor]], bottom_left: Vector, top_right: Vector, add_method: Callable[[list, Actor], None] = lambda a, el: a.extend(el)):
+    def get_actors_from_chk_pkg(chk_pkd: dict[Vector, Actor], bottom_left: Vector, top_right: Vector, add_method: Callable[[set, Actor], None] = lambda a, el: a.extend(el)):
         """
         Retrieves actors from the chunk package based on the given coordinates.
         Args:
             chk_pkd: Dictionary of actors by their chunk coordinates.
             bottom_left: Bottom left corner of the rectangle.
             top_right: Top right corner of the rectangle.
-            add_method: Method to add actors to the list. Default is to extend the list with the actors.
+            add_method: Method to add actors to the list. Default is to extend the set with the actors.
         Returns:
             list[Actor] - List of actors in the given rectangle.
         """
         actors = []
         for x in range(bottom_left.x, top_right.x + 1):
-            if x not in chk_pkd:
-                continue
             for y in range(bottom_left.y, top_right.y + 1):
-                if y not in chk_pkd[x]:
+                chk = Vector(x, y)
+                if chk not in chk_pkd:
                     continue
-                add_method(actors, chk_pkd[x][y])
+                add_method(actors, chk_pkd[chk])
 
         return actors
 
@@ -934,12 +928,11 @@ class ServerEngine(Engine):
                     for y in range(c_chk.rounded.y - player.update_distance, c_chk.rounded.y + player.update_distance + 1):
                         player.synced_chuks.add(Vector(x, y))
 
-                        if x not in level.chunks or y not in level.chunks[x]:
-                            continue
-                        if Vector(x, y) in prev_synced_chunks:
+                        chk = Vector(x, y)
+                        if chk not in level.chunks or chk in prev_synced_chunks:
                             continue
 
-                        for actor in level.chunks[x][y]:
+                        for actor in level.chunks[chk]:
                             self.network.send(player_id, "register_actor", actor.get_for_full_net_sync())
 
         self.__time("level_updates")
