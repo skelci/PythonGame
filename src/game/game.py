@@ -675,10 +675,10 @@ class ServerGame(ServerGameBase):
     
 
     @staticmethod
-    def tree_generation(chunk_origin, pos, tree_threshold, shared_tree_positions, chunk_data):
-        pos = chunk_origin + Vector(pos.x, pos.y)
+    def tree_generation(chunk_origin, ground_level, pos, tree_threshold, shared_tree_positions, chunk_data):
+        start_pos = chunk_origin + Vector(pos.x, pos.y)
         
-        if r.random() > tree_threshold:      
+        if r.random() > tree_threshold and start_pos.y == ground_level:  
             can_spawn = True
             for tree_pos in shared_tree_positions:
                 if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
@@ -856,7 +856,7 @@ class ServerGame(ServerGameBase):
                 if is_cave:
                     continue
                 elif pos.y == ground_level:
-                    self.tree_generation(chunk_origin, pos, tree_threshold, tree_positions, chunk_data)
+                    self.tree_generation(chunk_origin,ground_level, pos, tree_threshold, tree_positions, chunk_data)
                     chunk_data.append([(pos.x, pos.y), "grass"])
                     
                 elif pos.y < ground_level and pos.y > ground_level - 5:
@@ -916,7 +916,6 @@ class ServerGame(ServerGameBase):
         # Register all actors at once
         for actor in actors_to_add:
             level.register_actor(actor)
-            
             
 
     def tick(self):
