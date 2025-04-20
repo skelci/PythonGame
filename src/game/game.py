@@ -675,35 +675,35 @@ class ServerGame(ServerGameBase):
     
 
     @staticmethod
-    def tree_generation(chunk_origin, ground_levels, tree_threshold, shared_tree_positions, chunk_data):
-
-        for x_pos in range(CHUNK_SIZE):
-            ground_level = ground_levels[x_pos]
-            pos = chunk_origin + Vector(x_pos, ground_level)
-
-            # Only attempt to spawn a tree if no tree is near (minimum 4 blocks away)
-            if r.random() < tree_threshold and pos.y == ground_level:
-                can_spawn = True
-                for tree_pos in shared_tree_positions:
-                    if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
-                        can_spawn = False
-                if can_spawn:
-                    shared_tree_positions.append(pos)
-                    tree_height = r.randint(4, 7)
-                    top = pos + Vector(0, tree_height)
-                    for h in range(1, tree_height + 1):
-                        trunk_pos = pos + Vector(0, h)
-                        if trunk_pos.y >= chunk_origin.y:
-                            chunk_data.append(((trunk_pos.x, trunk_pos.y), "log"))
-                    rx = 3.25
-                    ry = 4.5
-                    top_leaf_pos = top + Vector(0, 5)
-                    chunk_data.append(((top_leaf_pos.x, top_leaf_pos.y), "leaf"))
-                    for dy in range(0, int(ry) + 1):
-                        for dx in range(-int(rx), int(rx) + 1):
-                            if (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1:
-                                leaf_pos = top + Vector(dx, dy)
-                                chunk_data.append(((leaf_pos.x, leaf_pos.y), "leaf"))
+    def tree_generation(chunk_origin, pos, tree_threshold, shared_tree_positions, chunk_data):
+        pos = chunk_origin + Vector(pos.x, pos.y)
+        
+        if r.random() > tree_threshold:      
+            can_spawn = True
+            for tree_pos in shared_tree_positions:
+                if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
+                    can_spawn = False
+                    break
+               
+            if can_spawn:
+                shared_tree_positions.append(pos)
+                tree_height = r.randint(4, 7)
+                top = pos + Vector(0, tree_height)
+                # Add trunk
+                for h in range(1, tree_height + 1):
+                    trunk_pos = pos + Vector(0, h)
+                    if trunk_pos.y >= chunk_origin.y:
+                        chunk_data.append(((trunk_pos.x, trunk_pos.y), "log"))
+               # Add leaves
+                rx = 3.25
+                ry = 4.5
+                top_leaf_pos = top + Vector(0, 5)
+                chunk_data.append(((top_leaf_pos.x, top_leaf_pos.y), "leaf"))
+                for dy in range(0, int(ry) + 1):
+                    for dx in range(-int(rx), int(rx) + 1):
+                        if (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1:
+                            leaf_pos = top + Vector(dx, dy)
+                            chunk_data.append(((leaf_pos.x, leaf_pos.y), "leaf"))
 
 
     @staticmethod
@@ -774,7 +774,7 @@ class ServerGame(ServerGameBase):
         chunk_data = []
         tree_positions = [] 
         chunk_origin = Vector(x, y) * CHUNK_SIZE
-        tree_threshold = 0.04
+        tree_threshold = 0.9  #smaller = more trees, bigger = less trees
         
         # Noise parameters
         terrain_scale = 0.035
@@ -843,11 +843,6 @@ class ServerGame(ServerGameBase):
         for ore_type, parameters in ore_parameters.items():
             self.ore_generation(ore_type, parameters, noise_data, ground_levels, set())
            
-        
-        # Generate trees 
-        self.tree_generation(chunk_origin, ground_levels, tree_threshold, tree_positions, chunk_data)
-        
-
             
         # Rest of terrain generation (unchanged)
         for y_pos in range(CHUNK_SIZE):
@@ -861,10 +856,12 @@ class ServerGame(ServerGameBase):
                 if is_cave:
                     continue
                 elif pos.y == ground_level:
+                    self.tree_generation(chunk_origin, pos, tree_threshold, tree_positions, chunk_data)
                     chunk_data.append([(pos.x, pos.y), "grass"])
+                    
                 elif pos.y < ground_level and pos.y > ground_level - 5:
                     chunk_data.append([(pos.x, pos.y), "dirt"])
-                elif pos.y <= ground_level - 5:
+                elif pos.y <= ground_level - 5: 
                     chunk_data.append([(pos.x, pos.y), "stone"])
 
         return chunk_data
