@@ -897,7 +897,7 @@ class ServerGame(ServerGameBase):
 
             for base_chunk_x, base_chunk_y in chunks_to_load:
                 self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
-                print(f"Active threads: {len(threading.enumerate())}")
+
 
 
 def breaking_blocks(engine_ref, level_ref, id):
