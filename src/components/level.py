@@ -163,7 +163,7 @@ class Level:
     @property
     def chunks(self):
         """
-        dict[int, dict[int, set[str]]] - Dictionary of all chunks in the level. The key is the chunk's x and y coordinates and the value is a set of actor names in that chunk.
+        dict[int, dict[int, set[Actor]]] - Dictionary of all chunks in the level. The key is the chunk's x and y coordinates and the value is a set of actors in that chunk.
         """
         return self.__chunks
         
@@ -235,7 +235,7 @@ class Level:
             if actor.name in self.__actors_with_overlap_events:
                 self.__actors_with_overlap_events.pop(actor.name)
             chk_x, chk_y = actor.chunk
-            self.chunks[chk_x][chk_y].remove(actor.name)
+            self.chunks[chk_x][chk_y].remove(actor)
         
         self.__actors_to_destroy.clear()
         return destroyed
@@ -253,10 +253,9 @@ class Level:
         for x in range(-1, 2):
             for y in range(-1, 2):
                 chunk_x, chunk_y = chunk_pos + Vector(x, y)
-                if chunk_x not in self.__chunks or chunk_y not in self.__chunks[chunk_x]:
+                if chunk_x not in self.chunks or chunk_y not in self.chunks[chunk_x]:
                     continue
-                for actor_name in self.__chunks[chunk_x][chunk_y]:
-                    actors.append(self.actors[actor_name])
+                actors.extend(self.chunks[chunk_x][chunk_y])
 
         return actors
     
@@ -267,11 +266,11 @@ class Level:
         Adds an actor to the chunk system.
         """
         chunk_x, chunk_y = get_chunk_cords(actor.position)
-        if chunk_x not in self.__chunks:
-            self.__chunks[chunk_x] = {}
-        if chunk_y not in self.__chunks[chunk_x]:
-            self.__chunks[chunk_x][chunk_y] = set()
-        self.__chunks[chunk_x][chunk_y].add(actor.name)
+        if chunk_x not in self.chunks:
+            self.chunks[chunk_x] = {}
+        if chunk_y not in self.chunks[chunk_x]:
+            self.chunks[chunk_x][chunk_y] = set()
+        self.chunks[chunk_x][chunk_y].add(actor)
 
         actor.chunk = Vector(chunk_x, chunk_y)
 
@@ -289,16 +288,15 @@ class Level:
             if chunk_x not in self.__chunks or chunk_y not in self.__chunks[chunk_x]:
                 continue
 
-            for actor_name in self.__chunks[chunk_x][chunk_y]:
-                sync_data = self.actors[actor_name].get_for_net_sync()
+            for actor in self.__chunks[chunk_x][chunk_y]:
+                sync_data = actor.get_for_net_sync()
                 if not sync_data:
                     continue
 
-                actor = self.actors[actor_name]
                 if "position" in sync_data:
                     a_chk_x, a_chk_y = actor.chunk
-                    if (a_chk_x != chunk_x or a_chk_y != chunk_y) and actor_name in self.__chunks[a_chk_x][a_chk_y]:
-                        self.__chunks[a_chk_x][a_chk_y].remove(actor_name)
+                    if (a_chk_x != chunk_x or a_chk_y != chunk_y) and actor in self.__chunks[a_chk_x][a_chk_y]:
+                        self.__chunks[a_chk_x][a_chk_y].remove(actor)
                         self.add_actor_to_chunk(actor)
                         
                 if not actor.visible and "visible" not in sync_data:
@@ -310,7 +308,7 @@ class Level:
                     chunk_updates[chunk_x] = {}
                 if chunk_y not in chunk_updates[chunk_x]:
                     chunk_updates[chunk_x][chunk_y] = {}
-                chunk_updates[chunk_x][chunk_y][actor_name] = sync_data
+                chunk_updates[chunk_x][chunk_y][actor] = sync_data
                         
         return chunk_updates
         

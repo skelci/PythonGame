@@ -478,7 +478,7 @@ class ClientEngine(Engine, Renderer):
                         continue
 
                     for actor in chk_actors:
-                        self.level.destroy_actor(self.level.actors[actor])
+                        self.level.destroy_actor(actor)
 
         self.__time("render_regs")
 
@@ -576,28 +576,28 @@ class ClientEngine(Engine, Renderer):
 
 
     def __register_actor(self, data):
-        if data[1] in self.__level.actors:
+        if data[1] in self.level.actors:
             return
         
         if data[0] not in self.__actor_templates:
             raise Exception(f"Actor template {data[0]} is not registered")
 
-        self.__level.register_actor(self.__actor_templates[data[0]](data[1], data[2])) # if it crashes in this line, it's because actor class you provided doesn't have correct attributes. It should have only name, position, everything else should be hardcoded
+        self.level.register_actor(self.__actor_templates[data[0]](data[1], data[2])) # if it crashes in this line, it's because actor class you provided doesn't have correct attributes. It should have only name, position, everything else should be hardcoded
 
 
     def __update_actor(self, data):
         actor_name = data[0]
-        if actor_name in self.__level.actors:
-            self.__level.actors[actor_name].update_from_net_sync(data[1])
+        if actor_name in self.level.actors:
+            actor = self.level.actors[actor_name]
+            actor.update_from_net_sync(data[1])
 
             if "position" not in data[1]:
                 return
 
-            actor = self.__level.actors[actor_name]
             chk_x, chk_y = get_chunk_cords(actor.position)
             a_chk_x, a_chk_y = actor.chunk
             if a_chk_x != chk_x or a_chk_y != chk_y:
-                self.level.chunks[a_chk_x][a_chk_y].remove(actor.name)
+                self.level.chunks[a_chk_x][a_chk_y].remove(actor)
                 self.level.add_actor_to_chunk(actor)
 
 
@@ -917,16 +917,16 @@ class ServerEngine(Engine):
                     self.network.send(player_id, "destroy_actor", actor.name)
 
                 for actor_dict in self.get_actors_from_chk_pkg(updates_pkg, bl_chk_pos, tr_chk_pos, lambda a, el: a.append(el)):
-                    for actor_name, sync_data in actor_dict.items():
+                    for actor, sync_data in actor_dict.items():
                         if "visible" in sync_data:
                             visible = sync_data["visible"]
                             if not visible:
-                                self.network.send(player_id, "destroy_actor", actor_name)
+                                self.network.send(player_id, "destroy_actor", actor.name)
                             else:
-                                self.network.send(player_id, "register_actor", level.actors[actor_name].get_for_full_net_sync())
+                                self.network.send(player_id, "register_actor", actor.get_for_full_net_sync())
                             continue
                             
-                        self.network.send(player_id, "update_actor", (actor_name, sync_data), True)
+                        self.network.send(player_id, "update_actor", (actor.name, sync_data), True)
 
                 prev_synced_chunks = player.synced_chuks.copy()
                 player.synced_chuks.clear()
@@ -934,15 +934,13 @@ class ServerEngine(Engine):
                     for y in range(c_chk.rounded.y - player.update_distance, c_chk.rounded.y + player.update_distance + 1):
                         player.synced_chuks.add(Vector(x, y))
 
-                        if x not in level.chunks:
+                        if x not in level.chunks or y not in level.chunks[x]:
                             continue
-                        if y not in level.chunks[x]:
-                            continue
-
                         if Vector(x, y) in prev_synced_chunks:
                             continue
+
                         for actor in level.chunks[x][y]:
-                            self.network.send(player_id, "register_actor", level.actors[actor].get_for_full_net_sync())
+                            self.network.send(player_id, "register_actor", actor.get_for_full_net_sync())
 
         self.__time("level_updates")
 
