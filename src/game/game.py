@@ -774,7 +774,7 @@ class ServerGame(ServerGameBase):
         chunk_data = []
         tree_positions = [] 
         chunk_origin = Vector(x, y) * CHUNK_SIZE
-        tree_threshold = 0.97  #smaller = more trees, bigger = less trees
+        tree_threshold = 0.98  #smaller = more trees, bigger = less trees
         
         # Noise parameters
         terrain_scale = 0.035
