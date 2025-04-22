@@ -44,7 +44,6 @@ class Engine(ABC):
     Common things in server and client engine.
     """
 
-
     def __init__(self):
         self.__running = True
 
@@ -189,6 +188,8 @@ class ClientEngine(Engine, Renderer):
         self.register_widget(InfoText("actor_render",   5, "actor render: "))
         self.register_widget(InfoText("widget_render",  6, "widget render: "))
         self.register_widget(InfoText("network",        7, "network: "))
+
+        print("[Client] Engine initialized")
 
 
     @property
@@ -693,6 +694,8 @@ class ServerEngine(Engine):
         }
 
         self.__clock = TPS(self.max_tps)
+
+        print("[Server] Engine initialized")
 
 
     @property
