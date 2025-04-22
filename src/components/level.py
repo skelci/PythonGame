@@ -356,7 +356,7 @@ class Level:
                     if not_should_colide_with(actor1, actor2):
                         continue
 
-                    if actor1.position.distance(actor2.position) > actor1.half_size.abs.max + actor2.half_size.abs.max:
+                    if actor1.position.distance_to(actor2.position) > actor1.half_size.abs.max + actor2.half_size.abs.max:
                         continue
                     direction = actor1.collision_response_direction(actor2)
                     if direction == Vector(0, 0):

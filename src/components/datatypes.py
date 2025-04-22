@@ -2,6 +2,8 @@
 This module contains various data types, utility classes, enums, and constants used in the game.
 """
 
+from pygame import Vector2
+
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Iterator
@@ -11,117 +13,67 @@ import threading
 
 
 
-@dataclass
-class Vector:
-    """
-    Represents a 2D vector with x and y coordinates.
-    Provides various mathematical operations and properties for vector manipulation.
-    """
-    x: float = 0
-    y: float = 0
-
-
-    def __post_init__(self):
-        if not isinstance(self.x, (int, float)):
-            raise TypeError(f"x must be an int or float, got {self.x.__class__.__name__}")
-        if not isinstance(self.y, (int, float)):
-            raise TypeError(f"y must be an int or float, got {self.y.__class__.__name__}")
+class Vector(Vector2):
+    @staticmethod
+    def from_tuple(tup):
+        """
+        Creates a Vector instance from a tuple of x and y coordinates.
+        """
+        if not isinstance(tup, tuple) or len(tup) != 2:
+            raise TypeError("Expected a tuple of two elements.")
         
-
-    def __iter__(self) -> Iterator[float]:
-        yield self.x
-        yield self.y
+        return Vector(*tup)
 
 
     def __add__(self, other):
+        if isinstance(other, tuple):
+            other = self.from_tuple(other)
+
         if isinstance(other, Vector):
-            return Vector(
-                x=self.x + other.x,
-                y=self.y + other.y
-            )
+            return super().__add__(other)
 
         elif isinstance(other, (int, float)):
-            return Vector(
-                x=self.x + other,
-                y=self.y + other
-            )
+            return Vector(self.x + other, self.y + other)
         
         return NotImplemented
+    
+    __radd__ = __add__
 
 
     def __sub__(self, other):
+        if isinstance(other, tuple):
+            other = self.from_tuple(other)
+
         if isinstance(other, Vector):
-            return Vector(
-                x=self.x - other.x,
-                y=self.y - other.y
-            )
+            return super().__sub__(other)
         
         elif isinstance(other, (int, float)):
-            return Vector(
-                x=self.x - other,
-                y=self.y - other
-            )
+            return Vector(self.x - other, self.y - other)
         
         return NotImplemented
-
+    
+    __rsub__ = __sub__
+    
 
     def __mul__(self, scalar):
-        if isinstance(scalar, Vector):
-            return Vector(
-                x=self.x * scalar.x,
-                y=self.y * scalar.y
-            )
-        
-        elif isinstance(scalar, (int, float)):
-            return Vector(
-                x=self.x * scalar,
-                y=self.y * scalar
-            )
-        
+        if isinstance(scalar, tuple):
+            scalar = self.from_tuple(scalar)
+
+        if isinstance(scalar, Vector2):
+            return Vector(self.x * scalar.x, self.y * scalar.y)
+
+        result = super().__mul__(scalar)
+        if isinstance(result, Vector2):
+            return Vector(result.x, result.y)
         return NotImplemented
 
+    __rmul__ = __mul__
 
-    def __truediv__(self, scalar):
-        if isinstance(scalar, Vector):
-            if scalar.x == 0 or scalar.y == 0:
-                raise ValueError("Cannot divide by zero.")
-            return Vector(
-                x=self.x / scalar.x,
-                y=self.y / scalar.y
-            )
-        
-        elif isinstance(scalar, (int, float)):
-            if scalar == 0:
-                raise ValueError("Cannot divide by zero.")
-            return Vector(
-                x=self.x / scalar,
-                y=self.y / scalar
-            )
-        
-        return NotImplemented
-    
-
-    def __floordiv__(self, scalar):
-        if isinstance(scalar, Vector):
-            if scalar.x == 0 or scalar.y == 0:
-                raise ValueError("Cannot divide by zero.")
-            return Vector(
-                x=self.x // scalar.x,
-                y=self.y // scalar.y
-            )
-        
-        elif isinstance(scalar, (int, float)):
-            if scalar == 0:
-                raise ValueError("Cannot divide by zero.")
-            return Vector(
-                x=self.x // scalar,
-                y=self.y // scalar
-            )
-        
-        return NotImplemented
-    
 
     def __mod__(self, scalar):
+        if isinstance(scalar, tuple):
+            scalar = self.from_tuple(scalar)
+
         if isinstance(scalar, Vector):
             if scalar.x == 0 or scalar.y == 0:
                 raise ValueError("Cannot divide by zero.")
@@ -140,29 +92,57 @@ class Vector:
         
         return NotImplemented
     
+    __rmod__ = __mod__
 
-    def __neg__(self):
-        return Vector(
-            -self.x,
-            -self.y
-        )
+
+    def __truediv__(self, scalar):
+        if isinstance(scalar, tuple):
+            scalar = self.from_tuple(scalar)
+
+        if isinstance(scalar, Vector):
+            if scalar.x == 0 or scalar.y == 0:
+                raise ValueError("Cannot divide by zero.")
+            return Vector(self.x / scalar.x, self.y / scalar.y)
+        
+        elif isinstance(scalar, (int, float)):
+            return super().__truediv__(scalar)
+        
+        return NotImplemented
     
+    __rtruediv__ = __truediv__
+
+
+    def __floordiv__(self, scalar):
+        if isinstance(scalar, tuple):
+            scalar = self.from_tuple(scalar)
+
+        if isinstance(scalar, Vector):
+            if scalar.x == 0 or scalar.y == 0:
+                raise ValueError("Cannot divide by zero.")
+            return Vector(self.x // scalar.x, self.y // scalar.y)
+        
+        elif isinstance(scalar, (int, float)):
+            return super().__floordiv__(scalar)
+        
+        return NotImplemented
+    
+    __rfloordiv__ = __floordiv__
+
 
     def __hash__(self):
         return hash(self.tuple)
-
     
+
     @property
     def length(self):
-        return (self.x ** 2 + self.y ** 2) ** 0.5
+        return super().length()
     
 
     @property
     def normalized(self):
         if self.length == 0:
             return Vector(0, 0)
-        
-        return self / self.length
+        return super().normalize()
     
 
     @property
@@ -218,7 +198,7 @@ class Vector:
         """
         Vector - The vector with x and y components converted to integers.
         """
-        return self.floored
+        return (int(self.x), int(self.y))
     
 
     @property
@@ -231,39 +211,7 @@ class Vector:
 
     @property
     def copy(self):
-        return Vector(*self)
-    
-
-    def dot(self, other):
-        if not isinstance(other, Vector):
-            raise TypeError(f"other must be a Vector, got {other.__class__.__name__}")
-        
-        return self.x * other.x + self.y * other.y
-    
-
-    def cross(self, other):
-        if not isinstance(other, Vector):
-            raise TypeError(f"other must be a Vector, got {other.__class__.__name__}")
-        
-        return self.x * other.y - self.y * other.x
-    
-
-    def squared_distance(self, other):
-        if not isinstance(other, Vector):
-            raise TypeError(f"other must be a Vector, got {other.__class__.__name__}")
-        
-        return (self.x - other.x) ** 2 + (self.y - other.y) ** 2
-    
-
-    def distance(self, other):        
-        return self.squared_distance(other) ** 0.5
-    
-
-    def manhattan_distance(self, other):
-        if not isinstance(other, Vector):
-            raise TypeError(f"other must be a Vector, got {other.__class__.__name__}")
-
-        return abs(self.x - other.x) + abs(self.y - other.y)
+        return super().copy()
     
 
 

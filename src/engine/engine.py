@@ -844,8 +844,8 @@ class ServerEngine(Engine):
             list[Actor] - List of actors in the given rectangle.
         """
         actors = []
-        for x in range(bottom_left.x, top_right.x + 1):
-            for y in range(bottom_left.y, top_right.y + 1):
+        for x in range(bottom_left.int[0], top_right.int[0] + 1):
+            for y in range(bottom_left.int[1], top_right.int[1] + 1):
                 chk = Vector(x, y)
                 if chk not in chk_pkd:
                     continue
@@ -924,8 +924,8 @@ class ServerEngine(Engine):
 
                 prev_synced_chunks = player.synced_chuks.copy()
                 player.synced_chuks.clear()
-                for x in range(c_chk.rounded.x - player.update_distance, c_chk.rounded.x + player.update_distance + 1):
-                    for y in range(c_chk.rounded.y - player.update_distance, c_chk.rounded.y + player.update_distance + 1):
+                for x in range(c_chk.int[0] - player.update_distance, c_chk.int[0] + player.update_distance + 1):
+                    for y in range(c_chk.int[1] - player.update_distance, c_chk.int[1] + player.update_distance + 1):
                         player.synced_chuks.add(Vector(x, y))
 
                         chk = Vector(x, y)
