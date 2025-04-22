@@ -56,7 +56,8 @@ class Leaf(Actor):
             self.level_ref.register_actor(StickEntity(self.name, self.position))
             #print("stick iz leaf") 
         for j in range(8):
-            self.level_ref.register_actor(LeafEntity(self.name, self.position)) 
+            self.level_ref.register_actor(LeafEntity(self.name, self.position))
+            #print("leaves:", j) 
 
 class Grass(Actor):
     def __init__(self, name, position):
@@ -1088,8 +1089,10 @@ class ServerGame(ServerGameBase):
             for base_chunk_x, base_chunk_y in chunks_to_load:
                 self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
 
-EntityPosition=set()
-
+Indestructible_classes = (
+    "LeafEntity", "StickEntity", "LogEntity", "GrassEntity", 
+    "DirtEntity", "StoneEntity", "CoalEntity", "IronEntity", "GoldEntity"
+)
 def breaking_blocks(engine_ref, level_ref, id):
     #print('breaking_blocks')
     # Get the player's position
@@ -1112,20 +1115,20 @@ def breaking_blocks(engine_ref, level_ref, id):
         #print(actor)
         actor_position = actor.position.rounded
         #print(actor_position)
+        #print("actor class", actor.__class__.__name__)
 
         if actor_position == mouse_pos:
             #print('actor:', actor_position)
             #print(EntityPosition)
-            if actor_position in EntityPosition:
-                #print('break')
+            #print(Indestructible_classes)
+            if actor.__class__.__name__ in Indestructible_classes:
+                #print('indestructible')
                 break
 
             if actor.name.startswith("__Player_"):
                 break
             
-            engine_ref.levels["Test_Level"].destroy_actor(actor) 
-            EntityPosition.add(actor_position)
-            #print(EntityPosition)         
+            engine_ref.levels["Test_Level"].destroy_actor(actor)          
             break
             
 
