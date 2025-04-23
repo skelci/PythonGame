@@ -24,8 +24,8 @@ import os
 import random
 
 
+ORIGINAL_CHUNK_SIZE = CHUNK_SIZE
 CHUNK_SIZE = 32
-ORIGINAL_CHUNK_SIZE = 8
 DEVIDER = CHUNK_SIZE // ORIGINAL_CHUNK_SIZE
 CAMERA_OFFSET_X = 1
 CAMERA_OFFSET_Y = 1
@@ -739,7 +739,7 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
         self.engine.max_tps = 60
-        self.engine.start_network("0.0.0.0", 5555, 10)
+        
 
         self.engine.register_level(TestLevel())
 
@@ -747,8 +747,7 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
-        self.game_map = {}
-        self.loaded_chunks = set()
+        self.game_map = set()
         self.current_base_chunk = Vector(0, 0)
         self.tunnel_generator = TunnelGenerator()
     
@@ -758,6 +757,11 @@ class ServerGame(ServerGameBase):
         self.engine.console.handle_cmd("build_client")
         #?endif
 
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                self.generate_and_load_chunks(x, y)
+
+        self.engine.start_network("0.0.0.0", 5555, 10)
 
     @staticmethod
     def smoothstep(val, edge0, edge1):
@@ -766,44 +770,40 @@ class ServerGame(ServerGameBase):
     
 
     @staticmethod
-    def tree_generation_worker(x_range, chunk_origin, ground_levels, tree_threshold, shared_tree_positions, tree_lock, tree_results):
-        local_results = []
-        for x_pos in x_range:
-            ground_level = ground_levels[x_pos]
-            pos = chunk_origin + Vector(x_pos, ground_level)
-
-            # Only attempt to spawn a tree if no tree is near (minimum 4 blocks away)
-            if r.random() < tree_threshold and pos.y == ground_level:
-                can_spawn = True
-                with tree_lock:
-                    for tree_pos in shared_tree_positions:
-                        if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
-                            can_spawn = False
-                            break
-                if can_spawn:
-                    with tree_lock:
-                        shared_tree_positions.append(pos)
-                    tree_height = r.randint(4, 7)
-                    top = pos + Vector(0, tree_height)
-                    for h in range(1, tree_height + 1):
-                        trunk_pos = pos + Vector(0, h)
-                        if trunk_pos.y >= chunk_origin.y:
-                            local_results.append([(trunk_pos.x, trunk_pos.y), "log"])
-                    rx = 3.25
-                    ry = 4.5
-                    top_leaf_pos = top + Vector(0, 5)
-                    local_results.append([(top_leaf_pos.x, top_leaf_pos.y), "leaf"])
-                    for dy in range(0, int(ry) + 1):
-                        for dx in range(-int(rx), int(rx) + 1):
-                            if (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1:
-                                leaf_pos = top + Vector(dx, dy)
-                                local_results.append([(leaf_pos.x, leaf_pos.y), "leaf"])
-        tree_results.extend(local_results)
+    def tree_generation(chunk_origin, ground_level, pos, tree_threshold, shared_tree_positions, chunk_data):
+        start_pos = chunk_origin + Vector(pos.x, pos.y)
+        
+        if r.random() > tree_threshold and start_pos.y == ground_level:  
+            can_spawn = True
+            for tree_pos in shared_tree_positions:
+                if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
+                    can_spawn = False
+                    break
+               
+            if can_spawn:
+                shared_tree_positions.append(pos)
+                tree_height = r.randint(4, 7)
+                top = pos + Vector(0, tree_height)
+                # Add trunk
+                for h in range(1, tree_height + 1):
+                    trunk_pos = pos + Vector(0, h)
+                    if trunk_pos.y >= chunk_origin.y:
+                        chunk_data.append(((trunk_pos.x, trunk_pos.y), "log"))
+               # Add leaves
+                rx = 3.25
+                ry = 4.5
+                top_leaf_pos = top + Vector(0, 5)
+                chunk_data.append(((top_leaf_pos.x, top_leaf_pos.y), "leaf"))
+                for dy in range(0, int(ry) + 1):
+                    for dx in range(-int(rx), int(rx) + 1):
+                        if (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1:
+                            leaf_pos = top + Vector(dx, dy)
+                            chunk_data.append(((leaf_pos.x, leaf_pos.y), "leaf"))
 
 
     @staticmethod
-    def ore_generation_thread(ore_type, parameters, noise_data, ground_levels, ore_positions, result_list):
-        local_ores = []
+    def ore_generation(ore_type, parameters, noise_data, ground_levels, chunk_data):
+        ore_positions = set()
     
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
@@ -824,18 +824,18 @@ class ServerGame(ServerGameBase):
                     )
                     
                     if ore_noise > parameters["threshold"]:
-                        local_ores.append([(pos.x, pos.y), ore_type])
-        result_list.extend(local_ores)
+                        chunk_data.add(((pos.x, pos.y), ore_type))
+
 
     @staticmethod
-    def generate_caves(y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
-                            surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, smoothstep_func):
-        for y_index in y_range:
-            row = []
-            for x_pos in range(CHUNK_SIZE):
-                pos = chunk_origin + Vector(x_pos, y_index)
-                ground_level = ground_levels[x_pos]
+    def generate_caves(chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+                    surface_threshold, mid_threshold, deep_threshold, ground_levels, noise_data, smoothstep_func):
+        for y_index in range(CHUNK_SIZE):
+            for x_index in range(CHUNK_SIZE):
+                pos = chunk_origin + Vector(x_index, y_index)
+                ground_level = ground_levels[x_index]
 
+                # Generate base noise and detail noise
                 base_val = noise.snoise2(
                     pos.x * cave_scale_x,
                     pos.y * cave_scale_y,
@@ -850,6 +850,7 @@ class ServerGame(ServerGameBase):
                 ) * 0.2
                 combined_noise = base_val + detail
 
+                # Calculate depth and determine cave threshold
                 depth = ground_level - pos.y
                 if depth < 6:
                     effective_threshold = surface_threshold
@@ -860,26 +861,15 @@ class ServerGame(ServerGameBase):
                 else:
                     effective_threshold = deep_threshold
 
+                # Determine if the position is part of a cave
                 is_cave = combined_noise > effective_threshold and pos.y < ground_level
-                row.append((pos, is_cave, False))
-            result_rows[y_index] = row
-
-
-    @staticmethod
-    def tunnel_generation_worker(tunnel_gen, noise_data, y_range):
-        """# Process only the rows in the given y_range
-        for y_pos in y_range:
-            for x_pos in range(CHUNK_SIZE):
-                pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
-                if is_cave:  # Only process cave tiles
-                    # Modify the noise_data directly to mark tunnels"""
-        tunnel_gen.generate_tunnels(noise_data)
+                noise_data[y_index][x_index] = (pos, is_cave, False)
 
     def generate_chunk(self, x, y):
         chunk_data = []
         tree_positions = [] 
         chunk_origin = Vector(x, y) * CHUNK_SIZE
-        tree_threshold = 0.04
+        tree_threshold = 0.98  #smaller = more trees, bigger = less trees
         
         # Noise parameters
         terrain_scale = 0.035
@@ -922,20 +912,20 @@ class ServerGame(ServerGameBase):
            
         
        # Single-threaded cave generation
-        result_rows = [None] * CHUNK_SIZE  # Pre-allocate rows
-        y_range = range(CHUNK_SIZE)  # Process all rows in one range
+       # Pre-allocate noise_data as a 2D array
+        noise_data = [[None for _ in range(CHUNK_SIZE)] for _ in range(CHUNK_SIZE)]
+        
         self.generate_caves(
-            y_range, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
-            surface_threshold, mid_threshold, deep_threshold, ground_levels, result_rows, ServerGame.smoothstep
+            chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+            surface_threshold, mid_threshold, deep_threshold, ground_levels, noise_data, ServerGame.smoothstep
         )
 
-        noise_data = result_rows[:]  # Assemble the rows in order
+        
                         
-        # Generate tunnels using thread
+        # Generate tunnels
         if y <= 0:
             tunnel_gen = TunnelGenerator()
-            y_range = range(CHUNK_SIZE)  # Process all rows in one range
-            self.tunnel_generation_worker(tunnel_gen, noise_data, y_range)
+            tunnel_gen.generate_tunnels(noise_data)
 
             # Add tunnel tiles to chunk_data
             for y_pos in range(CHUNK_SIZE):
@@ -944,38 +934,10 @@ class ServerGame(ServerGameBase):
                     if is_tunnel:
                         chunk_data.append([(pos.x, pos.y), None])
 
-            # Add tunnel tiles to chunk_data
-            for y_pos in range(CHUNK_SIZE):
-                for x_pos in range(CHUNK_SIZE):
-                    pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
-                    if is_tunnel:
-                        chunk_data.append([(pos.x, pos.y), None])
-        
-        # Generate ores in parallel threads
-        ore_results = []
-        ore_threads = []
+        # Generate ores
         for ore_type, parameters in ore_parameters.items():
-            t = threading.Thread(target=self.ore_generation_thread,
-                                args=(ore_type, parameters, noise_data, ground_levels, set(), ore_results))
-            ore_threads.append(t)
-            t.start()
-            
-
-        for t in ore_threads:
-            t.join()
-
-        chunk_data.extend(ore_results)
-
-
-        # Multithreaded tree generation
-        tree_results = []
-        tree_lock = threading.Lock()  # Lock is not necessary for single-threaded execution
-        x_range = range(CHUNK_SIZE)  # Process all x positions in one range
-        self.tree_generation_worker(
-            x_range, chunk_origin, ground_levels, tree_threshold, tree_positions, tree_lock, tree_results
-        )
-
-        chunk_data.extend(tree_results)
+            self.ore_generation(ore_type, parameters, noise_data, ground_levels, set())
+           
             
         # Rest of terrain generation (unchanged)
         for y_pos in range(CHUNK_SIZE):
@@ -989,13 +951,16 @@ class ServerGame(ServerGameBase):
                 if is_cave:
                     continue
                 elif pos.y == ground_level:
+                    self.tree_generation(chunk_origin,ground_level, pos, tree_threshold, tree_positions, chunk_data)
                     chunk_data.append([(pos.x, pos.y), "grass"])
+                    
                 elif pos.y < ground_level and pos.y > ground_level - 5:
                     chunk_data.append([(pos.x, pos.y), "dirt"])
-                elif pos.y <= ground_level - 5:
+                elif pos.y <= ground_level - 5: 
                     chunk_data.append([(pos.x, pos.y), "stone"])
 
         return chunk_data
+    
 
     def generate_and_load_chunks(self, chunk_x, chunk_y):
         level = self.engine.levels.get("Test_Level")
@@ -1004,51 +969,49 @@ class ServerGame(ServerGameBase):
 
         target_chunk = f"{chunk_x};{chunk_y}"
         
-        # Generate this chunk and immediate neighbors
-        """for dy in [-1, 0, 1]:
-            for dx in [-1, 0, 1]:
-                nx, ny = chunk_x + dx, chunk_y + dy
-                neighbor_chunk = f"{nx};{ny}"
-                if neighbor_chunk not in self.game_map:
-                    self.game_map[neighbor_chunk] = self.generate_chunk(nx, ny)"""
-        if target_chunk not in self.game_map:
-            self.game_map[target_chunk] = self.generate_chunk(chunk_x, chunk_y)
         
-        # Load the chunk if not already loaded
-        #if target_chunk not in self.loaded_chunks:
-            actors_to_add = []
-            for tile in self.game_map.get(target_chunk, []):
-                pos, tile_type = tile
-                actor_name = f"{tile_type}_{pos[0]}_{pos[1]}"
-                new_actor = None
-                
-                if tile_type == "grass":
-                    new_actor = Grass(actor_name, Vector(pos[0], pos[1]))
-                elif tile_type == "log":
-                    new_actor = Log(actor_name, Vector(pos[0], pos[1]))
-                elif tile_type == "leaf":
-                    new_actor = Leaf(actor_name, Vector(pos[0], pos[1]))
-                elif tile_type == "dirt":
-                    new_actor = Dirt(actor_name, Vector(pos[0], pos[1]))
-                elif tile_type == "stone":
-                    new_actor = Stone(actor_name, Vector(pos[0], pos[1]))
-                elif tile_type == "coal":
-                    new_actor = Coal(actor_name, Vector(pos[0], pos[1]))
-                elif tile_type == "gold":
-                    new_actor = Gold(actor_name, Vector(pos[0], pos[1]))
-                elif tile_type == "iron":
-                    new_actor = Iron(actor_name, Vector(pos[0], pos[1]))
-                elif tile_type == "tunnel_debug":
-                    new_actor = DebugTunnel(actor_name, Vector(pos[0], pos[1]))
+        if target_chunk not in self.game_map:
+            self.game_map.add(target_chunk)
+            chunk_thread = threading.Thread(target=self.load_chunk, args=(chunk_x, chunk_y, level))
+            chunk_thread.start()
 
-                if new_actor is not None:
-                    actors_to_add.append(new_actor)
-            # Register all actors at once
-            for actor in actors_to_add:
-                level.register_actor(actor)
+
+
+    def load_chunk(self, chunk_x, chunk_y, level):
+        
+        chunk_data = self.generate_chunk(chunk_x, chunk_y)
+        
+       
+        actors_to_add = []
+        for tile in chunk_data:
+            pos, tile_type = tile
+            actor_name = f"{tile_type}_{pos[0]}_{pos[1]}"
+            new_actor = None
             
-            #self.loaded_chunks.add(target_chunk)
-
+            if tile_type == "grass":
+                new_actor = Grass(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "log":
+                new_actor = Log(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "leaf":
+                new_actor = Leaf(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "dirt":
+                new_actor = Dirt(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "stone":
+                new_actor = Stone(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "coal":
+                new_actor = Coal(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "gold":
+                new_actor = Gold(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "iron":
+                new_actor = Iron(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "tunnel_debug":
+                new_actor = DebugTunnel(actor_name, Vector(pos[0], pos[1]))
+            if new_actor is not None:
+                actors_to_add.append(new_actor)
+        # Register all actors at once
+        for actor in actors_to_add:
+            level.register_actor(actor)
+            
 
     def tick(self):
         delta_time = super().tick()
@@ -1069,19 +1032,9 @@ class ServerGame(ServerGameBase):
         
 
         for pos in positions:
-            # Calculate new base chunk with smoothing
-            new_base_chunk = Vector(
-                math.floor((pos.x + CHUNK_SIZE/2) / CHUNK_SIZE),
-                math.floor((pos.y + CHUNK_SIZE/2) / CHUNK_SIZE)
-            )
+            new_base_chunk = ((pos + CHUNK_SIZE/2) / CHUNK_SIZE).floored
         
-            if not hasattr(self, "current_base_chunk"):
-                self.current_base_chunk = new_base_chunk
-            else:
-                smoothing_factor = 0.5
-                self.current_base_chunk += (new_base_chunk - self.current_base_chunk) * smoothing_factor
 
-            base_chunk_vector = self.current_base_chunk.floored
         
             # Load chunks in radius
             chunks_to_load = []
@@ -1093,8 +1046,8 @@ class ServerGame(ServerGameBase):
                     for offset_y in range(-ud - 2, ud + 3):
                         for offset_x in range(-ud - 2, ud + 3):
                             chunks_to_load.append((
-                                base_chunk_vector.x + offset_x, 
-                                base_chunk_vector.y + offset_y
+                                new_base_chunk.x + offset_x, 
+                                new_base_chunk.y + offset_y
                             ))
 
             for base_chunk_x, base_chunk_y in chunks_to_load:
@@ -1105,6 +1058,7 @@ Indestructible_classes = (
     "DirtEntity", "StoneEntity", "CoalEntity", "IronEntity", "GoldEntity"
 )
 def breaking_blocks(engine_ref, level_ref, id):
+    
     #print('breaking_blocks')
     # Get the player's position
     player = level_ref.actors[engine_ref.get_player_actor(id)].position

@@ -11,7 +11,6 @@ class Console:
     Simple terminal console for the server.
     """
 
-
     def __init__(self):
         self.__running = True
         self.__cmd_output = []
@@ -37,6 +36,8 @@ class Console:
             "stat_network": "print('network:', self.get_stat('network'), 'ms')",
             "stat_all": "for stat in ('tps', 'console_cmds', 'level_updates', 'network'):\n\tprint(stat + ': ' + self.get_stat(stat))",
         }
+
+        print("[Server] Console initialized.")
 
 
     @property
@@ -98,7 +99,7 @@ class Console:
 
 
     def __read_cmd(self):
-        cmd = input("> ")
+        cmd = input()
 
         if cmd:
             self.handle_cmd(cmd)

@@ -109,14 +109,6 @@ class Character(Rigidbody):
             self.__move_direction = value
         else:
             raise TypeError("Move direction must be -1, 0 or 1:", value)
-
-
-    @property
-    def is_grounded(self):
-        """
-        bool - Whether the character is on the ground or not.
-        """
-        return self.collided_sides[3] != 0
         
 
     def jump(self):
@@ -163,7 +155,7 @@ class Character(Rigidbody):
             self.velocity.y = 0
 
         # Gravity
-        if not self.is_grounded:
+        if not self.is_grounded and self.simulate_physics:
             self.velocity.y += GRAVITY * self.gravity_scale * delta_time
 
         # Air resistance
