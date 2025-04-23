@@ -14,14 +14,14 @@ from components.input_box import InputBox
 from components.widget import Widget
 from components.border import Border
 #?endif
-from collections import defaultdict
 
 import threading
 import random as r
 import math
-import noise
-import os
 import random
+#?ifdef SERVER
+import noise
+#?endif
 
 
 ORIGINAL_CHUNK_SIZE = CHUNK_SIZE
