@@ -168,6 +168,14 @@ class Rigidbody(Actor):
             raise TypeError("Collided sides must be a list with lenght of 4:", value)
         
 
+    @property
+    def is_grounded(self):
+        """
+        bool - Whether the rigidbody is on the ground or not.
+        """
+        return self.collided_sides[3] != 0
+        
+
     def on_collision(self, collision_data):
         """
         Refer to the Actor class for more information.
@@ -194,7 +202,7 @@ class Rigidbody(Actor):
             self.velocity.y = 0
 
         # Gravity
-        if self.collided_sides[3] == 0:
+        if not self.is_grounded and self.simulate_physics:
             self.velocity.y += GRAVITY * self.gravity_scale * delta_time
 
         # Air resistance
@@ -205,12 +213,12 @@ class Rigidbody(Actor):
             self.velocity -= v_change
         
         # Friction
-        if self.collided_sides[3] != 0:
+        if self.is_grounded:
             v_change = self.deceleration * delta_time
-            if self.velocity.abs.x < v_change:
+            if self.velocity.abs.x <= v_change:
                 self.velocity.x = 0
             else:
-                self.velocity.x -= v_change * math.ceil(self.velocity.abs.x)
+                self.velocity.x -= v_change * self.velocity.x / self.velocity.abs.x
 
 
     def is_colliding(self, collided_actor: Actor):

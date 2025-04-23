@@ -34,7 +34,7 @@ class Text(Widget):
         """
         super().__init__(name, position, size, color, layer, visible)
 
-        self.__font_size = size.y
+        self.__font_size = size.int[1]
         self.text = text
         self.font = font
 

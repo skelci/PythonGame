@@ -49,6 +49,8 @@ class Renderer:
         self.__actors_to_draw = {}
         self.__widgets_to_draw = []
 
+        print("[Client] Renderer initialized")
+
 
     @property
     def resolution(self):
