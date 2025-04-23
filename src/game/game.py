@@ -40,7 +40,8 @@ class Log(Actor):
             return
         r=random.randint(3,5)
         for i in range(r):
-            self.level_ref.register_actor(LogEntity(self.name, self.position))    
+            LogName = f"log_{self.name}_{i}"
+            self.level_ref.register_actor(LogEntity(LogName, self.position))    
             #print('wood iz log')
 
 class Leaf(Actor):
@@ -53,10 +54,12 @@ class Leaf(Actor):
         r=random.randint(0,5)
         #print(r)
         for i in range(r):
-            self.level_ref.register_actor(StickEntity(self.name, self.position))
+            StickName = f"stick_{self.name}_{i}"
+            self.level_ref.register_actor(StickEntity(StickName, self.position))
             #print("stick iz leaf") 
         for j in range(8):
-            self.level_ref.register_actor(LeafEntity(self.name, self.position))
+            LeafName = f"leaf_{self.name}_{j}"
+            self.level_ref.register_actor(LeafEntity(LeafName, self.position))
             #print("leaves:", j) 
 
 class Grass(Actor):
@@ -67,7 +70,8 @@ class Grass(Actor):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         for i in range(4):
-            self.level_ref.register_actor(DirtEntity(self.name, self.position))
+            GrassDirtName = f"grass_dirt_{self.name}_{i}"
+            self.level_ref.register_actor(DirtEntity(GrassDirtName, self.position))
             #print("entity dirt iz grasa")
 
 class Dirt(Actor):
@@ -79,7 +83,8 @@ class Dirt(Actor):
             return
         r=random.randint(3,5)
         for i in range(r):
-            self.level_ref.register_actor(DirtEntity(self.name, self.position))
+            DirtName = f"dirt_{self.name}_{i}"
+            self.level_ref.register_actor(DirtEntity(DirtName, self.position))
             #print('dirt iz dirta')
         chance=random.randint(1,4)
         if chance==1:
@@ -95,7 +100,8 @@ class Stone(Actor):
             return
         r=random.randint(3,5)
         for i in range(r):
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))   
+            StoneName = f"stone_{self.name}_{i}"
+            self.level_ref.register_actor(StoneEntity(StoneName, self.position))   
             #print('rock iz stone')     
 
 class Coal(Actor):
@@ -108,10 +114,11 @@ class Coal(Actor):
         self.level_ref.register_actor(CoalEntity(self.name, self.position))  
         r=random.randint(1,2)
         for i in range(2):
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))  
+            RockCoalName = f"rock_coal_{self.name}_{i}"
+            self.level_ref.register_actor(StoneEntity(RockCoalName, self.position))  
             #print("rock iz coala")
         if r==1:
-             self.level_ref.register_actor(StoneEntity(self.name, self.position))   
+             self.level_ref.register_actor(StoneEntity(RockCoalName, self.position))   
 
 class Iron(Actor):
     def __init__(self, name, position):
@@ -121,13 +128,15 @@ class Iron(Actor):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         for i in range(3):
-            self.level_ref.register_actor(IronEntity(self.name, self.position))   
+            IronName = f"iron_{self.name}_{i}"
+            self.level_ref.register_actor(IronEntity(IronName, self.position))   
         r=random.randint(1,2)
         for i in range(2):
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))  
+            RockIronName = f"rock_iron_{self.name}_{i}"
+            self.level_ref.register_actor(StoneEntity(RockIronName, self.position))  
             #print("rock iz irona") 
         if r==1:
-            self.level_ref.register_actor(StoneEntity(self.name, self.posiiton))    
+            self.level_ref.register_actor(StoneEntity(RockIronName, self.posiiton))    
 
 class Gold(Actor):
     def __init__(self, name, position):
@@ -137,13 +146,15 @@ class Gold(Actor):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         for i in range(3):
-            self.level_ref.register_actor(GoldEntity(self.name, self.position)) 
+            GoldName = f"gold_{self.name}_{i}"
+            self.level_ref.register_actor(GoldEntity(GoldName, self.position)) 
         r=random.randint(1,2)
         for i in range(2):
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))  
+            RockGoldName = f"rock_gold_{self.name}_{i}"
+            self.level_ref.register_actor(StoneEntity(RockGoldName, self.position))  
             #print("rock iz golda")
         if r==1:
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))    
+            self.level_ref.register_actor(StoneEntity(RockGoldName, self.position))    
 
 class DebugTunnel(Actor):
     def __init__(self, name, position):
