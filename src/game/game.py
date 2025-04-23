@@ -152,7 +152,7 @@ class DebugTunnel(Actor):
 
 class TestPlayer(Character):
     def __init__(self, name, position):
-        super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
+        super().__init__(name, position=Vector(-5, 27), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
 
 class LogEntity(Rigidbody):
     def __init__(self, name, position):
@@ -746,9 +746,8 @@ class ServerGame(ServerGameBase):
         self.engine.console.handle_cmd("build_client")
         #?endif
 
-        for x in range(-1, 2):
-            for y in range(-1, 2):
-                self.generate_and_load_chunks(x, y)
+
+        self.generate_and_load_chunks(-1, 0)
 
         self.engine.start_network("0.0.0.0", 5555, 10)
 
