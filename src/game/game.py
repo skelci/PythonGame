@@ -200,6 +200,7 @@ class DirtEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
+        #print(self.count)
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 255, 0)), restitution=0, initial_velocity=Initial_velocity)
 
 class GrassEntity(Rigidbody):        
