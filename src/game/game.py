@@ -41,8 +41,8 @@ class Log(Actor):
         
         count=random.randint(3,5)
         LogName = f"log_{self.name}"
-        LogEntity = LogEntity(LogName, self.position, count=count)
-        self.level_ref.register_actor(LogEntity) 
+        LogEntity_ = LogEntity(LogName, self.position, count=count)
+        self.level_ref.register_actor(LogEntity_) 
         #print('wood iz log')
 
 class Leaf(Actor):
@@ -55,13 +55,13 @@ class Leaf(Actor):
         
         count=random.randint(0,5)
         StickName = f"stick_{self.name}"
-        StickEntity = StickEntity(StickName, self.position, count=count)
-        self.level_ref.register_actor(StickEntity)
+        StickEntity_ = StickEntity(StickName, self.position, count=count)
+        self.level_ref.register_actor(StickEntity_)
         #print("stick iz leaf") 
 
         LeafName = f"leaf_{self.name}"
-        LeafEntity = LeafEntity(LeafName, self.position, count=8)
-        self.level_ref.register_actor(LeafEntity)
+        LeafEntity_ = LeafEntity(LeafName, self.position, count=8)
+        self.level_ref.register_actor(LeafEntity_)
         #print("leaves:", j) 
 
 class Grass(Actor):
