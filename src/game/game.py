@@ -160,7 +160,7 @@ class LogEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y) 
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(139, 69, 19)), restitution=0, initial_velocity=Initial_velocity)   
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(139, 69, 19)), restitution=0, initial_velocity=Initial_velocity)   
 
 class StickEntity(Rigidbody):    
     def __init__(self, name, position):
@@ -168,7 +168,7 @@ class StickEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(145, 69, 34)), restitution=0, initial_velocity=Initial_velocity)             
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(145, 69, 34)), restitution=0, initial_velocity=Initial_velocity)             
 
 class DirtEntity(Rigidbody):        
     def __init__(self, name, position):
@@ -176,7 +176,7 @@ class DirtEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 255, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(0, 255, 0)), restitution=0, initial_velocity=Initial_velocity)
 
 class GrassEntity(Rigidbody):        
     def __init__(self, name, position):
@@ -184,7 +184,7 @@ class GrassEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(255, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
 
 class StoneEntity(Rigidbody):    
     def __init__(self, name, position):
@@ -192,7 +192,7 @@ class StoneEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(128, 128, 128)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(128, 128, 128)), restitution=0, initial_velocity=Initial_velocity)
 
 class CoalEntity(Rigidbody):    
     def __init__(self, name, position):
@@ -200,7 +200,7 @@ class CoalEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(0, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
 
 class IronEntity(Rigidbody):    
     def __init__(self, name, position):
@@ -208,7 +208,7 @@ class IronEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(192, 192, 192)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(192, 192, 192)), restitution=0, initial_velocity=Initial_velocity)
 
 class GoldEntity(Rigidbody):    
     def __init__(self, name, position):
@@ -216,7 +216,7 @@ class GoldEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 215, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(255, 215, 0)), restitution=0, initial_velocity=Initial_velocity)
 
 class LeafEntity(Rigidbody):
     def __init__(self, name, position):
@@ -224,7 +224,7 @@ class LeafEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 215, 0)), restitution=0, initial_velocity=Initial_velocity)                                
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(0, 215, 0)), restitution=0, initial_velocity=Initial_velocity)                                
 
         
 
@@ -286,7 +286,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 2)
+        eng.set_camera_width(16 * 3)
         eng.resolution = Vector(1600, 900)
 
         # eng.fullscreen=True
