@@ -40,9 +40,7 @@ from typing import Any, Callable
 
 
 class Engine(ABC):
-    """
-    Common things in server and client engine.
-    """
+    """ Common things in server and client engine. """
 
     def __init__(self):
         self.__running = True
@@ -54,9 +52,7 @@ class Engine(ABC):
 
     @property
     def running(self):
-        """
-        bool - If True, engine is running, if False, engine is stopped.
-        """
+        """ bool - If True, engine is running, if False, engine is stopped. """
         return self.__running
 
 
@@ -72,9 +68,7 @@ class Engine(ABC):
 
 
     def stop(self):
-        """
-        Stop the engine. It will stop the main loop and end all threads.
-        """
+        """ Stop the engine. It will stop the main loop and end all threads. """
         self.__running = False
 
 
@@ -82,10 +76,7 @@ class Engine(ABC):
 
 #?ifdef CLIENT
 class InfoText(Widget):
-    """
-    Widget that is used to display stats in the top left corner of the screen.
-    """
-
+    """ Widget that is used to display stats in the top left corner of the screen. """
 
     def __init__(self, name: str, pos_y: int, pre_text_str: str):
         """
@@ -120,10 +111,7 @@ class InfoText(Widget):
 
 
 class ClientEngine(Engine, Renderer):
-    """
-    Client engine class. It is used to run the game on the client side.
-    """
-
+    """ Client engine class. It is used to run the game on the client side. """
 
     def __init__(self):
         Engine.__init__(self)
@@ -194,9 +182,7 @@ class ClientEngine(Engine, Renderer):
 
     @property
     def fps(self):
-        """
-        float - Maximum frames per second. Default is 120.
-        """
+        """ float - Maximum frames per second. Default is 120. """
         return self.__fps
     
 
@@ -210,9 +196,7 @@ class ClientEngine(Engine, Renderer):
 
     @property
     def current_background(self):
-        """
-        str - Current background name. If None, background with Color(0, 0, 0) is drawn.
-        """
+        """ str - Current background name. If None, background with Color(0, 0, 0) is drawn. """
         return self.__current_background
     
 
@@ -226,96 +210,72 @@ class ClientEngine(Engine, Renderer):
 
     @property
     def widgets(self):
-        """
-        dict[str, Widget] - Dictionary of all registered widgets. Key is widget name, value is widget object.
-        """
+        """ dict[str, Widget] - Dictionary of all registered widgets. Key is widget name, value is widget object. """
         return self.__widgets
 
 
     @property
     def backgrounds(self):
-        """
-        dict[str, Background] - Dictionary of all registered backgrounds. Key is background name, value is background object.
-        """
+        """ dict[str, Background] - Dictionary of all registered backgrounds. Key is background name, value is background object. """
         return self.__backgrounds
 
 
     @property
     def network(self):
-        """
-        ClientNetwork - used to handle connection and authentication with server.
-        """
+        """ ClientNetwork - used to handle connection and authentication with server. """
         return self.__network
     
 
     @property
     def level(self):
-        """
-        Level - Client level object. It is used to handle all actors (including physics).
-        """
+        """ Level - Client level object. It is used to handle all actors (including physics). """
         return self.__level
     
 
     @property
     def triggered_keys(self):
-        """
-        set[Keys] - Set of all keys that were pressed in the last frame.
-        """
+        """ set[Keys] - Set of all keys that were pressed in the last frame. """
         return self.__triggered_keys
          
 
     @property
     def pressed_keys(self):
-        """
-        set[Keys] - Set of all keys that are currently pressed.
-        """
+        """ set[Keys] - Set of all keys that are currently pressed. """
         return self.__pressed_keys
     
 
     @property
     def released_keys(self):
-        """
-        set[Keys] - Set of all keys that were released in the last frame.
-        """
+        """ set[Keys] - Set of all keys that were released in the last frame. """
         return self.__released_keys
             
 
     @property
     def screen_mouse_pos(self):
-        """
-        Vector - Mouse position in screen coordinates.
-        """
+        """ Vector - Mouse position in screen coordinates. """
         return self.__screen_mouse_pos
     
 
     @property
     def world_mouse_pos(self):
-        """
-        Vector - Mouse position in world coordinates. It is calculated from screen_mouse_pos, camera_width and camera_position.
-        """
+        """ Vector - Mouse position in world coordinates. It is calculated from screen_mouse_pos, camera_width and camera_position. """
         return self.__world_mouse_pos
     
 
     @property
     def update_distance(self):
-        """
-        int - Distance in chunks from player to load actors. It is calculated from camera_width.
-        """
+        """ int - Distance in chunks from player to load actors. It is calculated from camera_width. """
         return self.__update_distance
     
 
     def show_all_stats(self):
-        """
-        Show all stats of the engine in the top left corner of the screen. It sets all stat widgets to visible.
-        """
+        """ Show all stats of the engine in the top left corner of the screen. It sets all stat widgets to visible. """
         for name, _ in self.__stats.items():
             self.widgets[name].visible = True
 
 
     def hide_all_stats(self):
-        """
-        Hide all stats of the engine. It sets all stat widgets to invisible.
-        """
+        """ Hide all stats of the engine. It sets all stat widgets to invisible. """
         for name, _ in self.__stats.items():
             self.widgets[name].visible = False
 
@@ -614,10 +574,7 @@ class ClientEngine(Engine, Renderer):
 
 #?ifdef SERVER
 class Player:
-    """
-    Player class used to store some data for each connected client. It should be updated only by the engine.
-    """
-
+    """ Player class used to store some data for each connected client. It should be updated only by the engine. """
 
     def __init__(self):
         self.level = ""
@@ -634,10 +591,7 @@ class Player:
 
 
 class TPS:
-    """
-    Used to limit the ticks per second of the server.
-    """
-
+    """ Used to limit the ticks per second of the server. """
 
     def __init__(self, max_tps):
         self.max_tps = max_tps
@@ -656,16 +610,13 @@ class TPS:
 
 
 class ServerEngine(Engine):
-    """
-    Server engine class. It is used to run the game on the server side.
-    It handles all the game logic and physics.
-    """
-
+    """ Server engine class. It is used to run the game on the server side. It handles all the game logic and physics. """
 
     def __init__(self):
         super().__init__()
 
         self.__max_tps = 120
+        self.min_tps = 30
 
         self.__network = None
 
@@ -700,17 +651,13 @@ class ServerEngine(Engine):
 
     @property
     def console(self):
-        """
-        Console - Console object. It is used to handle commands from the console.
-        """
+        """ Console - Console object. It is used to handle commands from the console. """
         return self.__console
     
 
     @property
     def max_tps(self):
-        """
-        float - Maximum ticks per second. Default is 120.
-        """
+        """ float - Maximum ticks per second. Default is 120. """
         return self.__max_tps
     
 
@@ -721,29 +668,37 @@ class ServerEngine(Engine):
             self.__clock.max_tps = value
         else:
             raise TypeError("TPS must be a positive number:", value)
+        
+
+    @property
+    def min_tps(self):
+        """ float - Minimum ticks per second. Default is 30. """
+        return self.__min_tps
+    
+
+    @min_tps.setter
+    def min_tps(self, value):
+        if isinstance(value, (int, float)) and value > 0:
+            self.__min_tps = value
+        else:
+            raise TypeError("TPS must be a positive number:", value)
 
 
     @property
     def network(self):
-        """
-        ServerNetwork - used to handle connection and authentication with clients.
-        """
+        """ ServerNetwork - used to handle connection and authentication with clients. """
         return self.__network
     
 
     @property
     def players(self):
-        """
-        dict[int, Player] - Dictionary of all connected players. Key is player id, value is player object.
-        """
+        """ dict[int, Player] - Dictionary of all connected players. Key is player id, value is player object. """
         return self.__players
     
 
     @property
     def levels(self):
-        """
-        dict[str, Level] - Dictionary of all registered levels. Key is level name, value is level object.
-        """
+        """ dict[str, Level] - Dictionary of all registered levels. Key is level name, value is level object. """
         return self.__levels
         
 
@@ -780,7 +735,7 @@ class ServerEngine(Engine):
         Args:
             key: Key to be registered. It must be subclass of Keys.
             press_type: Press type. It must be subclass of KeyPressType.
-            func: Function that will be called based on the press type. It must take three arguments - engine_ref, level_ref and player_id.
+            func: Function that will be called based on the press type. It must take three arguments - engine_ref, level_ref and player_id. If press_type is HOLD, you will need to pass additional argument - delta_time.
         Raises:
             TypeError: If key is not subclass of Keys or press_type is not subclass of KeyPressType or func is not callable.
             ValueError: If key is already registered.
@@ -858,16 +813,14 @@ class ServerEngine(Engine):
 
 
     def tick(self):
-        """
-        Ticks the engine. It handles events, updates actors and handles network.
-        """
+        """ Ticks the engine. It handles events, updates actors and handles network. """
         delta_time = self.__clock.tick()
 
         self.__stats["tps"].append(1 / delta_time / 1000)
         self.__stats["tps"].pop(0)
 
-        if delta_time > 1 / 20:
-            delta_time = 1 / 20
+        if delta_time > 1 / self.min_tps:
+            delta_time = 1 / self.min_tps
 
         self.__time_now = time.time()
 
@@ -940,7 +893,7 @@ class ServerEngine(Engine):
 
         self.__time("level_updates")
 
-        self.__handle_network()
+        self.__handle_network(delta_time)
 
         self.__time("network")
 
@@ -951,7 +904,7 @@ class ServerEngine(Engine):
         self.__players[id] = Player()
     
 
-    def __handle_network(self):
+    def __handle_network(self, delta_time):
         self.network.tick()
 
         for id in self.__players:
@@ -968,7 +921,7 @@ class ServerEngine(Engine):
                 if key in self.__registered_keys:
                     press_type, func = self.__registered_keys[key]
                     if press_type == KeyPressType.HOLD:
-                        func(self, self.levels[self.players[id].level], id)
+                        func(self, self.levels[self.players[id].level], id, delta_time)
 
             for key in self.__players[id].released_keys:
                 if key in self.__registered_keys:
@@ -1022,6 +975,7 @@ class ServerEngine(Engine):
         if level_name in self.levels:
             self.__players[id].level = level_name
             player_actor = self.levels[level_name].default_character(self.get_player_actor(id), Vector()) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only name, position, everything else should be hardcoded
+            player_actor.id = id
             self.levels[level_name].register_actor(player_actor)
             self.__players[id].previous_chunk = get_chunk_cords(player_actor.position)
             self.__players[id].previous_different_chunk = self.__players[id].previous_chunk

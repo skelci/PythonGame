@@ -11,8 +11,10 @@ from components.material import Material
 
 class Character(Rigidbody):
     """
-    This class represents a character in the game. It inherits from the Rigidbody class and adds functionality for character movement and jumping.
+    This class represents a character in the game.
+    It inherits from the Rigidbody class and adds functionality for character movement and jumping.
     """
+
     def __init__(self, name: str, position = Vector(), half_size = Vector(0.4, 0.8), generate_overlap_events = True, collidable = True, simulate_physics = True, visible = True, material: Material = None, render_layer = 1, restitution = 0, initial_velocity = Vector(), min_velocity = KINDA_SMALL_NUMBER, mass = 70, gravity_scale = 1, air_resistance = 0.1, deceleration = 10, jump_velocity = 6, walk_speed = 3, acceleration = 6, air_control = 0.2):
         """
         Refer to the Rigidbody class for more information about the parameters.
@@ -33,9 +35,7 @@ class Character(Rigidbody):
 
     @property
     def jump_velocity(self):
-        """
-        float - Y velocity when jumping.
-        """
+        """ float - Y velocity when jumping. """
         return self.__jump_velocity
     
 
@@ -49,9 +49,7 @@ class Character(Rigidbody):
 
     @property
     def walk_speed(self):
-        """
-        float - Maximum X velocity when walking.
-        """
+        """ float - Maximum X velocity when walking. """
         return self.__walk_speed
     
 
@@ -65,9 +63,7 @@ class Character(Rigidbody):
 
     @property
     def acceleration(self):
-        """
-        float - Acceleration when moving.
-        """
+        """ float - Acceleration when moving. """
         return self.__acceleration
     
 
@@ -81,9 +77,7 @@ class Character(Rigidbody):
 
     @property
     def air_control(self):
-        """
-        float - Percentage of walk speed that can be controlled in the air.
-        """
+        """ float - Percentage of walk speed that can be controlled in the air. """
         return self.__air_control
     
 
@@ -97,9 +91,7 @@ class Character(Rigidbody):
 
     @property
     def move_direction(self):
-        """
-        int - Direction of movement. -1 for left, 0 for no movement, 1 for right.
-        """
+        """ int - Direction of movement. -1 for left, 0 for no movement, 1 for right. """
         return self.__move_direction
     
 
@@ -112,9 +104,7 @@ class Character(Rigidbody):
         
 
     def jump(self):
-        """
-        Makes the character jump. The character can only jump if it is on the ground.
-        """
+        """ Makes the character jump. The character can only jump if it is on the ground. """
         if self.is_grounded:
             self.velocity.y = self.jump_velocity
 
@@ -176,6 +166,6 @@ class Character(Rigidbody):
         self.__move(delta_time)
 
 
-        
-            
+
+
 

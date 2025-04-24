@@ -19,9 +19,7 @@ class BuildType(IntEnum):
 
 
 class Builder:
-    """
-    Simple python preprocessor for building and packaging server and client files.
-    """
+    """ Simple python preprocessor for building and packaging server and client files. """
 
 
     def __init__(self, build_dir, package_dir, server_folders, client_folders):
@@ -46,9 +44,7 @@ class Builder:
 
     @property
     def build_dir(self):
-        """
-        str - Directory to put the build cache files in.
-        """
+        """ str - Directory to put the build cache files in. """
         return self.__build_dir
     
 
@@ -62,9 +58,7 @@ class Builder:
 
     @property
     def package_dir(self):
-        """
-        str - Directory to put the package files in.
-        """
+        """ str - Directory to put the package files in. """
         return self.__package_dir
     
 
@@ -78,9 +72,7 @@ class Builder:
 
     @property
     def server_folders(self):
-        """
-        list - List of folders to build server files from.
-        """
+        """ list - List of folders to build server files from. """
         return self.__server_folders
     
 
@@ -94,9 +86,7 @@ class Builder:
 
     @property
     def client_folders(self):
-        """
-        list - List of folders to build client files from.
-        """
+        """ list - List of folders to build client files from. """
         return self.__client_folders
     
 
@@ -109,10 +99,8 @@ class Builder:
 
 
     def build_server(self):
-        """
-        Builds and packages the server files.
-        """
-        print("Building server...")
+        """ Builds and packages the server files. """
+        print("[Engine] Building server...")
         build_start = time.time()
 
         for folder in self.server_folders:
@@ -135,14 +123,12 @@ class Builder:
         with open(self.package_dir + "/server/run.bat", "w") as f:
             f.write(self.__run_script)
 
-        print(f"Server built in {time.time() - build_start:.3f} seconds.")
+        print(f"[Engine] Server built in {time.time() - build_start:.3f} seconds.")
 
 
     def build_client(self):
-        """
-        Builds and packages the client files.
-        """
-        print("Building client...")
+        """ Builds and packages the client files. """
+        print("[Engine] Building client...")
         build_start = time.time()
 
         for folder in self.client_folders:
@@ -165,7 +151,7 @@ class Builder:
         with open(self.package_dir + "/client/run.bat", "w") as f:
             f.write(self.__run_script)
 
-        print(f"Client built in {time.time() - build_start:.3f} seconds")
+        print(f"[Engine] Client built in {time.time() - build_start:.3f} seconds")
 
 
     def clear_build(self, build_type = BuildType.COMBINED):
@@ -199,7 +185,7 @@ class Builder:
         if lines[0].startswith("#?attr"):
             attr = lines[0][7:].strip()
             if attr not in ("ENGINE", "SERVER", "CLIENT"):
-                print("Invalid attribute:", file, ":", attr)
+                print("[Engine] Invalid attribute:", file, ":", attr)
                 return
 
             if attr == "ENGINE":
@@ -222,7 +208,7 @@ class Builder:
             if line.strip().startswith("#?"):
                 line = line.strip()
                 if len(line) < 7:
-                    print("Invalid line:", file, ":", line)
+                    print("[Engine] Invalid line:", file, ":", line)
                     continue
 
                 if build_type == BuildType.SERVER:

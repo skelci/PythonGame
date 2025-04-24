@@ -18,7 +18,6 @@ class Widget:
     This widget is a colored rectangle.
     """
     
-    
     def __init__(self, name: str, position: Vector, size: Vector, color: Color, layer = 0, visible = True, subwidgets: dict[str, 'Widget'] = {}, subwidget_offsets: dict[str, Vector] = {}, subwidget_alignments: dict[str, Alignment] = {}):
         """
         Args:
@@ -45,9 +44,7 @@ class Widget:
 
     @property
     def name(self):
-        """
-        str - Name of the widget.
-        """
+        """ str - Name of the widget. """
         return self.__name
     
 
@@ -61,9 +58,7 @@ class Widget:
 
     @property
     def position(self):
-        """
-        Vector - Position of the top left corner of the widget.
-        """
+        """ Vector - Position of the top left corner of the widget. """
         return self.__position
     
 
@@ -77,9 +72,7 @@ class Widget:
 
     @property
     def size(self):
-        """
-        Vector - Size of the widget.
-        """
+        """ Vector - Size of the widget. """
         return self.__size
     
 
@@ -94,9 +87,7 @@ class Widget:
 
     @property
     def layer(self):
-        """
-        int - Layer of the widget. Higher layers are drawn on top of lower layers.
-        """
+        """ int - Layer of the widget. Higher layers are drawn on top of lower layers. """
         return self.__layer
     
 
@@ -110,9 +101,7 @@ class Widget:
 
     @property
     def color(self):
-        """
-        Color - Color of the widget rectangle.
-        """
+        """ Color - Color of the widget rectangle. """
         return self.__color
     
 
@@ -127,9 +116,7 @@ class Widget:
 
     @property
     def visible(self):
-        """
-        bool - Whether the widget is visible or not. If not, it won't process even subwidgets.
-        """
+        """ bool - Whether the widget is visible or not. If not, it won't process even subwidgets. """
         return self.__visible
     
 
@@ -143,9 +130,7 @@ class Widget:
 
     @property
     def subwidgets(self):
-        """
-        dict[str, Widget] - Dictionary of subwidgets. The key is the name of the subwidget and the value is the widget itself.
-        """
+        """ dict[str, Widget] - Dictionary of subwidgets. The key is the name of the subwidget and the value is the widget itself. """
         self._subwidget_updated = False
         return self.__subwidget
     
@@ -160,9 +145,7 @@ class Widget:
 
     @property
     def subwidget_offsets(self):
-        """
-        dict[str, Vector] - Dictionary of subwidget offsets. The key is the name of the subwidget and the value is offset, which tells where the subwidget is positioned relative to the parent widget and alignment.
-        """
+        """ dict[str, Vector] - Dictionary of subwidget offsets. The key is the name of the subwidget and the value is offset, which tells where the subwidget is positioned relative to the parent widget and alignment. """
         self._subwidget_updated = False
         return self.__subwidget_offset
 
@@ -177,9 +160,7 @@ class Widget:
 
     @property
     def subwidget_alignments(self):
-        """
-        dict[str, Alignment] - Dictionary of subwidget alignments. The key is the name of the subwidget and the value is the alignment, which tells how the subwidget is aligned relative to the parent widget and offset (where will Vector(0, 0) be positioned).
-        """
+        """ dict[str, Alignment] - Dictionary of subwidget alignments. The key is the name of the subwidget and the value is the alignment, which tells how the subwidget is aligned relative to the parent widget and offset (where will Vector(0, 0) be positioned). """
         self._subwidget_updated = False
         return self.__subwidget_alignment
     
@@ -194,9 +175,7 @@ class Widget:
 
     @property
     def surface(self):
-        """
-        pygame.Surface - Surface of the widget. This is a colored rectangle.
-        """
+        """ pygame.Surface - Surface of the widget. This is a colored rectangle. """
         if self._updated and self._subwidget_updated:
             return self.__combined_surface
         

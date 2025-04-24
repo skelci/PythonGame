@@ -49,9 +49,7 @@ class Level:
 
     @property
     def engine_ref(self):
-        """
-        ServerEngine | ClientEngine - Reference to the engine that created this level.
-        """
+        """ ServerEngine | ClientEngine - Reference to the engine that created this level. """
         return self.__engine_ref
     
 
@@ -65,9 +63,7 @@ class Level:
 
     @property
     def name(self):
-        """
-        str - Name of the level.
-        """
+        """ str - Name of the level. """
         return self.__name
     
 
@@ -81,9 +77,7 @@ class Level:
 
     @property
     def default_character(self):
-        """
-        Character - Default character for the level. It will be used to create a new character when the player spawns in the level.
-        """
+        """ Character - Default character for the level. It will be used to create a new character when the player spawns in the level. """
         return self.__default_character
     
 
@@ -98,9 +92,7 @@ class Level:
 
     @property
     def background(self):
-        """
-        Background - Background for the level. It will be used to render the background.
-        """
+        """ Background - Background for the level. It will be used to render the background. """
         return self.__background
     
 
@@ -114,25 +106,19 @@ class Level:
 
     @property
     def actors(self):
-        """
-        dict[str, Actor] - Dictionary of all actors in the level. The key is the actor's name and the value is the actor object.
-        """
+        """ dict[str, Actor] - Dictionary of all actors in the level. The key is the actor's name and the value is the actor object. """
         return self.__actors
     
 
     @property
     def rigidbodies(self):
-        """
-        dict[str, Rigidbody] - Dictionary of all rigidbodies in the level. The key is the actor's name and the value is the actor object.
-        """
+        """ dict[str, Rigidbody] - Dictionary of all rigidbodies in the level. The key is the actor's name and the value is the actor object. """
         return self.__rigidbodies
     
 
     @property
     def simulation_speed(self):
-        """
-        float - Speed of the physics simulation. 1 is normal.
-        """
+        """ float - Speed of the physics simulation. 1 is normal. """
         return self.__simulation_speed
     
 
@@ -146,9 +132,7 @@ class Level:
 
     @property
     def gravity(self):
-        """
-        float - Gravity scale for the level. 1 is normal.
-        """
+        """ float - Gravity scale for the level. 1 is normal. """
         return self.__gravity
     
 
@@ -162,9 +146,7 @@ class Level:
 
     @property
     def chunks(self):
-        """
-        dict[Vector, set[Actor]] - Dictionary of all chunks in the level. The key is Vector with chunk's x and y coordinates and the value is a set of Actors in that chunk.
-        """
+        """ dict[Vector, set[Actor]] - Dictionary of all chunks in the level. The key is Vector with chunk's x and y coordinates and the value is a set of Actors in that chunk. """
         return self.__chunks
         
 
@@ -436,5 +418,5 @@ class Level:
             self.actors[actor_name].previously_collided = overlaped_set
 
     #?endif
-        
+
 

@@ -7,9 +7,7 @@ Console module for the engine.
 
 
 class Console:
-    """
-    Simple terminal console for the server.
-    """
+    """ Simple terminal console for the server. """
 
     def __init__(self):
         self.__running = True
@@ -42,25 +40,19 @@ class Console:
 
     @property
     def running(self):
-        """
-        bool: Whether the console is running or not.
-        """
+        """ bool: Whether the console is running or not. """
         return self.__running
         
 
     @property
     def cmd_output(self):
-        """
-        list[str]: The command execution buffer.
-        """
+        """ list[str]: The command execution buffer. """
         return self.__cmd_output
         
 
     @property
     def commands(self):
-        """
-        dict[str, str]: The commands registered to the console.
-        """
+        """ dict[str, str]: The commands registered to the console. """
         return self.__commands
     
 

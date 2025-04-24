@@ -14,7 +14,8 @@ from components.input_box import InputBox
 from components.widget import Widget
 from components.border import Border
 #?endif
-from collections import defaultdict
+
+from game.blocks import *
 
 import threading
 import random as r
@@ -30,202 +31,6 @@ DEVIDER = CHUNK_SIZE // ORIGINAL_CHUNK_SIZE
 CAMERA_OFFSET_X = 1
 CAMERA_OFFSET_Y = 1
 
-
-
-class Log(Actor):
-    def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material("res/textures/log.png"))
-        self.position = position
-    def __del__(self):
-        if self.engine_ref.__class__.__name__ == "ClientEngine":
-            return
-        r=random.randint(3,5)
-        for i in range(r):
-            self.level_ref.register_actor(LogEntity(self.name, self.position))    
-            #print('wood iz log')
-
-class Leaf(Actor):
-    def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), collidable=False, material = Material("res/textures/leaf_block.png"), render_layer=1)
-        self.position = position
-    def __del__(self):
-        if self.engine_ref.__class__.__name__ == "ClientEngine":
-            return
-        r=random.randint(0,5)
-        #print(r)
-        for i in range(r):
-            self.level_ref.register_actor(StickEntity(self.name, self.position))
-            #print("stick iz leaf") 
-        for j in range(8):
-            self.level_ref.register_actor(LeafEntity(self.name, self.position))
-            #print("leaves:", j) 
-
-class Grass(Actor):
-    def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass_block.png"))
-        self.position = position
-    def __del__(self):
-        if self.engine_ref.__class__.__name__ == "ClientEngine":
-            return
-        for i in range(4):
-            self.level_ref.register_actor(DirtEntity(self.name, self.position))
-            #print("entity dirt iz grasa")
-
-class Dirt(Actor):
-    def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/dirt.png"))
-        self.position = position
-    def __del__(self):
-        if self.engine_ref.__class__.__name__ == "ClientEngine":
-            return
-        r=random.randint(3,5)
-        for i in range(r):
-            self.level_ref.register_actor(DirtEntity(self.name, self.position))
-            #print('dirt iz dirta')
-        chance=random.randint(1,4)
-        if chance==1:
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))
-            #print('stone iz dirta')    
- 
-class Stone(Actor):
-    def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/stone.png"))
-        self.position = position
-    def __del__(self):
-        if self.engine_ref.__class__.__name__ == "ClientEngine":
-            return
-        r=random.randint(3,5)
-        for i in range(r):
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))   
-            #print('rock iz stone')     
-
-class Coal(Actor):
-    def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/coal_ore.png"))
-        self.position = position
-    def __del__(self):
-        if self.engine_ref.__class__.__name__ == "ClientEngine":
-            return
-        self.level_ref.register_actor(CoalEntity(self.name, self.position))  
-        r=random.randint(1,2)
-        for i in range(2):
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))  
-            #print("rock iz coala")
-        if r==1:
-             self.level_ref.register_actor(StoneEntity(self.name, self.position))   
-
-class Iron(Actor):
-    def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/iron_ore.png"))
-        self.position = position
-    def __del__(self):
-        if self.engine_ref.__class__.__name__ == "ClientEngine":
-            return
-        for i in range(3):
-            self.level_ref.register_actor(IronEntity(self.name, self.position))   
-        r=random.randint(1,2)
-        for i in range(2):
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))  
-            #print("rock iz irona") 
-        if r==1:
-            self.level_ref.register_actor(StoneEntity(self.name, self.posiiton))    
-
-class Gold(Actor):
-    def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/gold_ore.png"))
-        self.position = position
-    def __del__(self):
-        if self.engine_ref.__class__.__name__ == "ClientEngine":
-            return
-        for i in range(3):
-            self.level_ref.register_actor(GoldEntity(self.name, self.position)) 
-        r=random.randint(1,2)
-        for i in range(2):
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))  
-            #print("rock iz golda")
-        if r==1:
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))    
-
-class DebugTunnel(Actor):
-    def __init__(self, name, position):
-        super().__init__(name, position=position, half_size=Vector(0.5, 0.5), collidable=False, material=Material(Color(255, 0, 0)), render_layer=1)  # Bright red
-        self.position = position
-
-class TestPlayer(Character):
-    def __init__(self, name, position):
-        super().__init__(name, position=Vector(-5, 27), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
-
-class LogEntity(Rigidbody):
-    def __init__(self, name, position):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y) 
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/log_entity.png"), restitution=0, initial_velocity=Initial_velocity)   
-
-class StickEntity(Rigidbody):    
-    def __init__(self, name, position):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(145, 69, 34)), restitution=0, initial_velocity=Initial_velocity)             
-
-class DirtEntity(Rigidbody):        
-    def __init__(self, name, position):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/dirt_entity.png"), restitution=0, initial_velocity=Initial_velocity)
-
-class GrassEntity(Rigidbody):        
-    def __init__(self, name, position):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(255, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
-
-class StoneEntity(Rigidbody):    
-    def __init__(self, name, position):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/stone_entity.png"), restitution=0, initial_velocity=Initial_velocity)
-
-class CoalEntity(Rigidbody):    
-    def __init__(self, name, position):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/coal_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
-
-class IronEntity(Rigidbody):    
-    def __init__(self, name, position):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/iron_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
-
-class GoldEntity(Rigidbody):    
-    def __init__(self, name, position):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/gold_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
-
-class LeafEntity(Rigidbody):
-    def __init__(self, name, position):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(0, 215, 0)), restitution=0, initial_velocity=Initial_velocity)                                
 
         
 
@@ -279,7 +84,71 @@ class WarningWidget:
 class ClientGame(ClientGameBase):
     def __init__(self):
         super().__init__()
+        def update_inventory(data):
+            stevec=0
+            #print(data)
+            for key, value in data.items():
+                stevec+=1
+                key= f"slot_{stevec}"
+                self.engine.widgets["Inventory"].subwidgets[key].subwidgets["item_count"].text = str(value)
+        self.engine.regisrer_network_command("update_inventory", update_inventory)
 
+        class InventorySlot(Border):
+            def __init__(self, name):
+                super().__init__(name, Vector(0, 0), Vector(50, 50), 0, Color(150, 150, 150), Color(0, 0, 0, 100), True, 5, 
+                    subwidgets={
+                        "item_count": Text("item_count", Vector(0, 0), Vector(20, 20), Color(255, 255, 255), "res/fonts/arial.ttf", 0, True, " "),
+                    },
+                    subwidget_offsets={
+                        "item_count": Vector(-5, -5),
+                    }, 
+                    subwidget_alignments={
+                        "item_count": Alignment.BOTTOM_RIGHT,
+                    }
+                )
+
+        class Inventory(Widget):
+            def __init__(self):
+                super().__init__("Inventory", Vector(0, 0), Vector(1600, 900), Color(0, 0, 0, 0), 0, False,  
+                    subwidgets={
+                        "slot_1": InventorySlot("slot_1"),
+                        "slot_2": InventorySlot("slot_2"),
+                        "slot_3": InventorySlot("slot_3"),
+                        "slot_4": InventorySlot("slot_4"),
+                        "slot_5": InventorySlot("slot_5"),
+                        "slot_6": InventorySlot("slot_6"),
+                        "slot_7": InventorySlot("slot_7"),
+                        "slot_8": InventorySlot("slot_8"),
+                        "slot_9": InventorySlot("slot_9"),
+                        "slot_10": InventorySlot("slot_10"),
+                    },
+                    subwidget_offsets={
+                        "slot_1": Vector(-250, -50),
+                        "slot_2": Vector(-200, -50),
+                        "slot_3": Vector(-150, -50),
+                        "slot_4": Vector(-100, -50),
+                        "slot_5": Vector(-50, -50),
+                        "slot_6": Vector(0, -50),
+                        "slot_7": Vector(50, -50),
+                        "slot_8": Vector(100, -50),
+                        "slot_9": Vector(150, -50),
+                        "slot_10": Vector(200, -50),
+                    },
+                    subwidget_alignments={
+                        "slot_1": Alignment.BOTTOM_CENTER,
+                        "slot_2": Alignment.BOTTOM_CENTER,
+                        "slot_3": Alignment.BOTTOM_CENTER,
+                        "slot_4": Alignment.BOTTOM_CENTER,
+                        "slot_5": Alignment.BOTTOM_CENTER,
+                        "slot_6": Alignment.BOTTOM_CENTER,
+                        "slot_7": Alignment.BOTTOM_CENTER,
+                        "slot_8": Alignment.BOTTOM_CENTER,
+                        "slot_9": Alignment.BOTTOM_CENTER,
+                        "slot_10": Alignment.BOTTOM_CENTER,
+                    }
+                )
+
+        self.engine.register_widget(Inventory())        
 
         self.true_scroll = [0, 0]
         self.game_map = {}
@@ -287,7 +156,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 3)
+        eng.set_camera_width(16 * 2)
         eng.resolution = Vector(1600, 900)
 
         # eng.fullscreen=True
@@ -507,6 +376,7 @@ class ClientGame(ClientGameBase):
 
         if self.engine.check_network() and not self.authenticated:
             self.authenticated = True
+            self.engine.widgets["Inventory"].visible = True
             self.engine.widgets["main_menu-credentials"].visible = False
             self.engine.join_level("Test_Level")
             return True
@@ -547,17 +417,17 @@ class TestLevel(Level):
 #* This class was made by skelci
 class KeyHandler:
     @staticmethod
-    def key_W(engine_ref, level_ref, id):
+    def key_W(engine_ref, level_ref, id, delta_time):
         level_ref.actors[engine_ref.get_player_actor(id)].jump()
     
 
     @staticmethod
-    def key_A(engine_ref, level_ref, id):
+    def key_A(engine_ref, level_ref, id, delta_time):
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = -1
 
 
     @staticmethod
-    def key_D(engine_ref, level_ref, id):
+    def key_D(engine_ref, level_ref, id, delta_time):
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = 1
 
     @staticmethod
@@ -752,7 +622,6 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.W, KeyPressType.HOLD, KeyHandler.key_W)
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
-        self.engine.register_key(Keys.C, KeyPressType.TRIGGER, KeyHandler.key_C)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
         self.game_map = set()
         self.current_base_chunk = Vector(0, 0)
@@ -764,8 +633,9 @@ class ServerGame(ServerGameBase):
         self.engine.console.handle_cmd("build_client")
         #?endif
 
-
-        self.generate_and_load_chunks(-1, 0)
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                self.generate_and_load_chunks(x, y)
 
         self.engine.start_network("0.0.0.0", 5555, 10)
 
