@@ -46,7 +46,7 @@ class Log(Actor):
 
 class Leaf(Actor):
     def __init__(self, name, position):
-        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), collidable=False, material = Material(Color(34, 139, 34)), render_layer=1)
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), collidable=False, material = Material("res/textures/leaf_block.png"), render_layer=1)
         self.position = position
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
