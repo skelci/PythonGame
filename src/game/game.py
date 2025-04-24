@@ -14,14 +14,14 @@ from components.input_box import InputBox
 from components.widget import Widget
 from components.border import Border
 #?endif
+from collections import defaultdict
 
 import threading
 import random as r
 import math
-import random
-#?ifdef SERVER
 import noise
-#?endif
+import os
+import random
 
 
 ORIGINAL_CHUNK_SIZE = CHUNK_SIZE
@@ -29,7 +29,6 @@ CHUNK_SIZE = 32
 DEVIDER = CHUNK_SIZE // ORIGINAL_CHUNK_SIZE
 CAMERA_OFFSET_X = 1
 CAMERA_OFFSET_Y = 1
-
 
 
 class Log(Actor):
@@ -174,17 +173,18 @@ class DebugTunnel(Actor):
 
 class TestPlayer(Character):
     def __init__(self, name, position):
-        super().__init__(name, position=Vector(-5, 27), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
+        super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
         self.inventory = {}
    
         
 
     def add_to_inventory(self, item_name, count=0):
-        print("adding to inventory")
+        #print("adding to inventory")
         if item_name in self.inventory:
             self.inventory[item_name] += count
         else:
             self.inventory[item_name] = count
+        self.engine_ref.network.send(self.id, "update_inventory", self.inventory, True)
 
         # Display the inventory for debugging purposes
         #print(f"Inventory: {self.inventory}")
@@ -197,7 +197,7 @@ def pick_me_up(self, other_actor):
 
 
 class LogEntity(Rigidbody):
-    def __init__(self, name, position, count=0):
+    def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
@@ -209,7 +209,7 @@ class LogEntity(Rigidbody):
 
 
 class StickEntity(Rigidbody):    
-    def __init__(self, name, position, count=0):
+    def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
@@ -220,19 +220,19 @@ class StickEntity(Rigidbody):
         pick_me_up(self, other_actor)
 
 class DirtEntity(Rigidbody):        
-    def __init__(self, name, position, count=0):
+    def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
         #print(self.count)
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/dirt_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 255, 0)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
     def on_overlap_begin(self, other_actor):
         pick_me_up(self, other_actor)
 
 class GrassEntity(Rigidbody):        
-    def __init__(self, name, position, count=0):
+    def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
@@ -243,51 +243,51 @@ class GrassEntity(Rigidbody):
         pick_me_up(self, other_actor)
 
 class StoneEntity(Rigidbody):    
-    def __init__(self, name, position, count=0):
+    def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/stone_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(128, 128, 128)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
     def on_overlap_begin(self, other_actor):
         pick_me_up(self, other_actor)
 
 class CoalEntity(Rigidbody):    
-    def __init__(self, name, position, count=0):
+    def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/coal_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 0, 0)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
     def on_overlap_begin(self, other_actor):
         pick_me_up(self, other_actor)
 
 class IronEntity(Rigidbody):    
-    def __init__(self, name, position, count=0):
+    def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/iron_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(192, 192, 192)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
     def on_overlap_begin(self, other_actor):
         pick_me_up(self, other_actor)
 
 class GoldEntity(Rigidbody):    
-    def __init__(self, name, position, count=0):
+    def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/gold_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 215, 0)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
     def on_overlap_begin(self, other_actor):
         pick_me_up(self, other_actor)
 
 class LeafEntity(Rigidbody):
-    def __init__(self, name, position, count=0):
+    def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
@@ -348,7 +348,71 @@ class WarningWidget:
 class ClientGame(ClientGameBase):
     def __init__(self):
         super().__init__()
+        def update_inventory(data):
+            stevec=0
+            #print(data)
+            for key, value in data.items():
+                stevec+=1
+                key= f"slot_{stevec}"
+                self.engine.widgets["Inventory"].subwidgets[key].subwidgets["item_count"].text = str(value)
+        self.engine.regisrer_network_command("update_inventory", update_inventory)
 
+        class InventorySlot(Border):
+            def __init__(self, name):
+                super().__init__(name, Vector(0, 0), Vector(50, 50), 0, Color(150, 150, 150), Color(0, 0, 0, 100), True, 5, 
+                    subwidgets={
+                        "item_count": Text("item_count", Vector(0, 0), Vector(20, 20), Color(255, 255, 255), "res/fonts/arial.ttf", 0, True, " "),
+                    },
+                    subwidget_offsets={
+                        "item_count": Vector(-5, -5),
+                    }, 
+                    subwidget_alignments={
+                        "item_count": Alignment.BOTTOM_RIGHT,
+                    }
+                )
+
+        class Inventory(Widget):
+            def __init__(self):
+                super().__init__("Inventory", Vector(0, 0), Vector(1600, 900), Color(0, 0, 0, 0), 0, True,  
+                    subwidgets={
+                        "slot_1": InventorySlot("slot_1"),
+                        "slot_2": InventorySlot("slot_2"),
+                        "slot_3": InventorySlot("slot_3"),
+                        "slot_4": InventorySlot("slot_4"),
+                        "slot_5": InventorySlot("slot_5"),
+                        "slot_6": InventorySlot("slot_6"),
+                        "slot_7": InventorySlot("slot_7"),
+                        "slot_8": InventorySlot("slot_8"),
+                        "slot_9": InventorySlot("slot_9"),
+                        "slot_10": InventorySlot("slot_10"),
+                    },
+                    subwidget_offsets={
+                        "slot_1": Vector(-250, -50),
+                        "slot_2": Vector(-200, -50),
+                        "slot_3": Vector(-150, -50),
+                        "slot_4": Vector(-100, -50),
+                        "slot_5": Vector(-50, -50),
+                        "slot_6": Vector(0, -50),
+                        "slot_7": Vector(50, -50),
+                        "slot_8": Vector(100, -50),
+                        "slot_9": Vector(150, -50),
+                        "slot_10": Vector(200, -50),
+                    },
+                    subwidget_alignments={
+                        "slot_1": Alignment.BOTTOM_CENTER,
+                        "slot_2": Alignment.BOTTOM_CENTER,
+                        "slot_3": Alignment.BOTTOM_CENTER,
+                        "slot_4": Alignment.BOTTOM_CENTER,
+                        "slot_5": Alignment.BOTTOM_CENTER,
+                        "slot_6": Alignment.BOTTOM_CENTER,
+                        "slot_7": Alignment.BOTTOM_CENTER,
+                        "slot_8": Alignment.BOTTOM_CENTER,
+                        "slot_9": Alignment.BOTTOM_CENTER,
+                        "slot_10": Alignment.BOTTOM_CENTER,
+                    }
+                )
+
+        self.engine.register_widget(Inventory())        
 
         self.true_scroll = [0, 0]
         self.game_map = {}
@@ -356,7 +420,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 3)
+        eng.set_camera_width(16 * 2)
         eng.resolution = Vector(1600, 900)
 
         # eng.fullscreen=True
@@ -408,7 +472,7 @@ class ClientGame(ClientGameBase):
         eng.register_widget(self.user_already_logged_in_warning.widget)
         eng.register_widget(self.username_already_exists_warning.widget)
         eng.register_widget(self.wrong_credentials_warning.widget)
- 
+
         def connect_to_server(server_address):
             if not server_address:
                 return
@@ -423,12 +487,12 @@ class ClientGame(ClientGameBase):
                 except ValueError:
                     self.invalid_port_warning.show()
                     return
-                
-            eng.connect(server_ip, port)
-
-            if not eng.network.connected:
+            try:
+                eng.connect(server_ip, port)
+            except Exception as e:
+                print(f"Failed to connect: {e}")
                 self.failed_connection_warning.show()
-            return
+                return
             
         def get_usernname_password():
             username = self.engine.widgets["main_menu-credentials"].subwidgets["prompt_field-username"].subwidgets["input_box"].current_text
@@ -629,21 +693,6 @@ class KeyHandler:
     def key_D(engine_ref, level_ref, id):
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = 1
 
-    @staticmethod
-    def key_C(engine_ref, level_ref,id):
-        # Spawn a CoalEntity at the player's position
-        coal_entity = CoalEntity("coal_entity", Vector(-5, 26))
-        gold_entity = GoldEntity("gold_entity", Vector(-4, 26))
-        iron_entity = IronEntity("iron_entity", Vector(-3, 26))
-        stone_entity = StoneEntity("stone_entity", Vector(-2, 26))
-        dirt_entity = DirtEntity("dirt_entity", Vector(-1, 26))
-
-        level_ref.register_actor(coal_entity)
-        level_ref.register_actor(gold_entity)
-        level_ref.register_actor(iron_entity)
-        level_ref.register_actor(stone_entity)
-        level_ref.register_actor(dirt_entity)
-
 
 class TunnelGenerator:
     def __init__(self):
@@ -812,13 +861,14 @@ class TunnelGenerator:
 class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
+        self.engine.max_tps = 60
+        
 
         self.engine.register_level(TestLevel())
 
         self.engine.register_key(Keys.W, KeyPressType.HOLD, KeyHandler.key_W)
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
-        self.engine.register_key(Keys.C, KeyPressType.TRIGGER, KeyHandler.key_C)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
         self.game_map = set()
         self.current_base_chunk = Vector(0, 0)
@@ -830,8 +880,9 @@ class ServerGame(ServerGameBase):
         self.engine.console.handle_cmd("build_client")
         #?endif
 
-
-        self.generate_and_load_chunks(-1, 0)
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                self.generate_and_load_chunks(x, y)
 
         self.engine.start_network("0.0.0.0", 5555, 10)
 
