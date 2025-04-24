@@ -563,8 +563,17 @@ class KeyHandler:
     @staticmethod
     def key_C(engine_ref, level_ref,id):
         # Spawn a CoalEntity at the player's position
-        coal_entity = IronEntity("coal_entity", Vector(-5, 26))
+        coal_entity = CoalEntity("coal_entity", Vector(-5, 26))
+        gold_entity = GoldEntity("gold_entity", Vector(-4, 26))
+        iron_entity = IronEntity("iron_entity", Vector(-3, 26))
+        stone_entity = StoneEntity("stone_entity", Vector(-2, 26))
+        dirt_entity = DirtEntity("dirt_entity", Vector(-1, 26))
+
         level_ref.register_actor(coal_entity)
+        level_ref.register_actor(gold_entity)
+        level_ref.register_actor(iron_entity)
+        level_ref.register_actor(stone_entity)
+        level_ref.register_actor(dirt_entity)
 
 
 class TunnelGenerator:
