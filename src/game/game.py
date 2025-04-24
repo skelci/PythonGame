@@ -582,7 +582,6 @@ class TunnelGenerator:
     def __init__(self):
         self.width = 1.5
         self.curvature = 0.6# 0 = straight, 1 = very curved
-        self.max_tunnel_length = 15
         
 
     def _center_point(self, region):
@@ -734,7 +733,7 @@ class TunnelGenerator:
         # Create curved path
         path = self._calculate_curve(start, end)
         
-        # Dig along path
+        # Dig a long path
         for i in range(len(path)-1):
             x1, y1 = path[i]
             x2, y2 = path[i+1]
@@ -789,7 +788,7 @@ class ServerGame(ServerGameBase):
                
             if can_spawn:
                 shared_tree_positions.append(pos)
-                tree_height = r.randint(4, 7)
+                tree_height = r.randint(5, 7)
                 top = pos + Vector(0, tree_height)
                 # Add trunk
                 for h in range(1, tree_height + 1):
@@ -799,12 +798,12 @@ class ServerGame(ServerGameBase):
                # Add leaves
                 rx = 3.25
                 ry = 4.5
-                top_leaf_pos = top + Vector(0, 5)
+                top_leaf_pos = top + Vector(0, 4)
                 chunk_data.append(((top_leaf_pos.x, top_leaf_pos.y), "leaf"))
                 for dy in range(0, int(ry) + 1):
                     for dx in range(-int(rx), int(rx) + 1):
                         if (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1:
-                            leaf_pos = top + Vector(dx, dy)
+                            leaf_pos = top + Vector(dx, dy-1)
                             chunk_data.append(((leaf_pos.x, leaf_pos.y), "leaf"))
 
 
@@ -873,13 +872,17 @@ class ServerGame(ServerGameBase):
                 noise_data[y_index][x_index] = (pos, is_cave, False)
 
     def generate_chunk(self, x, y):
-        chunk_data = []
-        tree_positions = [] 
         chunk_origin = Vector(x, y) * CHUNK_SIZE
-        tree_threshold = 0.98  #smaller = more trees, bigger = less trees
-        
-        # Noise parameters
         terrain_scale = 0.035
+        
+        # First calculate ground levels
+        ground_levels = []
+        for x_pos in range(CHUNK_SIZE):
+            pos_x = chunk_origin.x + x_pos
+            height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=0)
+            ground_levels.append(16 - math.floor(height_noise * 10))
+           
+
         cave_scale_x = 0.02
         cave_scale_y = 0.025
         surface_threshold = 0.6
@@ -887,8 +890,32 @@ class ServerGame(ServerGameBase):
         deep_threshold = 0.34  
         cave_octaves = 2
         cave_persistence = 0.5
+    
+       # Single-threaded cave generation
+       # Pre-allocate noise_data as a 2D array
+        noise_data = [[None for _ in range(CHUNK_SIZE)] for _ in range(CHUNK_SIZE)]
         
-        # Enhanced ore generation parameters - different for each type
+        self.generate_caves(
+            chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+            surface_threshold, mid_threshold, deep_threshold, ground_levels, noise_data, ServerGame.smoothstep
+        )
+
+        chunk_data = []
+                        
+        # Generate tunnels
+        if y <= 0:
+            tunnel_gen = TunnelGenerator()
+            tunnel_gen.generate_tunnels(noise_data)
+
+            # Add tunnel tiles to chunk_data
+            for y_pos in range(CHUNK_SIZE):
+                for x_pos in range(CHUNK_SIZE):
+                    pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
+                    if is_tunnel:
+                        chunk_data.append([(pos.x, pos.y), None])
+
+
+                # Enhanced ore generation parameters - different for each type
         ore_parameters = {
             "coal": {
                 "scale": 0.042,       # smaller scale = bigger, spread-out veins
@@ -909,44 +936,15 @@ class ServerGame(ServerGameBase):
                 "min_depth": 70,
             }
         }
-        
-        # First calculate ground levels
-        ground_levels = []
-        for x_pos in range(CHUNK_SIZE):
-            pos_x = chunk_origin.x + x_pos
-            height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=0)
-            ground_levels.append(16 - math.floor(height_noise * 10))
-           
-        
-       # Single-threaded cave generation
-       # Pre-allocate noise_data as a 2D array
-        noise_data = [[None for _ in range(CHUNK_SIZE)] for _ in range(CHUNK_SIZE)]
-        
-        self.generate_caves(
-            chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
-            surface_threshold, mid_threshold, deep_threshold, ground_levels, noise_data, ServerGame.smoothstep
-        )
-
-        
-                        
-        # Generate tunnels
-        if y <= 0:
-            tunnel_gen = TunnelGenerator()
-            tunnel_gen.generate_tunnels(noise_data)
-
-            # Add tunnel tiles to chunk_data
-            for y_pos in range(CHUNK_SIZE):
-                for x_pos in range(CHUNK_SIZE):
-                    pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
-                    if is_tunnel:
-                        chunk_data.append([(pos.x, pos.y), None])
 
         # Generate ores
         for ore_type, parameters in ore_parameters.items():
             self.ore_generation(ore_type, parameters, noise_data, ground_levels, set())
-           
             
-        # Rest of terrain generation (unchanged)
+
+        tree_positions = [] 
+        tree_threshold = 0.98  #smaller = more trees, bigger = less trees
+            
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
                 pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
