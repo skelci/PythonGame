@@ -735,7 +735,7 @@ class ServerEngine(Engine):
         Args:
             key: Key to be registered. It must be subclass of Keys.
             press_type: Press type. It must be subclass of KeyPressType.
-            func: Function that will be called based on the press type. It must take three arguments - engine_ref, level_ref and player_id.
+            func: Function that will be called based on the press type. It must take three arguments - engine_ref, level_ref and player_id. If press_type is HOLD, you will need to pass additional argument - delta_time.
         Raises:
             TypeError: If key is not subclass of Keys or press_type is not subclass of KeyPressType or func is not callable.
             ValueError: If key is already registered.
@@ -893,7 +893,7 @@ class ServerEngine(Engine):
 
         self.__time("level_updates")
 
-        self.__handle_network()
+        self.__handle_network(delta_time)
 
         self.__time("network")
 
@@ -904,7 +904,7 @@ class ServerEngine(Engine):
         self.__players[id] = Player()
     
 
-    def __handle_network(self):
+    def __handle_network(self, delta_time):
         self.network.tick()
 
         for id in self.__players:
@@ -921,7 +921,7 @@ class ServerEngine(Engine):
                 if key in self.__registered_keys:
                     press_type, func = self.__registered_keys[key]
                     if press_type == KeyPressType.HOLD:
-                        func(self, self.levels[self.players[id].level], id)
+                        func(self, self.levels[self.players[id].level], id, delta_time)
 
             for key in self.__players[id].released_keys:
                 if key in self.__registered_keys:

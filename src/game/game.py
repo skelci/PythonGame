@@ -616,17 +616,17 @@ class TestLevel(Level):
 #* This class was made by skelci
 class KeyHandler:
     @staticmethod
-    def key_W(engine_ref, level_ref, id):
+    def key_W(engine_ref, level_ref, id, delta_time):
         level_ref.actors[engine_ref.get_player_actor(id)].jump()
     
 
     @staticmethod
-    def key_A(engine_ref, level_ref, id):
+    def key_A(engine_ref, level_ref, id, delta_time):
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = -1
 
 
     @staticmethod
-    def key_D(engine_ref, level_ref, id):
+    def key_D(engine_ref, level_ref, id, delta_time):
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = 1
 
     @staticmethod
