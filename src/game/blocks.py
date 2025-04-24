@@ -1,0 +1,273 @@
+from components.datatypes import *
+from components.actor import Actor
+from components.character import Character
+from components.rigidbody import Rigidbody
+from components.material import Material
+import random
+
+
+class Log(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material("res/textures/log.png"))
+        self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        
+        count=random.randint(3,5)
+        LogName = f"log_{self.name}"
+        LogEntity_ = LogEntity(LogName, self.position, count=count)
+        self.level_ref.register_actor(LogEntity_) 
+        #print('wood iz log')
+
+class Leaf(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), collidable=False, material = Material("res/textures/leaf_block.png"), render_layer=1)
+        self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        
+        count=random.randint(0,5)
+        StickName = f"stick_{self.name}"
+        StickEntity_ = StickEntity(StickName, self.position, count=count)
+        self.level_ref.register_actor(StickEntity_)
+        #print("stick iz leaf") 
+
+        LeafName = f"leaf_{self.name}"
+        LeafEntity_ = LeafEntity(LeafName, self.position, count=8)
+        self.level_ref.register_actor(LeafEntity_)
+        #print("leaves:", j) 
+
+class Grass(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass_block.png"))
+        self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        count=4
+        GrassDirtName = f"grass_dirt_{self.name}"
+        GrassDirtEntity= DirtEntity(GrassDirtName, self.position, count=count)
+        self.level_ref.register_actor(GrassDirtEntity)
+        #print("entity dirt iz grasa")
+
+class Dirt(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/dirt.png"))
+        self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        
+        count=random.randint(3,5)
+        DirtName = f"dirt_{self.name}"
+        dirt_entity = DirtEntity(DirtName, self.position, count=count)
+        self.level_ref.register_actor(dirt_entity)
+        #print('dirt iz dirta')
+
+        chance=random.randint(1,4)
+        if chance==1:
+            self.level_ref.register_actor(StoneEntity(self.name, self.position))
+            #print('stone iz dirta')    
+ 
+class Stone(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/stone.png"))
+        self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        count=random.randint(3,5)
+        StoneName = f"stone_{self.name}"
+        stone_entity = StoneEntity(StoneName, self.position, count=count)
+        self.level_ref.register_actor(stone_entity)
+        #print('rock iz stone')     
+
+class Coal(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/coal_ore.png"))
+        self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        
+        spawn_extra_stones = random.randint(1, 2)
+        stone_count = 3 if spawn_extra_stones == 1 else 2
+
+        self.level_ref.register_actor(CoalEntity(self.name, self.position))  
+        RockCoalName = f"rock_coal_{self.name}"
+        RockCoalEntity = StoneEntity(RockCoalName, self.position, count=stone_count)
+        self.level_ref.register_actor(RockCoalEntity) 
+        #print("rock iz coala")  
+
+class Iron(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/iron_ore.png"))
+        self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        
+        IronName = f"iron_{self.name}"
+        IronEnntity = IronEntity(IronName, self.position, count=3)
+        self.level_ref.register_actor(IronEnntity) 
+
+        spawn_extra_stones = random.randint(1, 2)
+        stone_count = 3 if spawn_extra_stones == 1 else 2
+
+        RockIronName = f"rock_iron_{self.name}"
+        RockIronEntity = StoneEntity(RockIronName, self.position, count=stone_count)
+        self.level_ref.register_actor(RockIronEntity)
+        #print("rock iz irona")   
+
+class Gold(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/gold_ore.png"))
+        self.position = position
+    def __del__(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        
+        GoldName = f"gold_{self.name}"
+        GoldEntity = GoldEntity(GoldName, self.position, count=3)
+        self.level_ref.register_actor(GoldEntity) 
+
+        spawn_extra_stones = random.randint(1, 2)
+        stone_count = 3 if spawn_extra_stones == 1 else 2
+
+        RockGoldName = f"rock_gold_{self.name}"
+        RockGoldEntity = StoneEntity(RockGoldName, self.position, count=stone_count)
+        self.level_ref.register_actor(RockGoldEntity)  
+        #print("rock iz golda")  
+
+class DebugTunnel(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position=position, half_size=Vector(0.5, 0.5), collidable=False, material=Material(Color(255, 0, 0)), render_layer=1)  # Bright red
+        self.position = position
+
+class TestPlayer(Character):
+    def __init__(self, name, position):
+        super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
+        self.inventory = {}
+   
+        
+
+    def add_to_inventory(self, item_name, count=0):
+        #print("adding to inventory")
+        if item_name in self.inventory:
+            self.inventory[item_name] += count
+        else:
+            self.inventory[item_name] = count
+        self.engine_ref.network.send(self.id, "update_inventory", self.inventory, True)
+
+        # Display the inventory for debugging purposes
+        #print(f"Inventory: {self.inventory}")
+
+def pick_me_up(self, other_actor):
+        #print("pick me up")
+        if isinstance(other_actor, Character):
+            other_actor.add_to_inventory(self.__class__.__name__, self.count)
+            self.level_ref.destroy_actor(self)
+
+
+class LogEntity(Rigidbody):
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y) 
+        self.count = count
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/log_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)   
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
+
+class StickEntity(Rigidbody):    
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(145, 69, 34)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)             
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
+class DirtEntity(Rigidbody):        
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        #print(self.count)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/dirt_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
+class GrassEntity(Rigidbody):        
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 0, 0)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
+class StoneEntity(Rigidbody):    
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/stone_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
+class CoalEntity(Rigidbody):    
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/coal_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
+class IronEntity(Rigidbody):    
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/iron_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
+class GoldEntity(Rigidbody):    
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/gold_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
+class LeafEntity(Rigidbody):
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 215, 0)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)                                
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
