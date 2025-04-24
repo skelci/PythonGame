@@ -201,7 +201,7 @@ class DirtEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 255, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/dirt_entity.png"), restitution=0, initial_velocity=Initial_velocity)
 
 class GrassEntity(Rigidbody):        
     def __init__(self, name, position, count=0):
@@ -219,7 +219,7 @@ class StoneEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(128, 128, 128)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/stone_entity.png"), restitution=0, initial_velocity=Initial_velocity)
 
 class CoalEntity(Rigidbody):    
     def __init__(self, name, position, count=0):
@@ -228,7 +228,7 @@ class CoalEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/coal_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
 
 class IronEntity(Rigidbody):    
     def __init__(self, name, position, count=0):
@@ -237,7 +237,7 @@ class IronEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(192, 192, 192)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/iron_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
 
 class GoldEntity(Rigidbody):    
     def __init__(self, name, position, count=0):
@@ -246,7 +246,7 @@ class GoldEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 215, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material("res/textures/gold_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
 
 class LeafEntity(Rigidbody):
     def __init__(self, name, position, count=0):
