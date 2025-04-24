@@ -174,6 +174,26 @@ class DebugTunnel(Actor):
 class TestPlayer(Character):
     def __init__(self, name, position):
         super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
+        self.inventory = {}
+   
+        
+
+    def add_to_inventory(self, item_name, count=0):
+        print("adding to inventory")
+        if item_name in self.inventory:
+            self.inventory[item_name] += count
+        else:
+            self.inventory[item_name] = count
+
+        # Display the inventory for debugging purposes
+        #print(f"Inventory: {self.inventory}")
+
+def pick_me_up(self, other_actor):
+        #print("pick me up")
+        if isinstance(other_actor, Character):
+            other_actor.add_to_inventory(self.__class__.__name__, self.count)
+            self.level_ref.destroy_actor(self)
+
 
 class LogEntity(Rigidbody):
     def __init__(self, name, position, count=0):
@@ -182,7 +202,10 @@ class LogEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y) 
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(139, 69, 19)), restitution=0, initial_velocity=Initial_velocity)   
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(139, 69, 19)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)   
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
 
 class StickEntity(Rigidbody):    
     def __init__(self, name, position, count=0):
@@ -191,7 +214,9 @@ class StickEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(145, 69, 34)), restitution=0, initial_velocity=Initial_velocity)             
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(145, 69, 34)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)             
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
 
 class DirtEntity(Rigidbody):        
     def __init__(self, name, position, count=0):
@@ -201,7 +226,9 @@ class DirtEntity(Rigidbody):
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
         #print(self.count)
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 255, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 255, 0)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
 
 class GrassEntity(Rigidbody):        
     def __init__(self, name, position, count=0):
@@ -210,7 +237,9 @@ class GrassEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 0, 0)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
 
 class StoneEntity(Rigidbody):    
     def __init__(self, name, position, count=0):
@@ -219,7 +248,9 @@ class StoneEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(128, 128, 128)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(128, 128, 128)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
 
 class CoalEntity(Rigidbody):    
     def __init__(self, name, position, count=0):
@@ -228,7 +259,9 @@ class CoalEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 0, 0)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
 
 class IronEntity(Rigidbody):    
     def __init__(self, name, position, count=0):
@@ -237,7 +270,9 @@ class IronEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(192, 192, 192)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(192, 192, 192)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
 
 class GoldEntity(Rigidbody):    
     def __init__(self, name, position, count=0):
@@ -246,7 +281,9 @@ class GoldEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 215, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 215, 0)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
 
 class LeafEntity(Rigidbody):
     def __init__(self, name, position, count=0):
@@ -255,8 +292,9 @@ class LeafEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 215, 0)), restitution=0, initial_velocity=Initial_velocity)                                
-
+        super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 215, 0)), restitution=0, initial_velocity=Initial_velocity, generate_overlap_events=True)                                
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
         
 
 #?ifdef CLIENT
