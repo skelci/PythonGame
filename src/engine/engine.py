@@ -975,6 +975,7 @@ class ServerEngine(Engine):
         if level_name in self.levels:
             self.__players[id].level = level_name
             player_actor = self.levels[level_name].default_character(self.get_player_actor(id), Vector()) # if it crashes in this line, it's because character class you provided doesn't have correct attributes. It should have only name, position, everything else should be hardcoded
+            player_actor.id = id
             self.levels[level_name].register_actor(player_actor)
             self.__players[id].previous_chunk = get_chunk_cords(player_actor.position)
             self.__players[id].previous_different_chunk = self.__players[id].previous_chunk
