@@ -684,9 +684,7 @@ class ServerNetwork(Network):
                             fail_msg = self._parse_for_send("register_outcome", result_id)
                             full_fail_msg = (fail_msg + END_OF_MESSAGE_SEPARATOR).encode('ascii')
                             conn.sendall(full_fail_msg)
-                            print(f"[Server] Login/Register failed for {addr} (Code: {result_id}). Closing connection.")
-                            conn.close()
-                            return
+                            break
                     if client_id > 0:
                         break
 

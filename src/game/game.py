@@ -329,7 +329,7 @@ class ClientGame(ClientGameBase):
 
         #* from here on, this method was made by skelci
         #?ifdef ENGINE
-        eng.connect("localhost", 5555)
+        # eng.connect("localhost", 5555)
         #?endif
 
         self.switched_to_login_menu = False
@@ -349,7 +349,7 @@ class ClientGame(ClientGameBase):
         eng.register_widget(self.user_already_logged_in_warning.widget)
         eng.register_widget(self.username_already_exists_warning.widget)
         eng.register_widget(self.wrong_credentials_warning.widget)
-
+ 
         def connect_to_server(server_address):
             if not server_address:
                 return
@@ -364,12 +364,12 @@ class ClientGame(ClientGameBase):
                 except ValueError:
                     self.invalid_port_warning.show()
                     return
-            try:
-                eng.connect(server_ip, port)
-            except Exception as e:
-                print(f"Failed to connect: {e}")
+                
+            eng.connect(server_ip, port)
+
+            if not eng.check_network():
                 self.failed_connection_warning.show()
-                return
+            return
             
         def get_usernname_password():
             username = self.engine.widgets["main_menu-credentials"].subwidgets["prompt_field-username"].subwidgets["input_box"].current_text
