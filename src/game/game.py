@@ -622,6 +622,7 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.W, KeyPressType.HOLD, KeyHandler.key_W)
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
+        self.engine.register_key(Keys.C, KeyPressType.TRIGGER, KeyHandler.key_C)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
         self.game_map = set()
         self.current_base_chunk = Vector(0, 0)
