@@ -31,6 +31,7 @@ CAMERA_OFFSET_X = 1
 CAMERA_OFFSET_Y = 1
 
 
+
 class Log(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material("res/textures/log.png"))
@@ -176,7 +177,7 @@ class DirtEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(0, 255, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/dirt_entity.png"), restitution=0, initial_velocity=Initial_velocity)
 
 class GrassEntity(Rigidbody):        
     def __init__(self, name, position):
@@ -192,7 +193,7 @@ class StoneEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(128, 128, 128)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/stone_entity.png"), restitution=0, initial_velocity=Initial_velocity)
 
 class CoalEntity(Rigidbody):    
     def __init__(self, name, position):
@@ -200,7 +201,7 @@ class CoalEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(0, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/coal_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
 
 class IronEntity(Rigidbody):    
     def __init__(self, name, position):
@@ -208,7 +209,7 @@ class IronEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(192, 192, 192)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/iron_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
 
 class GoldEntity(Rigidbody):    
     def __init__(self, name, position):
@@ -216,7 +217,7 @@ class GoldEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(255, 215, 0)), restitution=0, initial_velocity=Initial_velocity)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/gold_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
 
 class LeafEntity(Rigidbody):
     def __init__(self, name, position):
@@ -559,6 +560,12 @@ class KeyHandler:
     def key_D(engine_ref, level_ref, id):
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = 1
 
+    @staticmethod
+    def key_C(engine_ref, level_ref,id):
+        # Spawn a CoalEntity at the player's position
+        coal_entity = IronEntity("coal_entity", Vector(-5, 26))
+        level_ref.register_actor(coal_entity)
+
 
 class TunnelGenerator:
     def __init__(self):
@@ -735,6 +742,7 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.W, KeyPressType.HOLD, KeyHandler.key_W)
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
+        self.engine.register_key(Keys.C, KeyPressType.TRIGGER, KeyHandler.key_C)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
         self.game_map = set()
         self.current_base_chunk = Vector(0, 0)
