@@ -367,7 +367,7 @@ class ClientGame(ClientGameBase):
                 
             eng.connect(server_ip, port)
 
-            if not eng.check_network():
+            if not eng.network.connected:
                 self.failed_connection_warning.show()
             return
             
@@ -510,8 +510,8 @@ class ClientGame(ClientGameBase):
             self.engine.widgets["main_menu-server_prompt"].visible = False
             self.engine.widgets["main_menu-credentials"].visible = True
             #?ifdef ENGINE
-            self.engine.network.send("login", ("test", "test"))
-            self.engine.network.send("register", ("test", "test"))
+            # self.engine.network.send("login", ("test", "test"))
+            # self.engine.network.send("register", ("test", "test"))
             #?endif
             return False
 
