@@ -616,6 +616,7 @@ class ServerEngine(Engine):
         super().__init__()
 
         self.__max_tps = 120
+        self.min_tps = 30
 
         self.__network = None
 
@@ -665,6 +666,20 @@ class ServerEngine(Engine):
         if isinstance(value, (int, float)) and value > 0:
             self.__max_tps = value
             self.__clock.max_tps = value
+        else:
+            raise TypeError("TPS must be a positive number:", value)
+        
+
+    @property
+    def min_tps(self):
+        """ float - Minimum ticks per second. Default is 30. """
+        return self.__min_tps
+    
+
+    @min_tps.setter
+    def min_tps(self, value):
+        if isinstance(value, (int, float)) and value > 0:
+            self.__min_tps = value
         else:
             raise TypeError("TPS must be a positive number:", value)
 
@@ -804,8 +819,8 @@ class ServerEngine(Engine):
         self.__stats["tps"].append(1 / delta_time / 1000)
         self.__stats["tps"].pop(0)
 
-        if delta_time > 1 / 20:
-            delta_time = 1 / 20
+        if delta_time > 1 / self.min_tps:
+            delta_time = 1 / self.min_tps
 
         self.__time_now = time.time()
 

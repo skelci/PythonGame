@@ -773,8 +773,6 @@ class TunnelGenerator:
 class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
-        self.engine.max_tps = 60
-        
 
         self.engine.register_level(TestLevel())
 
