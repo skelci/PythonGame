@@ -329,7 +329,7 @@ class ClientGame(ClientGameBase):
 
         #* from here on, this method was made by skelci
         #?ifdef ENGINE
-        # eng.connect("localhost", 5555)
+        eng.connect("localhost", 5555)
         #?endif
 
         self.switched_to_login_menu = False
@@ -510,8 +510,8 @@ class ClientGame(ClientGameBase):
             self.engine.widgets["main_menu-server_prompt"].visible = False
             self.engine.widgets["main_menu-credentials"].visible = True
             #?ifdef ENGINE
-            # self.engine.network.send("login", ("test", "test"))
-            # self.engine.network.send("register", ("test", "test"))
+            self.engine.network.send("login", ("test", "test"))
+            self.engine.network.send("register", ("test", "test"))
             #?endif
             return False
 
