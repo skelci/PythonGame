@@ -9,6 +9,7 @@ from enum import IntEnum
 from typing import Iterator
 import math
 from collections import deque
+from queue import Queue
 import threading
 
 
@@ -269,9 +270,43 @@ class CollisionData:
 
 
 
+class AdvancedQueue():
+    """ A queue implementation with a fast way to manage more than one element at a time. """
+
+    def __init__(self):
+        self.__buffer = Queue()
+        self.lock = threading.Lock()
+
+
+    def add_data(self, data):
+        with self.lock:
+            self.__buffer.put(data)
+
+
+    def get_data(self, size = 1):
+        data = []
+        with self.lock:
+            for _ in range(min(size, self.__buffer.qsize())):
+                data.append(self.__buffer.get())
+        return data
+    
+
+    def get_all_data(self):
+        data = []
+        with self.lock:
+            while not self.__buffer.empty():
+                data.append(self.__buffer.get())
+        return data
+    
+
+    def add_data_multiple(self, data_list):
+        with self.lock:
+            for data in data_list:
+                self.__buffer.put(data)
+
+
 class AdvancedDeque:
     """ A deque implementation with a fast way to get more than one element at a time. """
-
 
     def __init__(self):
         self.__front_buffer = deque()
@@ -349,6 +384,7 @@ class KeyPressType(IntEnum):
 
 class Keys(IntEnum):
     """ Integer values representing various keyboard and mouse keys as defined by pygame. """
+
     MOUSE_LEFT =            1
     MOUSE_MIDDLE =          2
     MOUSE_RIGHT =           3

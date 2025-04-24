@@ -35,8 +35,10 @@ class Network(ABC):
         self.address = address
         self._running = True
 
-        self._output_buffer = AdvancedDeque()
-        self._input_buffer = AdvancedDeque()
+        self._receive_priority_buffer = AdvancedQueue()
+        self._receive_unpriority_buffer = AdvancedQueue()
+        self._send_priority_buffer = AdvancedQueue()
+        self._send_unpriority_buffer = AdvancedQueue()
 
 
     @property
@@ -69,7 +71,7 @@ class Network(ABC):
 
     @property
     def running(self):
-        """ bool - True if the network is running, False otherwise.\n """
+        """ bool - True if the network is running, False otherwise. """
         return self._running
 
 
@@ -128,18 +130,21 @@ class Network(ABC):
         pass
 
 
-    def get_data(self, size=1) -> List[Any]: # Return type might change based on server/client
+    def get_data(self, size=1) -> List[Any]:
         """
         Called only by the engine.
         Returns the data from the input buffer.
         """
-        return self._input_buffer.get_data(size)
+        data = self._receive_priority_buffer.get_all_data()
+        data += self._receive_unpriority_buffer.get_data(size)
+        return data
 
 
     @abstractmethod
     def stop(self):
         """ Stops network threads and closes sockets. """
         self._running = False
+
 
 
 #?ifdef CLIENT
@@ -220,9 +225,9 @@ class ClientNetwork(Network):
         parsed_data = self._parse_for_send(cmd, data)
         
         if has_priority:
-            self._output_buffer.add_data_front((True, parsed_data))
+            self._send_priority_buffer.add_data(parsed_data)
         else:
-            self._output_buffer.add_data_back((False, parsed_data))
+            self._send_unpriority_buffer.add_data(parsed_data)
 
 
     def tick(self):
@@ -233,18 +238,8 @@ class ClientNetwork(Network):
         if not self.running or not self.connected:
             return
 
-        data_to_send = self._output_buffer.get_all_data()
-        if not data_to_send:
-            return
-
-        udp_payloads = []
-        tcp_payloads = []
-
-        for has_priority, parsed_data in data_to_send:
-            if has_priority:
-                udp_payloads.append(parsed_data)
-            else:
-                tcp_payloads.append(parsed_data)
+        udp_payloads = self._send_priority_buffer.get_all_data()
+        tcp_payloads = self._send_unpriority_buffer.get_all_data()
 
         if udp_payloads:
             try:
@@ -310,7 +305,7 @@ class ClientNetwork(Network):
                         except Exception as e:
                             print(f"[Client] Error encoding/sending UDP registration: {e}")
 
-                    self._input_buffer.add_data_back_multiple(unpriority_data)
+                    self._receive_unpriority_buffer.add_data_multiple(unpriority_data)
 
             except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError) as e:
                 print(f"[Client] TCP connection error (connection lost): {e}")
@@ -348,7 +343,7 @@ class ClientNetwork(Network):
                 for payload in parsed_packets:
                     priority_data.append(payload)
 
-                self._input_buffer.add_data_front_multiple(priority_data)
+                self._receive_priority_buffer.add_data_multiple(priority_data)
 
             except socket.error as e:
                 if self.running:
@@ -489,12 +484,12 @@ class ServerNetwork(Network):
         parsed_data = self._parse_for_send(cmd, data)
         if has_priority:
             if client_id in self.__id_to_udp_addr:
-                self._output_buffer.add_data_front((client_id, True, parsed_data))
+                self._send_priority_buffer.add_data((client_id, parsed_data))
             else:
                 print(f"Server Warning: No UDP address for client {client_id}. Cannot send priority message '{cmd}'.")
         else:
             if client_id in self.__id_to_tcp_conn:
-                self._output_buffer.add_data_back((client_id, False, parsed_data))
+                self._send_unpriority_buffer.add_data((client_id, parsed_data))
             else:
                 print(f"Server Warning: No TCP connection for client {client_id}. Cannot send non-priority message '{cmd}'.")
 
@@ -506,25 +501,17 @@ class ServerNetwork(Network):
         """
         if not self.running:
             return
+        
+        udp_payloads = self._send_priority_buffer.get_all_data()
+        tcp_payloads = self._send_unpriority_buffer.get_all_data()
 
-        data_to_send = self._output_buffer.get_all_data()
-        if not data_to_send:
-            return
+        data_by_client_udp = {}
+        data_by_client_tcp = {}
 
-        data_by_client_udp: Dict[int, List[str]] = {}
-        data_by_client_tcp: Dict[int, List[str]] = {}
-
-        for client_id, has_priority, parsed_data in data_to_send:
-            if client_id not in self.__connected_ids:
-                continue
-            if has_priority:
-                if client_id not in data_by_client_udp:
-                    data_by_client_udp[client_id] = []
-                data_by_client_udp[client_id].append(parsed_data)
-            else:
-                if client_id not in data_by_client_tcp:
-                    data_by_client_tcp[client_id] = []
-                data_by_client_tcp[client_id].append(parsed_data)
+        for client_id, parsed_data in udp_payloads:
+            data_by_client_udp.setdefault(client_id, []).append(parsed_data)
+        for client_id, parsed_data in tcp_payloads:
+            data_by_client_tcp.setdefault(client_id, []).append(parsed_data)
 
         for client_id, payloads in data_by_client_udp.items():
             udp_addr = self.__id_to_udp_addr.get(client_id)
@@ -534,7 +521,7 @@ class ServerNetwork(Network):
             current_batch = []
             current_batch_size = len(END_OF_MESSAGE_SEPARATOR_BYTES)
 
-            for i, payload in enumerate(payloads):
+            for payload in payloads:
                 try:
                     payload_bytes = payload.encode('ascii')
                 except UnicodeEncodeError as e:
@@ -693,9 +680,9 @@ class ServerNetwork(Network):
 
                     unpriority_packets = []
                     for payload in parsed_packets:
-                        unpriority_packets.append(payload)
+                        unpriority_packets.append((client_id, payload))
 
-                    self._input_buffer.add_data_back_multiple([(client_id, d) for d in unpriority_packets])
+                    self._receive_unpriority_buffer.add_data_multiple(unpriority_packets)
 
         except (ConnectionResetError, BrokenPipeError, OSError) as e:
             print(f"[Server] TCP connection error with client {client_id if client_id > 0 else addr}: {e}")
@@ -739,12 +726,12 @@ class ServerNetwork(Network):
                         continue
 
                     if client_id is not None:
-                        priority_packets.append(payload)
+                        priority_packets.append((client_id, payload))
                     else:
                         print(f"[Server] Received UDP from unknown address {addr}. Ignoring data.")
 
                 if client_id is not None:
-                    self._input_buffer.add_data_front_multiple([(client_id, True, d) for d in priority_packets])
+                    self._receive_priority_buffer.add_data_multiple(priority_packets)
 
             except socket.error as e:
                 if self.running:
