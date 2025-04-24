@@ -16,7 +16,6 @@ class Border(Widget):
     Represents a border widget. It is a colored rectangle with a specified border color and thickness.
     """
 
-
     def __init__(self, name: str, position: Vector, size: Vector, layer = 0, border_color: Color = Color(255, 255, 255), bg_color: Color = Color(0, 0, 0, 0), visible = False, thickness = 10, subwidgets: dict[str, Widget] = {}, subwidget_offsets: dict[str, Vector] = {}, subwidget_alignments: dict[str, Alignment] = {}):
         """
         Refer to the Widget class for more information about the parameters.
@@ -33,9 +32,7 @@ class Border(Widget):
 
     @property
     def border_color(self):
-        """
-        Color - Color of the border.
-        """
+        """ Color - Color of the border. """
         return self.__border_color
     
 
@@ -49,9 +46,7 @@ class Border(Widget):
 
     @property
     def thickness(self):
-        """
-        int - Thickness of the border.
-        """
+        """ int - Thickness of the border. """
         return self.__thickness
     
 
@@ -70,4 +65,4 @@ class Border(Widget):
         pygame.draw.rect(surface, self.border_color.tuple, rect, self.thickness)
 
         return surface
-    
+

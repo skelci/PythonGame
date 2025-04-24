@@ -12,7 +12,6 @@ class Actor:
     It can be used to create a static object, a dynamic object or a trigger.
     """
 
-
     def __init__(self, name: str, position: Vector, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, visible = True, material: Material = None, render_layer = 0, restitution = 1):
         """
         Args:
@@ -55,9 +54,7 @@ class Actor:
 
     @property
     def engine_ref(self):
-        """
-        ServerEngine or ClientEngine - Reference to the engine that created this actor.
-        """
+        """ ServerEngine or ClientEngine - Reference to the engine that created this actor. """
         return self.__engine_ref
     
 
@@ -71,9 +68,7 @@ class Actor:
 
     @property
     def level_ref(self):
-        """
-        Level - Reference to the level, in which this actor is placed.
-        """
+        """ Level - Reference to the level, in which this actor is placed. """
         return self.__level_ref
     
 
@@ -87,9 +82,7 @@ class Actor:
 
     @property
     def name(self):
-        """
-        str - Name of the actor.
-        """
+        """ str - Name of the actor. """
         return self.__name
     
 
@@ -103,9 +96,7 @@ class Actor:
 
     @property
     def half_size(self):
-        """
-        Vector - Half size of the actor. This is used to scale material and collision box.
-        """
+        """ Vector - Half size of the actor. This is used to scale material and collision box. """
         return self.__half_size
     
 
@@ -120,9 +111,7 @@ class Actor:
 
     @property
     def position(self):
-        """
-        Vector - Position of the center of the actor.
-        """
+        """ Vector - Position of the center of the actor. """
         return self.__position
     
 
@@ -137,9 +126,7 @@ class Actor:
 
     @property
     def generate_overlap_events(self):
-        """
-        bool - Whether to generate overlap events or not. If true, the actor will generate overlap events when it overlaps with another actor.
-        """
+        """ bool - Whether to generate overlap events or not. If true, the actor will generate overlap events when it overlaps with another actor. """
         return self.__generate_overlap_events
     
 
@@ -153,9 +140,7 @@ class Actor:
 
     @property
     def collidable(self):
-        """
-        bool - Whether the actor is collidable or not. If true, the actor will collide with other actors.
-        """
+        """ bool - Whether the actor is collidable or not. If true, the actor will collide with other actors. """
         return self.__collidable
     
 
@@ -169,9 +154,7 @@ class Actor:
 
     @property
     def visible(self):
-        """
-        bool - Whether the actor is visible or not. If true, the actor will be rendered.
-        """
+        """ bool - Whether the actor is visible or not. If true, the actor will be rendered. """
         return self.__visible
     
 
@@ -188,9 +171,7 @@ class Actor:
 
     @property
     def material(self):
-        """
-        Material - Material of the actor. This is used to render the actor.
-        """
+        """ Material - Material of the actor. This is used to render the actor. """
         return self.__material
     
 
@@ -205,9 +186,7 @@ class Actor:
 
     @property
     def render_layer(self):
-        """
-        int - Render layer of the actor. Higher layers are rendered on top of lower layers.
-        """
+        """ int - Render layer of the actor. Higher layers are rendered on top of lower layers. """
         return self.__render_layer
     
 
@@ -221,9 +200,7 @@ class Actor:
 
     @property
     def restitution(self):
-        """
-        float - Restitution of the actor. This is used to calculate the bounce of the actor when it collides with another actor.
-        """
+        """ float - Restitution of the actor. This is used to calculate the bounce of the actor when it collides with another actor. """
         return self.__restitution
     
 
@@ -237,9 +214,7 @@ class Actor:
 
     @property
     def previously_collided(self):
-        """
-        set[Actor] - Set of actors that this actor has previously collided with.
-        """
+        """ set[Actor] - Set of actors that this actor has previously collided with. """
         return self.__previously_collided
     
 
@@ -253,9 +228,7 @@ class Actor:
 
     #?ifdef CLIENT
     def update_from_net_sync(self, data):
-        """
-        Called only by the engine. This function is used to update the actor from the network sync data.
-        """
+        """ Called only by the engine. This function is used to update the actor from the network sync data. """
         for key in data:
             match key:
                 case "half_size":
@@ -269,9 +242,7 @@ class Actor:
 
     #?ifdef SERVER
     def get_for_net_sync(self):
-        """
-        Called only by the engine. This function is used to get the actor data which changed and needs to be synced with the client.
-        """
+        """ Called only by the engine. This function is used to get the actor data which changed and needs to be synced with the client. """
         out = {}
         for key in self.__outdated:
             if self.__outdated[key]:

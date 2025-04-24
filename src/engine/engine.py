@@ -40,9 +40,7 @@ from typing import Any, Callable
 
 
 class Engine(ABC):
-    """
-    Common things in server and client engine.
-    """
+    """ Common things in server and client engine. """
 
     def __init__(self):
         self.__running = True
@@ -54,9 +52,7 @@ class Engine(ABC):
 
     @property
     def running(self):
-        """
-        bool - If True, engine is running, if False, engine is stopped.
-        """
+        """ bool - If True, engine is running, if False, engine is stopped. """
         return self.__running
 
 
@@ -72,9 +68,7 @@ class Engine(ABC):
 
 
     def stop(self):
-        """
-        Stop the engine. It will stop the main loop and end all threads.
-        """
+        """ Stop the engine. It will stop the main loop and end all threads. """
         self.__running = False
 
 
@@ -82,10 +76,7 @@ class Engine(ABC):
 
 #?ifdef CLIENT
 class InfoText(Widget):
-    """
-    Widget that is used to display stats in the top left corner of the screen.
-    """
-
+    """ Widget that is used to display stats in the top left corner of the screen. """
 
     def __init__(self, name: str, pos_y: int, pre_text_str: str):
         """
@@ -120,10 +111,7 @@ class InfoText(Widget):
 
 
 class ClientEngine(Engine, Renderer):
-    """
-    Client engine class. It is used to run the game on the client side.
-    """
-
+    """ Client engine class. It is used to run the game on the client side. """
 
     def __init__(self):
         Engine.__init__(self)
@@ -194,9 +182,7 @@ class ClientEngine(Engine, Renderer):
 
     @property
     def fps(self):
-        """
-        float - Maximum frames per second. Default is 120.
-        """
+        """ float - Maximum frames per second. Default is 120. """
         return self.__fps
     
 
@@ -210,9 +196,7 @@ class ClientEngine(Engine, Renderer):
 
     @property
     def current_background(self):
-        """
-        str - Current background name. If None, background with Color(0, 0, 0) is drawn.
-        """
+        """ str - Current background name. If None, background with Color(0, 0, 0) is drawn. """
         return self.__current_background
     
 
@@ -226,96 +210,72 @@ class ClientEngine(Engine, Renderer):
 
     @property
     def widgets(self):
-        """
-        dict[str, Widget] - Dictionary of all registered widgets. Key is widget name, value is widget object.
-        """
+        """ dict[str, Widget] - Dictionary of all registered widgets. Key is widget name, value is widget object. """
         return self.__widgets
 
 
     @property
     def backgrounds(self):
-        """
-        dict[str, Background] - Dictionary of all registered backgrounds. Key is background name, value is background object.
-        """
+        """ dict[str, Background] - Dictionary of all registered backgrounds. Key is background name, value is background object. """
         return self.__backgrounds
 
 
     @property
     def network(self):
-        """
-        ClientNetwork - used to handle connection and authentication with server.
-        """
+        """ ClientNetwork - used to handle connection and authentication with server. """
         return self.__network
     
 
     @property
     def level(self):
-        """
-        Level - Client level object. It is used to handle all actors (including physics).
-        """
+        """ Level - Client level object. It is used to handle all actors (including physics). """
         return self.__level
     
 
     @property
     def triggered_keys(self):
-        """
-        set[Keys] - Set of all keys that were pressed in the last frame.
-        """
+        """ set[Keys] - Set of all keys that were pressed in the last frame. """
         return self.__triggered_keys
          
 
     @property
     def pressed_keys(self):
-        """
-        set[Keys] - Set of all keys that are currently pressed.
-        """
+        """ set[Keys] - Set of all keys that are currently pressed. """
         return self.__pressed_keys
     
 
     @property
     def released_keys(self):
-        """
-        set[Keys] - Set of all keys that were released in the last frame.
-        """
+        """ set[Keys] - Set of all keys that were released in the last frame. """
         return self.__released_keys
             
 
     @property
     def screen_mouse_pos(self):
-        """
-        Vector - Mouse position in screen coordinates.
-        """
+        """ Vector - Mouse position in screen coordinates. """
         return self.__screen_mouse_pos
     
 
     @property
     def world_mouse_pos(self):
-        """
-        Vector - Mouse position in world coordinates. It is calculated from screen_mouse_pos, camera_width and camera_position.
-        """
+        """ Vector - Mouse position in world coordinates. It is calculated from screen_mouse_pos, camera_width and camera_position. """
         return self.__world_mouse_pos
     
 
     @property
     def update_distance(self):
-        """
-        int - Distance in chunks from player to load actors. It is calculated from camera_width.
-        """
+        """ int - Distance in chunks from player to load actors. It is calculated from camera_width. """
         return self.__update_distance
     
 
     def show_all_stats(self):
-        """
-        Show all stats of the engine in the top left corner of the screen. It sets all stat widgets to visible.
-        """
+        """ Show all stats of the engine in the top left corner of the screen. It sets all stat widgets to visible. """
         for name, _ in self.__stats.items():
             self.widgets[name].visible = True
 
 
     def hide_all_stats(self):
-        """
-        Hide all stats of the engine. It sets all stat widgets to invisible.
-        """
+        """ Hide all stats of the engine. It sets all stat widgets to invisible. """
         for name, _ in self.__stats.items():
             self.widgets[name].visible = False
 
@@ -614,10 +574,7 @@ class ClientEngine(Engine, Renderer):
 
 #?ifdef SERVER
 class Player:
-    """
-    Player class used to store some data for each connected client. It should be updated only by the engine.
-    """
-
+    """ Player class used to store some data for each connected client. It should be updated only by the engine. """
 
     def __init__(self):
         self.level = ""
@@ -634,10 +591,7 @@ class Player:
 
 
 class TPS:
-    """
-    Used to limit the ticks per second of the server.
-    """
-
+    """ Used to limit the ticks per second of the server. """
 
     def __init__(self, max_tps):
         self.max_tps = max_tps
@@ -656,11 +610,7 @@ class TPS:
 
 
 class ServerEngine(Engine):
-    """
-    Server engine class. It is used to run the game on the server side.
-    It handles all the game logic and physics.
-    """
-
+    """ Server engine class. It is used to run the game on the server side. It handles all the game logic and physics. """
 
     def __init__(self):
         super().__init__()
@@ -700,17 +650,13 @@ class ServerEngine(Engine):
 
     @property
     def console(self):
-        """
-        Console - Console object. It is used to handle commands from the console.
-        """
+        """ Console - Console object. It is used to handle commands from the console. """
         return self.__console
     
 
     @property
     def max_tps(self):
-        """
-        float - Maximum ticks per second. Default is 120.
-        """
+        """ float - Maximum ticks per second. Default is 120. """
         return self.__max_tps
     
 
@@ -725,25 +671,19 @@ class ServerEngine(Engine):
 
     @property
     def network(self):
-        """
-        ServerNetwork - used to handle connection and authentication with clients.
-        """
+        """ ServerNetwork - used to handle connection and authentication with clients. """
         return self.__network
     
 
     @property
     def players(self):
-        """
-        dict[int, Player] - Dictionary of all connected players. Key is player id, value is player object.
-        """
+        """ dict[int, Player] - Dictionary of all connected players. Key is player id, value is player object. """
         return self.__players
     
 
     @property
     def levels(self):
-        """
-        dict[str, Level] - Dictionary of all registered levels. Key is level name, value is level object.
-        """
+        """ dict[str, Level] - Dictionary of all registered levels. Key is level name, value is level object. """
         return self.__levels
         
 
@@ -858,9 +798,7 @@ class ServerEngine(Engine):
 
 
     def tick(self):
-        """
-        Ticks the engine. It handles events, updates actors and handles network.
-        """
+        """ Ticks the engine. It handles events, updates actors and handles network. """
         delta_time = self.__clock.tick()
 
         self.__stats["tps"].append(1 / delta_time / 1000)

@@ -41,9 +41,7 @@ class Network(ABC):
 
     @property
     def address(self):
-        """
-        str - The address of the network.
-        """
+        """ str - The address of the network. """
         return self.__address
 
 
@@ -57,9 +55,7 @@ class Network(ABC):
 
     @property
     def port(self):
-        """
-        int - The port of the network (UDP port for server/client). TCP uses port + 1.
-        """
+        """ int - The port of the network (UDP port for server/client). TCP uses port + 1. """
         return self.__port
 
 
@@ -73,9 +69,7 @@ class Network(ABC):
 
     @property
     def running(self):
-        """
-        bool - True if the network is running, False otherwise.\n
-        """
+        """ bool - True if the network is running, False otherwise.\n """
         return self._running
 
 
@@ -190,9 +184,7 @@ class ClientNetwork(Network):
 
     @property
     def connected(self):
-        """
-        bool - True if the TCP socket is connected, False otherwise.
-        """
+        """ bool - True if the TCP socket is connected, False otherwise. """
         try:
             # fileno() raises OSError if closed, or returns -1 if not valid
             return self.tcp_socket and self.tcp_socket.fileno() != -1

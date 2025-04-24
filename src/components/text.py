@@ -17,6 +17,7 @@ class Text(Widget):
     Represents a text widget. It renders text on the screen using a specified font and color.
     Its size is dynamically updated based on the text content and font size.
     """
+    
     __fonts = {}
 
 
@@ -43,9 +44,7 @@ class Text(Widget):
 
     @property
     def text(self):
-        """
-        str - The text to be displayed.
-        """
+        """ str - The text to be displayed. """
         return self.__text
     
 
@@ -60,9 +59,7 @@ class Text(Widget):
 
     @property
     def font(self):
-        """
-        str - Path to the font file.
-        """
+        """ str - Path to the font file. """
         return self.__font
     
 

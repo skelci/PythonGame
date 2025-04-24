@@ -11,9 +11,9 @@ from components.datatypes import *
 
 class Rigidbody(Actor):
     """
-    This class represents a rigid body physics object. It is used to create a physics object that can be moved and collided with other objects.
+    This class represents a rigid body physics object.
+    It is used to create a physics object that can be moved and collided with other objects.
     """
-
     
     def __init__(self, name: str, position: Vector, half_size = Vector(0.5, 0.5), generate_overlap_events = False, collidable = True, simulate_physics = True, visible = True, material: Material = None, render_layer = 0, restitution = 0.5, initial_velocity = Vector(), min_velocity = KINDA_SMALL_NUMBER, mass = 1, gravity_scale = 1, air_resistance = 0.1, deceleration = 10):
         """
@@ -42,9 +42,7 @@ class Rigidbody(Actor):
 
     @property
     def simulate_physics(self):
-        """
-        bool - Whether to simulate physics or not. If not, the object will not be affected by gravity, velocity or collisions.
-        """
+        """ bool - Whether to simulate physics or not. If not, the object will not be affected by gravity, velocity or collisions. """
         return self.__simulate_physics
     
 
@@ -58,9 +56,7 @@ class Rigidbody(Actor):
 
     @property
     def velocity(self):
-        """
-        Vector - Velocity of the object. This is a vector that represents the speed and direction of the object.
-        """
+        """ Vector - Velocity of the object. This is a vector that represents the speed and direction of the object. """
         return self.__velocity
     
 
@@ -74,9 +70,7 @@ class Rigidbody(Actor):
 
     @property
     def min_velocity(self):
-        """
-        Vector - Minimum velocity of the object. This is a float that represents the minimum length of the velocity vector. If the length of the velocity vector is less than this value, the velocity will be set to 0.
-        """
+        """ Vector - Minimum velocity of the object. This is a float that represents the minimum length of the velocity vector. If the length of the velocity vector is less than this value, the velocity will be set to 0. """
         return self.__min_velocity
     
 
@@ -90,9 +84,7 @@ class Rigidbody(Actor):
 
     @property
     def mass(self):
-        """
-        float - Mass of the object. It is used to calculate new velocity after collision.
-        """
+        """ float - Mass of the object. It is used to calculate new velocity after collision. """
         return self.__mass
     
 
@@ -106,9 +98,7 @@ class Rigidbody(Actor):
 
     @property
     def gravity_scale(self):
-        """
-        float - Gravity scale of the object.
-        """
+        """ float - Gravity scale of the object. """
         return self.__gravity_scale
     
 
@@ -122,9 +112,7 @@ class Rigidbody(Actor):
 
     @property
     def air_resistance(self):
-        """
-        float - Air resistance of the object. This represents the percentage of the velocity that is removed each second.
-        """
+        """ float - Air resistance of the object. This represents the percentage of the velocity that is removed each second. """
         return self.__air_resistance
     
 
@@ -138,9 +126,7 @@ class Rigidbody(Actor):
 
     @property
     def deceleration(self):
-        """
-        float - Friction of the object. This represents the value of the x-axis velocity that is removed each second.
-        """
+        """ float - Friction of the object. This represents the value of the x-axis velocity that is removed each second. """
         return self.__deceleration
     
 
@@ -154,9 +140,7 @@ class Rigidbody(Actor):
 
     @property
     def collided_sides(self):
-        """
-        list[int] - List of collided sides. This is a list of 4 integers that represent the distance to the collided side. The order is right, left, top, bottom. If the distance is 0, it means that the object is not colliding with that side.
-        """
+        """ list[int] - List of collided sides. This is a list of 4 integers that represent the distance to the collided side. The order is right, left, top, bottom. If the distance is 0, it means that the object is not colliding with that side. """
         return self.__collided_sides
     
 
@@ -170,9 +154,7 @@ class Rigidbody(Actor):
 
     @property
     def is_grounded(self):
-        """
-        bool - Whether the rigidbody is on the ground or not.
-        """
+        """ bool - Whether the rigidbody is on the ground or not. """
         return self.collided_sides[3] != 0
         
 
@@ -281,5 +263,4 @@ class Rigidbody(Actor):
             self.position.y + self.half_size.y - (collided_actor.position.y - collided_actor.half_size.y),
             collided_actor.position.y + collided_actor.half_size.y - (self.position.y - self.half_size.y)
         )
-    
-    
+

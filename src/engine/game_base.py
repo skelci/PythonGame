@@ -19,17 +19,13 @@ from components.datatypes import *
 #?ifdef CLIENT
 class ClientGameBase:
     def __init__(self):
-        """
-        Initializes the client engine.
-        """
+        """ Initializes the client engine. """
         self.__engine = ClientEngine()
     
 
     @property
     def engine(self):
-        """
-        ClientEngine - The engine instance for the client.
-        """
+        """ ClientEngine - The engine instance for the client. """
         return self.__engine
 
 
@@ -48,17 +44,13 @@ class ClientGameBase:
 #?ifdef SERVER
 class ServerGameBase:
     def __init__(self):
-        """
-        Initializes the server engine.
-        """
+        """ Initializes the server engine. """
         self.__engine = ServerEngine()
     
 
     @property
     def engine(self):
-        """
-        ServerEngine - The engine instance for the server.
-        """
+        """ ServerEngine - The engine instance for the server. """
         return self.__engine
 
 

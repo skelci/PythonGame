@@ -13,9 +13,8 @@ import os
 
 
 class Material:
-    """
-    Represents a material for rendering.
-    """
+    """ Represents a material for rendering. """
+    
     #?ifdef CLIENT
     __textures = {}
     __scaled_textures = {}
@@ -35,9 +34,7 @@ class Material:
 
     @property
     def texture_str(self):
-        """
-        str | Color - Path to the texture file or a Color object.
-        """
+        """ str | Color - Path to the texture file or a Color object. """
         return self.__texture_str
     
 
@@ -55,9 +52,7 @@ class Material:
 
     @property
     def texture(self):
-        """
-        pygame.Surface - The original texture surface.
-        """
+        """ pygame.Surface - The original texture surface. """
         return Material.__textures[self.texture_str]
 
 

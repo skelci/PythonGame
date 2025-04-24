@@ -41,9 +41,7 @@ class Button(Border):
 
     @property
     def hover_color(self):
-        """
-        Color - Color of the button when hovered over.
-        """
+        """ Color - Color of the button when hovered over. """
         return self.__hover_color
     
 
@@ -57,9 +55,7 @@ class Button(Border):
 
     @property
     def click_color(self):
-        """
-        Color - Color of the button when clicked.
-        """
+        """ Color - Color of the button when clicked. """
         return self.__click_color
     
 
@@ -73,9 +69,7 @@ class Button(Border):
 
     @property
     def action(self):
-        """
-        Callable[[], None] - The action to be called when the button is clicked.
-        """
+        """ Callable[[], None] - The action to be called when the button is clicked. """
         return self.__action
     
 
@@ -89,9 +83,7 @@ class Button(Border):
 
     @property
     def screen_rect(self):
-        """
-        tuple[Vector, Vector] - The screen rectangle of the button. The first element is the top left corner and the second element is the bottom right corner.
-        """
+        """ tuple[Vector, Vector] - The screen rectangle of the button. The first element is the top left corner and the second element is the bottom right corner. """
         return self.__screen_rect
     
 
@@ -106,9 +98,7 @@ class Button(Border):
 
     @property
     def main_color(self):
-        """
-        Color - The main color of the button.
-        """
+        """ Color - The main color of the button. """
         return self.__main_color
     
 
@@ -135,5 +125,5 @@ class Button(Border):
         else:
             self.color = self.main_color
 
-        
-        
+
+

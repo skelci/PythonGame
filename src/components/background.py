@@ -34,9 +34,7 @@ class BackgroundLayer:
 
     @property
     def material(self):
-        """
-        Material - Material to be used for the layer.
-        """
+        """ Material - Material to be used for the layer. """
         return self.__material
     
 
@@ -51,9 +49,7 @@ class BackgroundLayer:
 
     @property
     def width(self):
-        """
-        float - Width of the material in world units.
-        """
+        """ float - Width of the material in world units. """
         return self.__width
     
 
@@ -67,9 +63,7 @@ class BackgroundLayer:
 
     @property
     def scroll_speed(self):
-        """
-        float - Speed at which the layer scrolls. A value of 1 means it scrolls at the same speed as the camera.
-        """
+        """ float - Speed at which the layer scrolls. A value of 1 means it scrolls at the same speed as the camera. """
         return self.__scroll_speed
     
 
@@ -155,9 +149,7 @@ class Background:
 
     @property
     def name(self):
-        """
-        str - Name of the background.
-        """
+        """ str - Name of the background. """
         return self.__name
     
 
@@ -171,9 +163,7 @@ class Background:
 
     @property
     def layers(self):
-        """
-        list[BackgroundLayer] - List of BackgroundLayer instances in the background.
-        """
+        """ list[BackgroundLayer] - List of BackgroundLayer instances in the background. """
         return self.__layers
     
 
@@ -208,5 +198,5 @@ class Background:
             bg_surface.blit(layer.get_bg_surface(camera_pos, screen_res, camera_width), (0, 0))
 
         return bg_surface
-        
+
 

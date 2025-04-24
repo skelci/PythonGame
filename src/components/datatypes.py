@@ -16,9 +16,7 @@ import threading
 class Vector(Vector2):
     @staticmethod
     def from_tuple(tup):
-        """
-        Creates a Vector instance from a tuple of x and y coordinates.
-        """
+        """ Creates a Vector instance from a tuple of x and y coordinates. """
         if not isinstance(tup, tuple) or len(tup) != 2:
             raise TypeError("Expected a tuple of two elements.")
         
@@ -179,33 +177,25 @@ class Vector(Vector2):
 
     @property
     def max(self):
-        """
-        float - The maximum value of the vector's x and y components.
-        """
+        """ float - The maximum value of the vector's x and y components. """
         return max(self.x, self.y)
     
 
     @property
     def min(self):
-        """
-        float - The minimum value of the vector's x and y components.
-        """
+        """ float - The minimum value of the vector's x and y components. """
         return min(self.x, self.y)
     
 
     @property
     def int(self):
-        """
-        Vector - The vector with x and y components converted to integers.
-        """
+        """ Vector - The vector with x and y components converted to integers. """
         return (int(self.x), int(self.y))
     
 
     @property
     def tuple(self):
-        """
-        tuple[float, float] - The vector as a tuple of x and y components.
-        """
+        """ tuple[float, float] - The vector as a tuple of x and y components. """
         return (self.x, self.y)
     
 
@@ -217,9 +207,7 @@ class Vector(Vector2):
 
 @dataclass
 class Color:
-    """
-    Represents a color with red, green, blue, and alpha channels.
-    """
+    """ Represents a color with red, green, blue, and alpha channels. """
     r: int = 0
     g: int = 0
     b: int = 0
@@ -250,9 +238,7 @@ class Color:
 
     @property
     def tuple(self):
-        """
-        tuple[int, int, int, int] - The color as a tuple of red, green, blue, and alpha channels.
-        """
+        """ tuple[int, int, int, int] - The color as a tuple of red, green, blue, and alpha channels. """
         return (self.r, self.g, self.b, self.a)
     
 
@@ -274,9 +260,7 @@ class Color:
 
 @dataclass
 class CollisionData:
-    """
-    Represents collision data for a physics engine.
-    """
+    """ Represents collision data for a physics engine. """
     normal: Vector
     velocity: Vector
     restitution: float
@@ -286,9 +270,7 @@ class CollisionData:
 
 
 class AdvancedDeque:
-    """
-    A deque implementation with a fast way to get more than one element at a time.
-    """
+    """ A deque implementation with a fast way to get more than one element at a time. """
 
 
     def __init__(self):
@@ -366,9 +348,7 @@ class KeyPressType(IntEnum):
 
 
 class Keys(IntEnum):
-    """
-    Integer values representing various keyboard and mouse keys as defined by pygame.
-    """
+    """ Integer values representing various keyboard and mouse keys as defined by pygame. """
     MOUSE_LEFT =            1
     MOUSE_MIDDLE =          2
     MOUSE_RIGHT =           3

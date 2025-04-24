@@ -47,25 +47,19 @@ class InputBox(Text):
 
     @property
     def current_text(self):
-        """
-        str - The current text in the input box.
-        """
+        """ str - The current text in the input box. """
         return self.__current_text
     
 
     @property
     def is_cursor_visible(self):
-        """
-        bool - Whether the cursor is currently visible.
-        """
+        """ bool - Whether the cursor is currently visible. """
         return self.__is_cursor_visible
     
 
     @property
     def is_in_focus(self):
-        """
-        bool - Whether the input box is currently in focus.
-        """
+        """ bool - Whether the input box is currently in focus. """
         return self.__is_in_focus
     
 
@@ -82,9 +76,7 @@ class InputBox(Text):
 
     @property
     def cursor_position(self):
-        """
-        int - The current position of the cursor in the text.
-        """
+        """ int - The current position of the cursor in the text. """
         return self.__cursor_position
     
 
@@ -99,9 +91,7 @@ class InputBox(Text):
 
     @property
     def action(self):
-        """
-        Callable[[str], None] - The action to be called when the user presses the enter key.
-        """
+        """ Callable[[str], None] - The action to be called when the user presses the enter key. """
         return self.__action
     
 
@@ -115,9 +105,7 @@ class InputBox(Text):
 
     @property
     def screen_rect(self):
-        """
-        tuple[Vector, Vector] - The screen rectangle of the input box. The first element is the top left corner, second elemnent is bottom right corner. 
-        """
+        """ tuple[Vector, Vector] - The screen rectangle of the input box. The first element is the top left corner, second elemnent is bottom right corner. """
         return self.__screen_rect
     
 

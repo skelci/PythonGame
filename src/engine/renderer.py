@@ -16,11 +16,7 @@ import time
 
 
 class Renderer:
-    """
-    Renderer class for managing the Pygame display and rendering.
-    This class handles everything related to the display.
-    """
-
+    """ Renderer class for managing the Pygame display and rendering. This class handles everything related to the display. """
 
     def __init__(self, width: int, height: int, camera_width: float, title = "Pygame Window", fullscreen = False, windowed = True, camera_position = Vector()):
         """
@@ -54,9 +50,7 @@ class Renderer:
 
     @property
     def resolution(self):
-        """
-        Vector - The window dimensions represented as a vector (width, height). This value is used to set the display mode.
-        """
+        """ Vector - The window dimensions represented as a vector (width, height). This value is used to set the display mode. """
         return self.__resolution
 
 
@@ -74,9 +68,7 @@ class Renderer:
 
     @property
     def title(self):
-        """
-        str - The title of the window. This value is used to set the window caption.
-        """
+        """ str - The title of the window. This value is used to set the window caption. """
         return self.__title
     
 
@@ -91,9 +83,7 @@ class Renderer:
 
     @property
     def camera_position(self):
-        """
-        Vector - The position of the camera in the game world. This value is used to determine the rendering offset.
-        """
+        """ Vector - The position of the camera in the game world. This value is used to determine the rendering offset. """
         return self.__camera_position
     
 
@@ -107,9 +97,7 @@ class Renderer:
 
     @property
     def camera_width(self):
-        """
-        float - The width of the camera in game world units. This value is used to scale the rendering of actors and widgets.
-        """
+        """ float - The width of the camera in game world units. This value is used to scale the rendering of actors and widgets. """
         return self.__camera_width
     
 
@@ -123,10 +111,7 @@ class Renderer:
 
     @property
     def fullscreen(self):
-        """
-        bool - Indicates whether the display is in fullscreen mode. If True, the display occupies the entire screen.
-        It also overrides resolution and windowed settings.
-        """
+        """ bool - Indicates whether the display is in fullscreen mode. If True, the display occupies the entire screen. It also overrides resolution and windowed settings. """
         return self.__fullscreen
     
 
@@ -145,9 +130,7 @@ class Renderer:
 
     @property
     def windowed(self):
-        """
-        bool - Indicates whether the display is in windowed mode. If True, the window header is shown.
-        """
+        """ bool - Indicates whether the display is in windowed mode. If True, the window header is shown. """
         return self.__windowed
     
 
@@ -165,26 +148,19 @@ class Renderer:
 
     @property
     def screen(self):
-        """
-        pygame.display - The Pygame display surface.
-        """
+        """ pygame.display - The Pygame display surface. """
         return self.__screen
     
 
     @property
     def actors_to_draw(self):
-        """
-        dict[int, set[Actor]] - Dictionary of actors to draw, where key is the render layer and value is a set of actors.
-        """
+        """ dict[int, set[Actor]] - Dictionary of actors to draw, where key is the render layer and value is a set of actors. """
         return self.__actors_to_draw
     
 
     @property
     def widgets_to_draw(self):
-        """
-        Returns:
-            list[Widget] - List of widgets to draw for current frame.
-        """
+        """ list[Widget] - List of widgets to draw for current frame. """
         return self.__widgets_to_draw
 
 
@@ -238,10 +214,7 @@ class Renderer:
 
     
     def clear(self):
-        """
-        Called only by engine at the beginning of the frame.
-        This method clears buffers from previous frame.
-        """
+        """ Called only by engine at the beginning of the frame. This method clears buffers from previous frame. """
         self.__widgets_to_draw.clear()
 
 
@@ -283,10 +256,7 @@ class Renderer:
 
 
     def draw_background(self, background: Background):
-        """
-        Called only by engine at the beginning of the frame after buffers are cleared.
-        It draws background.
-        """
+        """ Called only by engine at the beginning of the frame after buffers are cleared. It draws background. """
         bg_surface = background.get_bg_surface(self.camera_position, self.resolution, self.camera_width)
         self.screen.blit(bg_surface, (0, 0))
 
