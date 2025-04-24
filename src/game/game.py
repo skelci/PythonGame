@@ -38,11 +38,12 @@ class Log(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        r=random.randint(3,5)
-        for i in range(r):
-            LogName = f"log_{self.name}_{i}"
-            self.level_ref.register_actor(LogEntity(LogName, self.position))    
-            #print('wood iz log')
+        
+        count=random.randint(3,5)
+        LogName = f"log_{self.name}"
+        LogEntity_ = LogEntity(LogName, self.position, count=count)
+        self.level_ref.register_actor(LogEntity_) 
+        #print('wood iz log')
 
 class Leaf(Actor):
     def __init__(self, name, position):
@@ -51,16 +52,17 @@ class Leaf(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        r=random.randint(0,5)
-        #print(r)
-        for i in range(r):
-            StickName = f"stick_{self.name}_{i}"
-            self.level_ref.register_actor(StickEntity(StickName, self.position))
-            #print("stick iz leaf") 
-        for j in range(8):
-            LeafName = f"leaf_{self.name}_{j}"
-            self.level_ref.register_actor(LeafEntity(LeafName, self.position))
-            #print("leaves:", j) 
+        
+        count=random.randint(0,5)
+        StickName = f"stick_{self.name}"
+        StickEntity_ = StickEntity(StickName, self.position, count=count)
+        self.level_ref.register_actor(StickEntity_)
+        #print("stick iz leaf") 
+
+        LeafName = f"leaf_{self.name}"
+        LeafEntity_ = LeafEntity(LeafName, self.position, count=8)
+        self.level_ref.register_actor(LeafEntity_)
+        #print("leaves:", j) 
 
 class Grass(Actor):
     def __init__(self, name, position):
@@ -69,10 +71,11 @@ class Grass(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        for i in range(4):
-            GrassDirtName = f"grass_dirt_{self.name}_{i}"
-            self.level_ref.register_actor(DirtEntity(GrassDirtName, self.position))
-            #print("entity dirt iz grasa")
+        count=4
+        GrassDirtName = f"grass_dirt_{self.name}"
+        GrassDirtEntity= DirtEntity(GrassDirtName, self.position, count=count)
+        self.level_ref.register_actor(GrassDirtEntity)
+        #print("entity dirt iz grasa")
 
 class Dirt(Actor):
     def __init__(self, name, position):
@@ -81,11 +84,13 @@ class Dirt(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        r=random.randint(3,5)
-        for i in range(r):
-            DirtName = f"dirt_{self.name}_{i}"
-            self.level_ref.register_actor(DirtEntity(DirtName, self.position))
-            #print('dirt iz dirta')
+        
+        count=random.randint(3,5)
+        DirtName = f"dirt_{self.name}"
+        dirt_entity = DirtEntity(DirtName, self.position, count=count)
+        self.level_ref.register_actor(dirt_entity)
+        #print('dirt iz dirta')
+
         chance=random.randint(1,4)
         if chance==1:
             self.level_ref.register_actor(StoneEntity(self.name, self.position))
@@ -98,11 +103,11 @@ class Stone(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        r=random.randint(3,5)
-        for i in range(r):
-            StoneName = f"stone_{self.name}_{i}"
-            self.level_ref.register_actor(StoneEntity(StoneName, self.position))   
-            #print('rock iz stone')     
+        count=random.randint(3,5)
+        StoneName = f"stone_{self.name}"
+        stone_entity = StoneEntity(StoneName, self.position, count=count)
+        self.level_ref.register_actor(stone_entity)
+        #print('rock iz stone')     
 
 class Coal(Actor):
     def __init__(self, name, position):
@@ -111,14 +116,15 @@ class Coal(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
+        
+        spawn_extra_stones = random.randint(1, 2)
+        stone_count = 3 if spawn_extra_stones == 1 else 2
+
         self.level_ref.register_actor(CoalEntity(self.name, self.position))  
-        r=random.randint(1,2)
-        for i in range(2):
-            RockCoalName = f"rock_coal_{self.name}_{i}"
-            self.level_ref.register_actor(StoneEntity(RockCoalName, self.position))  
-            #print("rock iz coala")
-        if r==1:
-             self.level_ref.register_actor(StoneEntity(RockCoalName, self.position))   
+        RockCoalName = f"rock_coal_{self.name}"
+        RockCoalEntity = StoneEntity(RockCoalName, self.position, count=stone_count)
+        self.level_ref.register_actor(RockCoalEntity) 
+        #print("rock iz coala")  
 
 class Iron(Actor):
     def __init__(self, name, position):
@@ -127,16 +133,18 @@ class Iron(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        for i in range(3):
-            IronName = f"iron_{self.name}_{i}"
-            self.level_ref.register_actor(IronEntity(IronName, self.position))   
-        r=random.randint(1,2)
-        for i in range(2):
-            RockIronName = f"rock_iron_{self.name}_{i}"
-            self.level_ref.register_actor(StoneEntity(RockIronName, self.position))  
-            #print("rock iz irona") 
-        if r==1:
-            self.level_ref.register_actor(StoneEntity(RockIronName, self.posiiton))    
+        
+        IronName = f"iron_{self.name}"
+        IronEnntity = IronEntity(IronName, self.position, count=3)
+        self.level_ref.register_actor(IronEnntity) 
+
+        spawn_extra_stones = random.randint(1, 2)
+        stone_count = 3 if spawn_extra_stones == 1 else 2
+
+        RockIronName = f"rock_iron_{self.name}"
+        RockIronEntity = StoneEntity(RockIronName, self.position, count=stone_count)
+        self.level_ref.register_actor(RockIronEntity)
+        #print("rock iz irona")   
 
 class Gold(Actor):
     def __init__(self, name, position):
@@ -145,16 +153,18 @@ class Gold(Actor):
     def __del__(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
-        for i in range(3):
-            GoldName = f"gold_{self.name}_{i}"
-            self.level_ref.register_actor(GoldEntity(GoldName, self.position)) 
-        r=random.randint(1,2)
-        for i in range(2):
-            RockGoldName = f"rock_gold_{self.name}_{i}"
-            self.level_ref.register_actor(StoneEntity(RockGoldName, self.position))  
-            #print("rock iz golda")
-        if r==1:
-            self.level_ref.register_actor(StoneEntity(RockGoldName, self.position))    
+        
+        GoldName = f"gold_{self.name}"
+        GoldEntity = GoldEntity(GoldName, self.position, count=3)
+        self.level_ref.register_actor(GoldEntity) 
+
+        spawn_extra_stones = random.randint(1, 2)
+        stone_count = 3 if spawn_extra_stones == 1 else 2
+
+        RockGoldName = f"rock_gold_{self.name}"
+        RockGoldEntity = StoneEntity(RockGoldName, self.position, count=stone_count)
+        self.level_ref.register_actor(RockGoldEntity)  
+        #print("rock iz golda")  
 
 class DebugTunnel(Actor):
     def __init__(self, name, position):
@@ -166,75 +176,84 @@ class TestPlayer(Character):
         super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
 
 class LogEntity(Rigidbody):
-    def __init__(self, name, position):
+    def __init__(self, name, position, count=0):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y) 
+        self.count = count
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(139, 69, 19)), restitution=0, initial_velocity=Initial_velocity)   
 
 class StickEntity(Rigidbody):    
-    def __init__(self, name, position):
+    def __init__(self, name, position, count=0):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(145, 69, 34)), restitution=0, initial_velocity=Initial_velocity)             
 
 class DirtEntity(Rigidbody):        
-    def __init__(self, name, position):
+    def __init__(self, name, position, count=0):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 255, 0)), restitution=0, initial_velocity=Initial_velocity)
 
 class GrassEntity(Rigidbody):        
-    def __init__(self, name, position):
+    def __init__(self, name, position, count=0):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
 
 class StoneEntity(Rigidbody):    
-    def __init__(self, name, position):
+    def __init__(self, name, position, count=0):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(128, 128, 128)), restitution=0, initial_velocity=Initial_velocity)
 
 class CoalEntity(Rigidbody):    
-    def __init__(self, name, position):
+    def __init__(self, name, position, count=0):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
 
 class IronEntity(Rigidbody):    
-    def __init__(self, name, position):
+    def __init__(self, name, position, count=0):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(192, 192, 192)), restitution=0, initial_velocity=Initial_velocity)
 
 class GoldEntity(Rigidbody):    
-    def __init__(self, name, position):
+    def __init__(self, name, position, count=0):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(255, 215, 0)), restitution=0, initial_velocity=Initial_velocity)
 
 class LeafEntity(Rigidbody):
-    def __init__(self, name, position):
+    def __init__(self, name, position, count=0):
         angle = random.uniform(0,2*math.pi)
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
         super().__init__(name, position=position, half_size=Vector(0.2, 0.2), collidable=False, material=Material(Color(0, 215, 0)), restitution=0, initial_velocity=Initial_velocity)                                
 
         
