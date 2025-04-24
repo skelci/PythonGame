@@ -161,7 +161,7 @@ class LogEntity(Rigidbody):
         velocity_x = math.cos(angle) 
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y) 
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(139, 69, 19)), restitution=0, initial_velocity=Initial_velocity)   
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/log_entity.png"), restitution=0, initial_velocity=Initial_velocity)   
 
 class StickEntity(Rigidbody):    
     def __init__(self, name, position):
@@ -568,12 +568,14 @@ class KeyHandler:
         iron_entity = IronEntity("iron_entity", Vector(-3, 26))
         stone_entity = StoneEntity("stone_entity", Vector(-2, 26))
         dirt_entity = DirtEntity("dirt_entity", Vector(-1, 26))
+        log_entity = LogEntity("log_entity", Vector(-6, 26))
 
         level_ref.register_actor(coal_entity)
         level_ref.register_actor(gold_entity)
         level_ref.register_actor(iron_entity)
         level_ref.register_actor(stone_entity)
         level_ref.register_actor(dirt_entity)
+        level_ref.register_actor(log_entity)
 
 
 class TunnelGenerator:
