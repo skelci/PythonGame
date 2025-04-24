@@ -31,6 +31,7 @@ CAMERA_OFFSET_X = 1
 CAMERA_OFFSET_Y = 1
 
 
+
 class Log(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material("res/textures/log.png"))
@@ -173,7 +174,7 @@ class DebugTunnel(Actor):
 
 class TestPlayer(Character):
     def __init__(self, name, position):
-        super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
+        super().__init__(name, position=Vector(-5, 27), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
 
 class LogEntity(Rigidbody):
     def __init__(self, name, position, count=0):
@@ -316,7 +317,7 @@ class ClientGame(ClientGameBase):
 
         eng = self.engine
 
-        eng.set_camera_width(16 * 2)
+        eng.set_camera_width(16 * 3)
         eng.resolution = Vector(1600, 900)
 
         # eng.fullscreen=True
@@ -589,6 +590,21 @@ class KeyHandler:
     def key_D(engine_ref, level_ref, id):
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = 1
 
+    @staticmethod
+    def key_C(engine_ref, level_ref,id):
+        # Spawn a CoalEntity at the player's position
+        coal_entity = CoalEntity("coal_entity", Vector(-5, 26))
+        gold_entity = GoldEntity("gold_entity", Vector(-4, 26))
+        iron_entity = IronEntity("iron_entity", Vector(-3, 26))
+        stone_entity = StoneEntity("stone_entity", Vector(-2, 26))
+        dirt_entity = DirtEntity("dirt_entity", Vector(-1, 26))
+
+        level_ref.register_actor(coal_entity)
+        level_ref.register_actor(gold_entity)
+        level_ref.register_actor(iron_entity)
+        level_ref.register_actor(stone_entity)
+        level_ref.register_actor(dirt_entity)
+
 
 class TunnelGenerator:
     def __init__(self):
@@ -765,6 +781,7 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.W, KeyPressType.HOLD, KeyHandler.key_W)
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
+        self.engine.register_key(Keys.C, KeyPressType.TRIGGER, KeyHandler.key_C)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
         self.game_map = set()
         self.current_base_chunk = Vector(0, 0)
@@ -776,9 +793,8 @@ class ServerGame(ServerGameBase):
         self.engine.console.handle_cmd("build_client")
         #?endif
 
-        for x in range(-1, 2):
-            for y in range(-1, 2):
-                self.generate_and_load_chunks(x, y)
+
+        self.generate_and_load_chunks(-1, 0)
 
         self.engine.start_network("0.0.0.0", 5555, 10)
 
