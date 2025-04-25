@@ -248,7 +248,7 @@ class ClientNetwork(Network):
             except socket.error as e:
                 print(f"[Client] UDP send error: {e}")
             except Exception as e:
-                 print(f"[Client] Error encoding/sending UDP data: {e}")
+                print(f"[Client] Error encoding/sending UDP data: {e}")
 
         if tcp_payloads:
             try:
@@ -525,28 +525,14 @@ class ServerNetwork(Network):
                 try:
                     payload_bytes = payload.encode('ascii')
                 except UnicodeEncodeError as e:
-                    print(f"Server Warning: Cannot encode UDP payload for client {client_id}: {e}. Skipping payload.")
+                    print(f"[Server] Warning: Cannot encode UDP payload for client {client_id}: {e}. Skipping payload.")
                     continue
 
                 payload_len = len(payload_bytes)
                 separator_len = len(RECORD_SEPARATOR_BYTES) if current_batch else 0
 
                 if payload_len + separator_len + len(END_OF_MESSAGE_SEPARATOR_BYTES) > self._packet_size:
-                    print(f"Server Warning: Single UDP payload for client {client_id} is too large ({payload_len} bytes). Skipping.")
-                    if current_batch:
-                        try:
-                            batch_message = (RECORD_SEPARATOR.join(current_batch) + END_OF_MESSAGE_SEPARATOR).encode('ascii')
-                            self.udp_socket.sendto(batch_message, udp_addr)
-                        except socket.error as e:
-                            print(f"[Server] UDP send error (pre-large payload batch) to {udp_addr} (ID: {client_id}): {e}")
-                            current_batch = []
-                            break
-                        except Exception as e:
-                            print(f"[Server] Error encoding/sending UDP batch (pre-large) to {udp_addr} (ID: {client_id}): {e}")
-                            current_batch = []
-                            break
-                        current_batch = []
-                        current_batch_size = len(END_OF_MESSAGE_SEPARATOR_BYTES)
+                    print(f"[Server] Warning: Single UDP payload for client {client_id} is too large ({payload_len} bytes). Skipping.")
                     continue
 
                 if current_batch_size + separator_len + payload_len > self._packet_size:
