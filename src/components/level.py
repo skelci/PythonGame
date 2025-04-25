@@ -42,6 +42,7 @@ class Level:
         self.__chunks = {}
         self.__actors_to_destroy = set()
         self.__actors_to_create = set()
+        self.__previously_collided = {}
 
         for actor in actors:
             self.register_actor(actor)
@@ -148,6 +149,18 @@ class Level:
     def chunks(self):
         """ dict[Vector, set[Actor]] - Dictionary of all chunks in the level. The key is Vector with chunk's x and y coordinates and the value is a set of Actors in that chunk. """
         return self.__chunks
+    
+
+    @property
+    def previously_collided(self):
+        """ dict[Actor, set[Actor]] - Dictionary of all actors that have collided in the last tick. The key is the actor and the value is a set of actors that have collided with it. """
+        return self.__previously_collided
+    
+
+    @property
+    def actors_with_overlap_events(self):
+        """ dict[str, Actor] - Dictionary of all actors that have overlap events. The key is the actor's name and the value is the actor object. """
+        return self.__actors_with_overlap_events
         
 
     def register_actor(self, actor: Actor):
@@ -269,12 +282,6 @@ class Level:
                 sync_data = actor.get_for_net_sync()
                 if not sync_data:
                     continue
-
-                if "position" in sync_data:
-                    a_chk = actor.chunk
-                    if (a_chk.x != chunk.x or a_chk.y != chunk.y) and actor in self.chunks[chunk]:
-                        self.chunks[a_chk.x][a_chk.y].remove(actor)
-                        self.add_actor_to_chunk(actor)
                         
                 if not actor.visible and "visible" not in sync_data:
                     continue 
@@ -368,6 +375,13 @@ class Level:
             collided_actors[name][0].normal = collided_actors[name][1].normalized
             self.actors[name].on_collision(collided_actors[name][0])
 
+        for actor in self.actors.values():
+            chk = get_chunk_cords(actor.position)
+            a_chk = actor.chunk
+            if a_chk.x != chk.x or a_chk.y != chk.y:
+                self.chunks[a_chk].remove(actor)
+                self.add_actor_to_chunk(actor)
+
         collided_actors_directions = {}
         for actor1 in self.rigidbodies.values():
             if not actor1.simulate_physics:
@@ -402,20 +416,21 @@ class Level:
                 if actor1 is actor2 or not is_overlapping_rect(actor1, actor2):
                     continue
 
-                if actor2.name not in overlaped_actors:
-                    overlaped_actors[actor2.name] = set()
-                overlaped_actors[actor2.name].add(actor1)
+                if actor2 not in overlaped_actors:
+                    overlaped_actors[actor2] = set()
+                overlaped_actors[actor2].add(actor1)
 
             actor1.half_size -= KINDA_SMALL_NUMBER
 
-        for actor_name, overlaped_set in overlaped_actors.items():
-            for actor in overlaped_set - self.actors[actor_name].previously_collided:
-                self.actors[actor_name].on_overlap_begin(actor)
-            for actor in self.actors[actor_name].previously_collided - overlaped_set:
-                self.actors[actor_name].on_overlap_end(actor)
+        for actor, overlaped_set in overlaped_actors.items():
+            for other_actor in overlaped_set - self.__previously_collided.get(actor, set()):
+                actor.on_overlap_begin(other_actor)
 
-        for actor_name, overlaped_set in overlaped_actors.items():
-            self.actors[actor_name].previously_collided = overlaped_set
+        for actor, overlaped_set in self.__previously_collided.items():
+            for other_actor in overlaped_set - overlaped_actors.get(actor, set()):
+                actor.on_overlap_end(other_actor)
+
+        self.__previously_collided = overlaped_actors
 
     #?endif
 

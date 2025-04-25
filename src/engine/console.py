@@ -15,8 +15,8 @@ class Console:
 
         self.__commands = {
             "help": "print('Commands:', ', '.join(self.console.commands.keys()))",
-            "print": "print({arg1})",
-            "raw": "{arg1}",
+            "print": "print({args})",
+            "raw": "{args}",
             "sim_speed": "self.levels['{arg1}'}.simulation_speed = float({arg2})",
             "stop": "self.stop()\nself.console.stop()",
             "tp": "self.levels['{arg1}'].actors['{arg2}'].position = Vector({arg3}, {arg4})",
@@ -111,8 +111,12 @@ class Console:
         if command_key in self.commands:
             template = self.commands[command_key]
             context = {}
-            for idx, arg in enumerate(cmd_args[1:], start=1):
-                context[f"arg{idx}"] = arg
+            if "{args}" in template:
+                args = " ".join(cmd_args[1:])
+                context["args"] = args
+            else:
+                for idx, arg in enumerate(cmd_args[1:], start=1):
+                    context[f"arg{idx}"] = arg
             try:
                 py_cmd = eval(f"f'''{template}'''", {}, context)
             except TypeError as e:

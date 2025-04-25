@@ -212,20 +212,6 @@ class Actor:
             raise TypeError("Restitution must be a float between 0 and 1:", value)
         
 
-    @property
-    def previously_collided(self):
-        """ set[Actor] - Set of actors that this actor has previously collided with. """
-        return self.__previously_collided
-    
-
-    @previously_collided.setter
-    def previously_collided(self, value):
-        if isinstance(value, set):
-            self.__previously_collided = value
-        else:
-            raise TypeError("Previously collided must be a set:", value)
-        
-
     #?ifdef CLIENT
     def update_from_net_sync(self, data):
         """ Called only by the engine. This function is used to update the actor from the network sync data. """
