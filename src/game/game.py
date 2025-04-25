@@ -401,10 +401,7 @@ class ClientGame(ClientGameBase):
             self.true_scroll[1] += (player.position.y - self.true_scroll[1] - CAMERA_OFFSET_Y) * 0.1
             
             # Update the camera position of the engine so that rendering follows.
-            self.engine.camera_position = Vector(
-                self.true_scroll[0],
-                self.true_scroll[1]
-            )                      
+            self.engine.camera_position = Vector(self.true_scroll[0],self.true_scroll[1])                      
 
 #?endif
 
@@ -433,8 +430,8 @@ class KeyHandler:
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = 1
 
     @staticmethod
-    def key_C(engine_ref, level_ref,id):
-        # Spawn a CoalEntity at the player's position
+    def key_C(level_ref):
+        # Spawn Entities at the player's position
         coal_entity = CoalEntity("coal_entity", Vector(-5, 26))
         gold_entity = GoldEntity("gold_entity", Vector(-4, 26))
         iron_entity = IronEntity("iron_entity", Vector(-3, 26))
@@ -479,6 +476,9 @@ class ServerGame(ServerGameBase):
                 self.generate_and_load_chunks(x, y)
 
         self.engine.start_network("0.0.0.0", 5555, 10)
+    
+
+    #     MATEVŽ
 
     @staticmethod
     def smoothstep(val, edge0, edge1):
@@ -506,7 +506,8 @@ class ServerGame(ServerGameBase):
                     trunk_pos = pos + Vector(0, h)
                     if trunk_pos.y >= chunk_origin.y:
                         chunk_data.append(((trunk_pos.x, trunk_pos.y), "log"))
-               # Add leaves
+                #Pri matematiki pomagal Github Copilot
+                # Add leaves
                 rx = 3.25
                 ry = 4.5
                 top_leaf_pos = top + Vector(0, 4)
@@ -768,6 +769,9 @@ class ServerGame(ServerGameBase):
 
             for base_chunk_x, base_chunk_y in chunks_to_load:
                 self.generate_and_load_chunks(base_chunk_x, base_chunk_y)
+
+
+#    JURE
 
 Indestructible_classes = (
     "LeafEntity", "StickEntity", "LogEntity", "GrassEntity", 
