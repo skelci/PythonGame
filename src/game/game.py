@@ -13,6 +13,7 @@ from components.text import Text
 from components.input_box import InputBox
 from components.widget import Widget
 from components.border import Border
+from components.icon import Icon
 #?endif
 
 from game.blocks import *
@@ -148,7 +149,7 @@ class ClientGame(ClientGameBase):
                     }
                 )
 
-        self.engine.register_widget(Inventory())        
+        self.engine.register_widget(Inventory())
 
         self.true_scroll = [0, 0]
         self.game_map = {}
