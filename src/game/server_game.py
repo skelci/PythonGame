@@ -252,25 +252,27 @@ class ServerGame(ServerGameBase):
                 "scale": 0.042,       # smaller scale = bigger, spread-out veins
                 "threshold": 0.7,   # Lower threshold = more common
                 "base": 1000,        # Unique noise pattern
-                "min_depth": 10,      # Shallowest depth
+                "min_depth": 12,      # Shallowest depth
             },
             "iron": {
                 "scale": 0.048,       # Smaller scale = tighter veins
                 "threshold": 0.72,
                 "base": 2500,
-                "min_depth": 10,
+                "min_depth": 25,
             },
             "gold": {
                 "scale": 0.052,    
                 "threshold": 0.76,    # Slightly higher threshold = slightly rarer
                 "base": 4500,
-                "min_depth": 10,
+                "min_depth": 40,
             }
         }
 
         # Generate ores
         for ore_type, parameters in ore_parameters.items():
-            self.ore_generation(ore_type, parameters, noise_data, ground_levels, set())
+            ore_chunk_data = set()
+            self.ore_generation(ore_type, parameters, noise_data, ground_levels, ore_chunk_data)
+            chunk_data.extend([(pos, ore_type) for pos, ore_type in ore_chunk_data])
             
 
         tree_positions = [] 
