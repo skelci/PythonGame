@@ -65,23 +65,24 @@ class ServerGame(ServerGameBase):
         super().__init__()
         self.engine.max_tps = 60
         self.seed = random.randint(0, 9999)
+        random.seed(self.seed)
         self.cave_seed = self.seed + 100
         self.ore_parameters = {
             "coal": {
                 "scale": 0.042,
-                "threshold": 0.72,   
+                "threshold": 0.72,  
                 "base": self.seed + 500,        
                 "min_depth": 15,
             },
             "iron": {
                 "scale": 0.048,       
-                "threshold": 0.74,
+                "threshold": 0.76,
                 "base": self.seed + 1000,
                 "min_depth": 30,
             },
             "gold": {
                 "scale": 0.052,    
-                "threshold": 0.76,    
+                "threshold": 0.78,    
                 "base": self.seed + 1500,
                 "min_depth": 60,
             }
