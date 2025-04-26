@@ -2,10 +2,10 @@
 This module defines the Character class, which is used to create a character object in the game.
 """
 
-from components.rigidbody import Rigidbody
+from .rigidbody import Rigidbody
 
-from components.datatypes import *
-from components.material import Material
+from .datatypes import *
+from .material import Material
 
 
 

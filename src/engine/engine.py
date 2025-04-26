@@ -4,15 +4,15 @@ It handles all the game logic and physics.
 """
 
 #?ifdef CLIENT
-from engine.renderer import Renderer
+from .renderer import Renderer
 #?endif
 #?ifdef SERVER
-from engine.console import Console
+from .console import Console
 #?endif
 #?ifdef ENGINE
-from engine.builder import *
+from .builder import *
 #?endif
-from engine.network import *
+from .network import *
 
 #?ifdef CLIENT
 from components.button import Button

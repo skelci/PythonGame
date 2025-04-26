@@ -5,7 +5,6 @@ Preprocessor for building and packaging server and client files.
 """
 
 from enum import IntEnum
-
 import os
 import shutil
 import time
@@ -18,9 +17,9 @@ class BuildType(IntEnum):
     COMBINED = 2
 
 
+
 class Builder:
     """ Simple python preprocessor for building and packaging server and client files. """
-
 
     def __init__(self, build_dir, package_dir, server_folders, client_folders):
         """

@@ -4,8 +4,8 @@
 This module contains the Icon class, which is used to create an icon for the GUI system.
 """
 
-from components.widget import Widget
-from components.datatypes import *
+from .widget import Widget
+from .datatypes import *
 
 
 

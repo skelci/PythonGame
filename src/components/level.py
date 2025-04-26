@@ -2,12 +2,12 @@
 This module contains the Level class, which is used to create a level in the game.
 """
 
-from components.datatypes import *
-from components.actor import Actor
-from components.background import Background
-from components.rigidbody import Rigidbody
-from components.character import Character
-from components.game_math import *
+from .datatypes import *
+from .actor import Actor
+from .background import Background
+from .rigidbody import Rigidbody
+from .character import Character
+from .game_math import *
 
 
 

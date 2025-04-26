@@ -4,10 +4,10 @@
 This module contains the InputBox class, which is used to create an input box widget.
 """
 
-from components.text import Text
+from .text import Text
 
-from components.game_math import *
-from components.datatypes import *
+from .game_math import *
+from .datatypes import *
 
 from typing import Callable
 

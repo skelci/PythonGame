@@ -4,12 +4,12 @@
 This module contains the Button class, which is used to create a button widget.
 """
 
-from components.border import Border
+from .border import Border
 
-from components.text import Text
-from components.datatypes import *
-from components.game_math import *
-from components.widget import Widget
+from .text import Text
+from .datatypes import *
+from .game_math import *
+from .widget import Widget
 
 from typing import Callable
 

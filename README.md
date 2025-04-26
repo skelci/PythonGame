@@ -41,6 +41,7 @@ python ./src/main.py
 ### Jure
 
 - actor destruction
+- inventory
 
 ### Niko
 

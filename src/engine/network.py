@@ -486,12 +486,12 @@ class ServerNetwork(Network):
             if client_id in self.__id_to_udp_addr:
                 self._send_priority_buffer.add_data((client_id, parsed_data))
             else:
-                print(f"Server Warning: No UDP address for client {client_id}. Cannot send priority message '{cmd}'.")
+                print(f"[Server] Warning: No UDP address for client {client_id}. Cannot send priority message '{cmd}'.")
         else:
             if client_id in self.__id_to_tcp_conn:
                 self._send_unpriority_buffer.add_data((client_id, parsed_data))
             else:
-                print(f"Server Warning: No TCP connection for client {client_id}. Cannot send non-priority message '{cmd}'.")
+                print(f"[Server] Warning: No TCP connection for client {client_id}. Cannot send non-priority message '{cmd}'.")
 
 
     def tick(self):
@@ -708,7 +708,7 @@ class ServerNetwork(Network):
                             self.__udp_addr_to_id[addr] = reg_id
                             client_id = reg_id
                         else:
-                            print(f"Server Warning: Received UDP registration for unknown/already registered ID {reg_id} from {addr}.")
+                            print(f"[Server] Warning: Received UDP registration for unknown/already registered ID {reg_id} from {addr}.")
                         continue
 
                     if client_id is not None:

@@ -10,7 +10,7 @@ class ServerGame(ServerGameBase):
 ```
 """
 
-from engine.engine import *
+from .engine import *
 
 from components.datatypes import *
 

@@ -2,10 +2,10 @@
 This module contains the Rigidbody class, which is used to create a rigid body physics object.
 """
 
-from components.actor import Actor
+from .actor import Actor
 
-from components.material import Material
-from components.datatypes import *
+from .material import Material
+from .datatypes import *
 
 
 

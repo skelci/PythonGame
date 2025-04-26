@@ -2,8 +2,8 @@
 This module contains the Actor class, which is used to create an objects inside the level.
 """
 
-from components.datatypes import *
-from components.material import Material
+from .datatypes import *
+from .material import Material
 
 
 class Actor:
@@ -297,7 +297,7 @@ class Actor:
     
 
     def __repr__(self):
-        return self.__str__()
+        return f"Actor({self.name})"
     
 
     def __hash__(self):

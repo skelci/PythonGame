@@ -2,7 +2,7 @@
 This module contains various math functions and classes used in the game.
 """
 
-from components.datatypes import *
+from .datatypes import *
 
 
 

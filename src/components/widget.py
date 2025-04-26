@@ -4,7 +4,7 @@
 This module contains the Widget class, which is core to the GUI system.
 """
 
-from components.datatypes import *
+from .datatypes import *
 
 import pygame
 
