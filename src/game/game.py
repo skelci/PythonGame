@@ -430,7 +430,7 @@ class KeyHandler:
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = 1
 
     @staticmethod
-    def key_C(level_ref):
+    def key_C(engine_ref, level_ref, id):
         # Spawn Entities at the player's position
         coal_entity = CoalEntity("coal_entity", Vector(-5, 26))
         gold_entity = GoldEntity("gold_entity", Vector(-4, 26))
