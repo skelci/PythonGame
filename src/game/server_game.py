@@ -64,11 +64,28 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
         self.engine.max_tps = 60
-        self.terrain_seed = random.randint(0, 999)
-        self.cave_seed = random.randint(0, 999)
-        #print("Terrain seed:", self.terrain_seed)
-        #print("Cave seed:", self.cave_seed)
-        
+        self.terrain_seed = random.randint(0, 9999)
+        self.cave_seed = random.randint(0, 9999)
+        self.ore_parameters = {
+            "coal": {
+                "scale": 0.042,
+                "threshold": 0.72,   
+                "base": random.randint(0, 9999),        
+                "min_depth": 12,      
+            },
+            "iron": {
+                "scale": 0.048,       
+                "threshold": 0.74,
+                "base": random.randint(0, 9999),
+                "min_depth": 25,
+            },
+            "gold": {
+                "scale": 0.052,    
+                "threshold": 0.76,    
+                "base": random.randint(0, 9999),
+                "min_depth": 40,
+            }
+        }
         
 
         self.engine.register_level(TestLevel())
@@ -246,30 +263,10 @@ class ServerGame(ServerGameBase):
                         chunk_data.append([(pos.x, pos.y), None])
 
 
-                # Enhanced ore generation parameters - different for each type
-        ore_parameters = {
-            "coal": {
-                "scale": 0.042,       # smaller scale = bigger, spread-out veins
-                "threshold": 0.72,   # Lower threshold = more common
-                "base": 1000,        # Unique noise pattern
-                "min_depth": 12,      # Shallowest depth
-            },
-            "iron": {
-                "scale": 0.048,       # Smaller scale = tighter veins
-                "threshold": 0.74,
-                "base": 2500,
-                "min_depth": 25,
-            },
-            "gold": {
-                "scale": 0.052,    
-                "threshold": 0.76,    # Slightly higher threshold = slightly rarer
-                "base": 4500,
-                "min_depth": 40,
-            }
-        }
+        
 
         # Generate ores
-        for ore_type, parameters in ore_parameters.items():
+        for ore_type, parameters in self.ore_parameters.items():
             ore_chunk_data = set()
             self.ore_generation(ore_type, parameters, noise_data, ground_levels, ore_chunk_data)
             chunk_data.extend([(pos, ore_type) for pos, ore_type in ore_chunk_data])
