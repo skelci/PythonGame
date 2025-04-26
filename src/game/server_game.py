@@ -219,11 +219,13 @@ class ServerGame(ServerGameBase):
                 is_cave = combined_noise > effective_threshold and pos.y < ground_level
                 noise_data[y_index][x_index] = (pos, is_cave, False)
 
+
+
     def generate_chunk(self, x, y):
         chunk_origin = Vector(x, y) * TERRAIN_GENERATION_CHUNK_SIZE
         terrain_scale = 0.02
         
-        # First calculate ground levels
+        
         ground_levels = []
         for x_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
             pos_x = chunk_origin.x + x_pos
@@ -239,8 +241,7 @@ class ServerGame(ServerGameBase):
         cave_octaves = 2
         cave_persistence = 0.5
     
-       # Single-threaded cave generation
-       # Pre-allocate noise_data as a 2D array
+    
         noise_data = [[None for _ in range(TERRAIN_GENERATION_CHUNK_SIZE)] for _ in range(TERRAIN_GENERATION_CHUNK_SIZE)]
         
         self.generate_caves(
@@ -263,8 +264,6 @@ class ServerGame(ServerGameBase):
                         chunk_data.append([(pos.x, pos.y), None])
 
 
-        
-
         # Generate ores
         for ore_type, parameters in self.ore_parameters.items():
             ore_chunk_data = set()
@@ -273,13 +272,13 @@ class ServerGame(ServerGameBase):
             
 
         tree_positions = [] 
-        tree_threshold = 0.98  #smaller = more trees, bigger = less trees
+        tree_threshold = 0.98
             
         for y_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
             for x_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
+
                 pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                 ground_level = ground_levels[x_pos]
-
                 if any(block[0] == (pos.x, pos.y) for block in chunk_data):
                     continue
 
@@ -342,7 +341,7 @@ class ServerGame(ServerGameBase):
                 new_actor = DebugTunnel(actor_name, Vector(pos[0], pos[1]))
             if new_actor is not None:
                 actors_to_add.append(new_actor)
-        # Register all actors at once
+        
         for actor in actors_to_add:
             level.register_actor(actor)
             
