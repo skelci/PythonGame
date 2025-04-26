@@ -1,3 +1,5 @@
+#?attr SERVER
+
 import math
 import random as r
 

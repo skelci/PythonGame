@@ -1,4 +1,4 @@
-#*attr SERVER
+#?attr SERVER
 
 from engine.game_base import ServerGameBase
 
@@ -296,8 +296,7 @@ class ServerGame(ServerGameBase):
         if level is None:
             return
 
-        target_chunk = f"{chunk_x};{chunk_y}"
-        
+        target_chunk = Vector(chunk_x, chunk_y)
         
         if target_chunk not in self.game_map:
             self.game_map.add(target_chunk)
