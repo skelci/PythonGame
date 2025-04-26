@@ -64,26 +64,26 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
         self.engine.max_tps = 60
-        self.terrain_seed = random.randint(0, 9999)
-        self.cave_seed = random.randint(0, 9999)
+        self.seed = random.randint(0, 9999)
+        self.cave_seed = self.seed + 100
         self.ore_parameters = {
             "coal": {
                 "scale": 0.042,
                 "threshold": 0.72,   
-                "base": random.randint(0, 9999),        
-                "min_depth": 12,      
+                "base": self.seed + 500,        
+                "min_depth": 15,
             },
             "iron": {
                 "scale": 0.048,       
                 "threshold": 0.74,
-                "base": random.randint(0, 9999),
-                "min_depth": 25,
+                "base": self.seed + 1000,
+                "min_depth": 30,
             },
             "gold": {
                 "scale": 0.052,    
                 "threshold": 0.76,    
-                "base": random.randint(0, 9999),
-                "min_depth": 40,
+                "base": self.seed + 1500,
+                "min_depth": 60,
             }
         }
         
@@ -227,7 +227,7 @@ class ServerGame(ServerGameBase):
         ground_levels = []
         for x_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
             pos_x = chunk_origin.x + x_pos
-            height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=self.terrain_seed)
+            height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=self.seed)
             ground_levels.append(16 - math.floor(height_noise * 14))
            
 
