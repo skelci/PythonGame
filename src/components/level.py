@@ -313,6 +313,19 @@ class Level:
                     chunks.add(previous_chunk_pos)
 
         return chunks
+
+
+    def update_actor_chunk(self, actor: Actor):
+        """
+        You should call this function if you move an actor which is not a Rigidbody.
+        Args:
+            actor: Actor to update the chunk for.
+        """
+        chk = get_chunk_cords(actor.position)
+        a_chk = actor.chunk
+        if a_chk.x != chk.x or a_chk.y != chk.y:
+            self.chunks[a_chk].remove(actor)
+            self.add_actor_to_chunk(actor)
         
 
     def tick(self, delta_time: float):
@@ -375,12 +388,8 @@ class Level:
             collided_actors[name][0].normal = collided_actors[name][1].normalized
             self.actors[name].on_collision(collided_actors[name][0])
 
-        for actor in self.actors.values():
-            chk = get_chunk_cords(actor.position)
-            a_chk = actor.chunk
-            if a_chk.x != chk.x or a_chk.y != chk.y:
-                self.chunks[a_chk].remove(actor)
-                self.add_actor_to_chunk(actor)
+        for actor in self.rigidbodies.values():
+            self.update_actor_chunk(actor)
 
         collided_actors_directions = {}
         for actor1 in self.rigidbodies.values():
