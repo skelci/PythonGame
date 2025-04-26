@@ -1,6 +1,8 @@
 import math
 import random as r
 
+#    MATEVŽ   veliko pomagal Deepseek
+
 class TunnelGenerator:
     def __init__(self):
         self.width = 1.5

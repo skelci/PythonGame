@@ -6,6 +6,9 @@ from components.material import Material
 import random
 
 
+#   JURE
+
+
 class Log(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material("res/textures/log.png"))
