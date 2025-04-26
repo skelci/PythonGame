@@ -64,6 +64,11 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
         self.engine.max_tps = 60
+        self.terrain_seed = random.randint(0, 999)
+        self.cave_seed = random.randint(0, 999)
+        #print("Terrain seed:", self.terrain_seed)
+        #print("Cave seed:", self.cave_seed)
+        
         
 
         self.engine.register_level(TestLevel())
@@ -158,7 +163,7 @@ class ServerGame(ServerGameBase):
 
 
     @staticmethod
-    def generate_caves(chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+    def generate_caves(self, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
                     surface_threshold, mid_threshold, deep_threshold, ground_levels, noise_data, smoothstep_func):
         for y_index in range(TERRAIN_GENERATION_CHUNK_SIZE):
             for x_index in range(TERRAIN_GENERATION_CHUNK_SIZE):
@@ -171,12 +176,14 @@ class ServerGame(ServerGameBase):
                     pos.y * cave_scale_y,
                     octaves=cave_octaves,
                     persistence=cave_persistence,
-                    lacunarity=2.0
+                    lacunarity=2.0,
+                    base=self.cave_seed
                 )
                 detail = noise.snoise2(
                     pos.x * cave_scale_x * 3,
                     pos.y * cave_scale_y * 3,
-                    octaves=1
+                    octaves=1,
+                    base=self.cave_seed
                 ) * 0.2
                 combined_noise = base_val + detail
 
@@ -197,14 +204,14 @@ class ServerGame(ServerGameBase):
 
     def generate_chunk(self, x, y):
         chunk_origin = Vector(x, y) * TERRAIN_GENERATION_CHUNK_SIZE
-        terrain_scale = 0.035
+        terrain_scale = 0.02
         
         # First calculate ground levels
         ground_levels = []
         for x_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
             pos_x = chunk_origin.x + x_pos
-            height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=0)
-            ground_levels.append(16 - math.floor(height_noise * 10))
+            height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=self.terrain_seed)
+            ground_levels.append(16 - math.floor(height_noise * 14))
            
 
         cave_scale_x = 0.02
@@ -220,7 +227,7 @@ class ServerGame(ServerGameBase):
         noise_data = [[None for _ in range(TERRAIN_GENERATION_CHUNK_SIZE)] for _ in range(TERRAIN_GENERATION_CHUNK_SIZE)]
         
         self.generate_caves(
-            chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
+            self, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
             surface_threshold, mid_threshold, deep_threshold, ground_levels, noise_data, ServerGame.smoothstep
         )
 
@@ -243,21 +250,21 @@ class ServerGame(ServerGameBase):
         ore_parameters = {
             "coal": {
                 "scale": 0.042,       # smaller scale = bigger, spread-out veins
-                "threshold": 0.72,   # Lower threshold = more common
+                "threshold": 0.7,   # Lower threshold = more common
                 "base": 1000,        # Unique noise pattern
-                "min_depth": 8,      # Shallowest depth
+                "min_depth": 10,      # Shallowest depth
             },
             "iron": {
                 "scale": 0.048,       # Smaller scale = tighter veins
-                "threshold": 0.76,
+                "threshold": 0.72,
                 "base": 2500,
-                "min_depth": 40,
+                "min_depth": 10,
             },
             "gold": {
                 "scale": 0.052,    
-                "threshold": 0.8,    # Slightly higher threshold = slightly rarer
+                "threshold": 0.76,    # Slightly higher threshold = slightly rarer
                 "base": 4500,
-                "min_depth": 70,
+                "min_depth": 10,
             }
         }
 
