@@ -17,7 +17,7 @@ class Console:
             "help": "print('Commands:', ', '.join(self.console.commands.keys()))",
             "print": "print({args})",
             "raw": "{args}",
-            "sim_speed": "self.levels['{arg1}'}.simulation_speed = float({arg2})",
+            "sim_speed": "self.levels['{arg1}'].simulation_speed = float({arg2})",
             "stop": "self.stop()\nself.console.stop()",
             "tp": "self.levels['{arg1}'].actors['{arg2}'].position = Vector({arg3}, {arg4})",
 

@@ -320,11 +320,6 @@ class ClientNetwork(Network):
 
     def __handle_udp_connection(self):
         """ Handles receiving data from the UDP socket. """
-        while self.running and self.__server_ip is None:
-            time.sleep(0.01)
-
-        if not self.running: return
-
         expected_server_addr = (self.__server_ip, self.port)
 
         while self.running:
@@ -402,8 +397,8 @@ class ServerNetwork(Network):
             on_disconnect: A function called when a client disconnects (passes client ID).
         """
         super().__init__(address, port)
-        self.tcp_port = self.port + 1
         self.max_connections = max_connections
+        self.__tcp_port = self.port + 1
         self.__on_connect = on_connect
         self.__on_disconnect = on_disconnect
 
@@ -443,11 +438,11 @@ class ServerNetwork(Network):
             self.udp_socket.close()
             raise
 
-        self.tcp_accept_thread = threading.Thread(target=self.__accept_tcp_connections, daemon=True)
-        self.udp_read_thread = threading.Thread(target=self.__handle_udp_reads, daemon=True)
+        self.__tcp_accept_thread = threading.Thread(target=self.__accept_tcp_connections, daemon=True)
+        self.__udp_read_thread = threading.Thread(target=self.__handle_udp_reads, daemon=True)
 
-        self.tcp_accept_thread.start()
-        self.udp_read_thread.start()
+        self.__tcp_accept_thread.start()
+        self.__udp_read_thread.start()
 
 
     @property
@@ -464,6 +459,12 @@ class ServerNetwork(Network):
                 self.tcp_socket.listen(value)
         else:
             raise TypeError("Max connections must be a positive integer:", value)
+        
+
+    @property
+    def tcp_port(self):
+        """ int - The TCP port of the server. """
+        return self.__tcp_port
 
 
     def send(self, client_id: int, cmd: str, data, has_priority=False):
@@ -602,7 +603,7 @@ class ServerNetwork(Network):
                     print(f"[Server] Error accepting TCP connections: {e}")
                 break
             except Exception as e:
-                 print(f"[Server] Unexpected error in TCP accept loop: {e}")
+                print(f"[Server] Unexpected error in TCP accept loop: {e}")
 
 
     def __handle_client_tcp(self, conn: socket.socket, addr: tuple):
@@ -722,9 +723,10 @@ class ServerNetwork(Network):
             except socket.error as e:
                 if self.running:
                     print(f"[Server] UDP receive error: {e}")
-                break
+                continue
             except Exception as e:
                 print(f"[Server] Unexpected error in UDP read loop: {e}")
+                break
 
 
     def __handle_login(self, request: str, data: tuple, conn: socket.socket) -> int:

@@ -60,7 +60,7 @@ def lerp(a, b, t: float):
         b: Ending value.
         t: Interpolation factor (0 <= t <= 1).
     Returns:
-        float - Interpolated value between a and b.
+        Any - Interpolated value between a and b.
     """
     return a + (b - a) * t
 
