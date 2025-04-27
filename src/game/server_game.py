@@ -64,8 +64,12 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
         self.engine.max_tps = 60
-        self.seed = random.randint(0, 9999)
-        random.seed(self.seed)
+        self.seed = 1000#random.randint(0, 9999)
+        self.tree_random = r.Random(self.seed)
+        self.game_map = set()
+        self.current_base_chunk = Vector(0, 0)
+        self.tunnel_generator = TunnelGenerator(self.seed + 10)
+    
         self.cave_seed = self.seed + 100
         self.ore_parameters = {
             "coal": {
@@ -96,10 +100,6 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
         self.engine.register_key(Keys.C, KeyPressType.TRIGGER, KeyHandler.key_C)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
-        self.game_map = set()
-        self.current_base_chunk = Vector(0, 0)
-        self.tunnel_generator = TunnelGenerator()
-    
 
         #?ifdef ENGINE
         self.engine.console.handle_cmd("build_server")
@@ -122,10 +122,10 @@ class ServerGame(ServerGameBase):
     
 
     @staticmethod
-    def tree_generation(chunk_origin, ground_level, pos, tree_threshold, shared_tree_positions, chunk_data):
+    def tree_generation(self,chunk_origin, ground_level, pos, tree_threshold, shared_tree_positions, chunk_data):
         start_pos = chunk_origin + Vector(pos.x, pos.y)
         
-        if r.random() > tree_threshold and start_pos.y == ground_level:  
+        if self.tree_random.random() > tree_threshold and start_pos.y == ground_level:
             can_spawn = True
             for tree_pos in shared_tree_positions:
                 if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
@@ -134,7 +134,7 @@ class ServerGame(ServerGameBase):
                
             if can_spawn:
                 shared_tree_positions.append(pos)
-                tree_height = r.randint(5, 7)
+                tree_height = self.tree_random.randint(5, 7)
                 top = pos + Vector(0, tree_height)
                 # Add trunk
                 for h in range(1, tree_height + 1):
@@ -254,7 +254,7 @@ class ServerGame(ServerGameBase):
                         
         # Generate tunnels
         if y <= 0:
-            tunnel_gen = TunnelGenerator()
+            tunnel_gen = self.tunnel_generator
             tunnel_gen.generate_tunnels(noise_data)
 
             # Add tunnel tiles to chunk_data
@@ -286,7 +286,7 @@ class ServerGame(ServerGameBase):
                 if is_cave:
                     continue
                 elif pos.y == ground_level:
-                    self.tree_generation(chunk_origin,ground_level, pos, tree_threshold, tree_positions, chunk_data)
+                    self.tree_generation(self, chunk_origin,ground_level, pos, tree_threshold, tree_positions, chunk_data)
                     chunk_data.append([(pos.x, pos.y), "grass"])
                     
                 elif pos.y < ground_level and pos.y > ground_level - 5:
