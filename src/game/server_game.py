@@ -305,9 +305,10 @@ class ServerGame(ServerGameBase):
         target_chunk = Vector(chunk_x, chunk_y)
         
         if target_chunk not in self.game_map:
+            self.load_chunk(chunk_x, chunk_y, level)
             self.game_map.add(target_chunk)
-            chunk_thread = threading.Thread(target=self.load_chunk, args=(chunk_x, chunk_y, level))
-            chunk_thread.start()
+            # = threading.Thread(target=self.load_chunk, args=(chunk_x, chunk_y, level))
+            #chunk_thread.start()
 
 
 
