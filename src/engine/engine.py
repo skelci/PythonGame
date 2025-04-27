@@ -755,7 +755,7 @@ class ServerEngine(Engine):
             port: Server port. It must be a positive integer.
             max_connections: Maximum number of connections. It must be a positive integer.
         """
-        self.__network = ServerNetwork(address, port, max_connections, self.__on_player_connect)
+        self.__network = ServerNetwork(address, port, max_connections, self.__on_player_connect, self.__on_player_disconnect)
 
 
     def get_stat(self, stat_name: str):
@@ -902,6 +902,15 @@ class ServerEngine(Engine):
 
     def __on_player_connect(self, id):
         self.__players[id] = Player()
+
+
+    def __on_player_disconnect(self, id):
+        player = self.__players[id]
+        if player.level:
+            level = self.levels[player.level]
+            level.destroy_actor(level.actors[self.get_player_actor(id)])
+        
+        del self.__players[id]
     
 
     def __handle_network(self, delta_time):

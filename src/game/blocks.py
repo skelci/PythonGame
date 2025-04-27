@@ -134,8 +134,8 @@ class Gold(Actor):
             return
         
         GoldName = f"gold_{self.name}"
-        GoldEntity = GoldEntity(GoldName, self.position, count=3)
-        self.level_ref.register_actor(GoldEntity) 
+        Gold_Entity = GoldEntity(GoldName, self.position, count=3)
+        self.level_ref.register_actor(Gold_Entity) 
 
         spawn_extra_stones = random.randint(1, 2)
         stone_count = 3 if spawn_extra_stones == 1 else 2
