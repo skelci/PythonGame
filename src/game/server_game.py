@@ -65,7 +65,7 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
         self.engine.max_tps = 60
-        self.seed = random.randint(0, 9999)
+        self.seed = 1#random.randint(0, 9999)
         self.game_map = set()
         self.current_base_chunk = Vector(0, 0)
         self.tunnel_generator = TunnelGenerator(self.seed + 10)
@@ -231,7 +231,7 @@ class ServerGame(ServerGameBase):
         for x_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
             pos_x = chunk_origin.x + x_pos
             height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=self.seed)
-            ground_levels.append(16 - math.floor(height_noise * 14))
+            ground_levels.append(16 - math.floor(height_noise * 15))
            
 
         cave_scale_x = 0.02
@@ -255,7 +255,7 @@ class ServerGame(ServerGameBase):
         # Generate tunnels
         if y <= 0:
             tunnel_gen = self.tunnel_generator
-            tunnel_gen.generate_tunnels(noise_data)
+            tunnel_gen.generate_tunnels(noise_data, ground_levels)
 
             # Add tunnel tiles to chunk_data
             for y_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
