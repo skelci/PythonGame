@@ -7,6 +7,7 @@ from components.game_math import *
 
 from .blocks import *
 from .tunnel_generator import TunnelGenerator
+from .random_num import get_random_num
 
 import noise
 import random as r
@@ -64,8 +65,7 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
         self.engine.max_tps = 60
-        self.seed = 1000#random.randint(0, 9999)
-        self.tree_random = r.Random(self.seed)
+        self.seed = random.randint(0, 9999)
         self.game_map = set()
         self.current_base_chunk = Vector(0, 0)
         self.tunnel_generator = TunnelGenerator(self.seed + 10)
@@ -125,7 +125,7 @@ class ServerGame(ServerGameBase):
     def tree_generation(self,chunk_origin, ground_level, pos, tree_threshold, shared_tree_positions, chunk_data):
         start_pos = chunk_origin + Vector(pos.x, pos.y)
         
-        if self.tree_random.random() > tree_threshold and start_pos.y == ground_level:
+        if get_random_num(self.seed,start_pos.x) < tree_threshold and start_pos.y == ground_level:
             can_spawn = True
             for tree_pos in shared_tree_positions:
                 if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
@@ -134,7 +134,7 @@ class ServerGame(ServerGameBase):
                
             if can_spawn:
                 shared_tree_positions.append(pos)
-                tree_height = self.tree_random.randint(5, 7)
+                tree_height = int(get_random_num(self.seed, pos.x, 5, 8))
                 top = pos + Vector(0, tree_height)
                 # Add trunk
                 for h in range(1, tree_height + 1):
@@ -273,7 +273,7 @@ class ServerGame(ServerGameBase):
             
 
         tree_positions = [] 
-        tree_threshold = 0.98
+        tree_threshold = 0.05
             
         for y_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
             for x_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
@@ -305,10 +305,9 @@ class ServerGame(ServerGameBase):
         target_chunk = Vector(chunk_x, chunk_y)
         
         if target_chunk not in self.game_map:
-            self.load_chunk(chunk_x, chunk_y, level)
             self.game_map.add(target_chunk)
-            # = threading.Thread(target=self.load_chunk, args=(chunk_x, chunk_y, level))
-            #chunk_thread.start()
+            chunk_thread = threading.Thread(target=self.load_chunk, args=(chunk_x, chunk_y, level))
+            chunk_thread.start()
 
 
 

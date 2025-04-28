@@ -2,6 +2,7 @@
 
 import math
 import random as r
+from .random_num import get_random_num
 
 #    MATEVŽ   veliko pomagal Deepseek
 
@@ -9,7 +10,7 @@ class TunnelGenerator:
     def __init__(self, seed):
         self.width = 1.5
         self.curvature = 0.6 
-        self.tunnel_random = r.Random(seed) 
+        self.seed = seed
         
 
     def _center_point(self, region):
@@ -143,7 +144,7 @@ class TunnelGenerator:
             perp_y = dx/length
             
             # Apply curvature
-            offset = (self.tunnel_random.random() * 2 - 1) * length * self.curvature
+            offset = (get_random_num(self.seed, (start,end) ) * 2 - 1) * length * self.curvature
             mid_x += perp_x * offset
             mid_y += perp_y * offset
         
