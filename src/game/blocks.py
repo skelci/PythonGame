@@ -152,7 +152,7 @@ class DebugTunnel(Actor):
 
 class TestPlayer(Character):
     def __init__(self, name, position):
-        super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2)
+        super().__init__(name, position=Vector(-5, 25), material = Material(Color(0, 0, 255)), jump_velocity=7, render_layer=2, initial_velocity=Vector())
         self.inventory = {}
    
         
