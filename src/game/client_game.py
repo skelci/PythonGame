@@ -89,7 +89,16 @@ class ClientGame(ClientGameBase):
                     slot.subwidgets["item_icon"].material = Material("res/textures/stone.png")
                 elif key=="CoalEntity":
                     #print("CoalEntity")
-                    slot.subwidgets["item_icon"].material = Material("res/textures/coal.png")        
+                    slot.subwidgets["item_icon"].material = Material("res/textures/coal.png")
+                elif key=="IronEntity":
+                    #print("IronEntity")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/iron.png")
+                elif key=="GoldEntity": 
+                    #print("GoldEntity")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/gold.png")
+                elif key=="LogEntity":
+                    #print("LogEntity")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/log.png")             
                 key=f"slot_{stevec}" 
                 print("Key:", key)
                 self.engine.widgets["Inventory"].subwidgets[key].subwidgets["item_count"].text = str(value)
