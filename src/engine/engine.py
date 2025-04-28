@@ -621,6 +621,8 @@ class ServerEngine(Engine):
         self.__network = None
 
         self.__players = {}
+        self.__new_players = {}
+        self.__destroyed_players = set()
         self.__levels = {}
         self.__registered_keys = {}
 
@@ -854,11 +856,11 @@ class ServerEngine(Engine):
                 bl_chk_pos = Vector(
                     min((get_chunk_cords(player.position).x - player.update_distance), pd_chk.x - player.update_distance),
                     min((get_chunk_cords(player.position).y - player.update_distance), pd_chk.y - player.update_distance)
-                ).rounded - 1
+                ).floored - 1
                 tr_chk_pos = Vector(
                     max((get_chunk_cords(player.position).x + player.update_distance), pd_chk.x + player.update_distance),
                     max((get_chunk_cords(player.position).y + player.update_distance), pd_chk.y + player.update_distance)
-                ).rounded
+                ).floored
 
                 for actor in self.get_actors_from_chk_pkg(new_actors_pkg, bl_chk_pos, tr_chk_pos):
                     self.network.send(player_id, "register_actor", actor.get_for_full_net_sync())
@@ -901,20 +903,25 @@ class ServerEngine(Engine):
     
 
     def __on_player_connect(self, id):
-        self.__players[id] = Player()
+        self.__new_players[id] = Player()
 
 
-    def __on_player_disconnect(self, id):
-        player = self.__players[id]
-        if player.level:
-            level = self.levels[player.level]
-            level.destroy_actor(level.actors[self.get_player_actor(id)])
-        
-        del self.__players[id]
+    def __on_player_disconnect(self, id):        
+        self.__destroyed_players.add(id)
     
 
     def __handle_network(self, delta_time):
         self.network.tick()
+
+        self.__players.update(self.__new_players)
+        self.__new_players.clear()
+        for id in self.__destroyed_players:
+            player = self.__players[id]
+            if player.level:
+                level = self.levels[player.level]
+                level.destroy_actor(level.actors[self.get_player_actor(id)])
+            del self.__players[id]
+        self.__destroyed_players.clear()
 
         for id in self.__players:
             if not self.__players[id].level:
@@ -942,7 +949,7 @@ class ServerEngine(Engine):
             self.__players[id].triggered_keys.clear()
 
         if not self.network:
-            print("You forgot to call start_network")
+            print("[Server] You forgot to call start_network")
             return
 
         data_buffer = self.network.get_data(100)

@@ -14,7 +14,7 @@ from .blocks import *
 
 
 
-CAMERA_OFFSET_X = 1
+CAMERA_OFFSET_X = 0
 CAMERA_OFFSET_Y = 1
 
 
