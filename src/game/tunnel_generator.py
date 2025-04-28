@@ -11,7 +11,7 @@ class TunnelGenerator:
         self.width = 1.5
         self.curvature = 0.6 
         self.seed = seed
-        self.min_depth = 5
+        self.min_depth = 6
         
 
     def _center_point(self, region):

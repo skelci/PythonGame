@@ -65,7 +65,7 @@ class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
         self.engine.max_tps = 60
-        self.seed = 1#random.randint(0, 9999)
+        self.seed = random.randint(0, 9999)
         self.game_map = set()
         self.current_base_chunk = Vector(0, 0)
         self.tunnel_generator = TunnelGenerator(self.seed + 10)
@@ -74,21 +74,21 @@ class ServerGame(ServerGameBase):
         self.ore_parameters = {
             "coal": {
                 "scale": 0.042,
-                "threshold": 0.72,  
+                "threshold": 0.76,
                 "base": self.seed + 500,        
-                "min_depth": 15,
+                "min_depth": 10,
             },
             "iron": {
-                "scale": 0.048,       
+                "scale": 0.045,     
                 "threshold": 0.76,
                 "base": self.seed + 1000,
-                "min_depth": 30,
+                "min_depth": 20,
             },
             "gold": {
-                "scale": 0.052,    
-                "threshold": 0.78,    
+                "scale": 0.052,
+                "threshold": 0.8,
                 "base": self.seed + 1500,
-                "min_depth": 60,
+                "min_depth": 40,
             }
         }
         
@@ -114,13 +114,7 @@ class ServerGame(ServerGameBase):
     
 
     #     MATEVŽ
-
-    @staticmethod
-    def smoothstep(val, edge0, edge1):
-        t = max(0.0, min((val - edge0) / (edge1 - edge0), 1.0))
-        return t * t * (3 - 2 * t)
-    
-
+ 
     @staticmethod
     def tree_generation(self,chunk_origin, ground_level, pos, tree_threshold, shared_tree_positions, chunk_data):
         start_pos = chunk_origin + Vector(pos.x, pos.y)
@@ -181,8 +175,7 @@ class ServerGame(ServerGameBase):
 
 
     @staticmethod
-    def generate_caves(self, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
-                    surface_threshold, mid_threshold, deep_threshold, ground_levels, noise_data, smoothstep_func):
+    def generate_caves(self, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence, ground_levels, noise_data):
         for y_index in range(TERRAIN_GENERATION_CHUNK_SIZE):
             for x_index in range(TERRAIN_GENERATION_CHUNK_SIZE):
                 pos = chunk_origin + Vector(x_index, y_index)
@@ -205,18 +198,18 @@ class ServerGame(ServerGameBase):
                 ) * 0.2
                 combined_noise = base_val + detail
 
-                # Calculate depth and determine cave threshold
                 depth = ground_level - pos.y
-                if depth < 6:
-                    effective_threshold = surface_threshold
-                elif 6 <= depth < 16:
-                    effective_threshold = surface_threshold - (surface_threshold - mid_threshold) * smoothstep_func(depth, 6, 16)
-                elif 16 <= depth < 30:
-                    effective_threshold = mid_threshold - (mid_threshold - deep_threshold) * smoothstep_func(depth, 16, 30)
+                if depth < 4:
+                    effective_threshold = 0.9
+                elif 4 <= depth < 15:
+                    effective_threshold = 0.6
+                elif 15 <= depth < 30:
+                    effective_threshold = 0.5
+                elif 30 <= depth < 50:
+                    effective_threshold = 0.4
                 else:
-                    effective_threshold = deep_threshold
+                    effective_threshold = 0.35
 
-                # Determine if the position is part of a cave
                 is_cave = combined_noise > effective_threshold and pos.y < ground_level
                 noise_data[y_index][x_index] = (pos, is_cave, False)
 
@@ -236,9 +229,6 @@ class ServerGame(ServerGameBase):
 
         cave_scale_x = 0.02
         cave_scale_y = 0.025
-        surface_threshold = 0.6
-        mid_threshold = 0.5      
-        deep_threshold = 0.34  
         cave_octaves = 2
         cave_persistence = 0.5
     
@@ -246,9 +236,7 @@ class ServerGame(ServerGameBase):
         noise_data = [[None for _ in range(TERRAIN_GENERATION_CHUNK_SIZE)] for _ in range(TERRAIN_GENERATION_CHUNK_SIZE)]
         
         self.generate_caves(
-            self, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,
-            surface_threshold, mid_threshold, deep_threshold, ground_levels, noise_data, ServerGame.smoothstep
-        )
+            self, chunk_origin, cave_scale_x, cave_scale_y, cave_octaves, cave_persistence,ground_levels, noise_data)
 
         chunk_data = []
                         
@@ -273,7 +261,7 @@ class ServerGame(ServerGameBase):
             
 
         tree_positions = [] 
-        tree_threshold = 0.05
+        tree_threshold = 0.04
             
         for y_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
             for x_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
@@ -355,7 +343,6 @@ class ServerGame(ServerGameBase):
         if not current_level:
             return
         
-        # Collect player positions
         positions = []
         for player_id, player_actor in current_level.actors.items():
             if isinstance(player_actor, TestPlayer):
@@ -369,8 +356,7 @@ class ServerGame(ServerGameBase):
             new_base_chunk = ((pos + TERRAIN_GENERATION_CHUNK_SIZE/2) / TERRAIN_GENERATION_CHUNK_SIZE).floored
         
 
-        
-            # Load chunks in radius
+    
             chunks_to_load = []
             ud = 0
             if self.engine.players:
