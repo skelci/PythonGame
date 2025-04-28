@@ -971,7 +971,7 @@ class ServerEngine(Engine):
 
     def on_connect(self, id: int):
         """
-        Called when player connects to the server.
+        Called when player joins level.
         Args:
             id: Player id.
         """
