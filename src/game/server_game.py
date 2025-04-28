@@ -51,6 +51,8 @@ class KeyHandler:
         stone_entity = StoneEntity("stone_entity", Vector(-2, 26))
         dirt_entity = DirtEntity("dirt_entity", Vector(-1, 26))
         log_entity = LogEntity("log_entity", Vector(-6, 26))
+        stick_entity = StickEntity("stick_entity", Vector(-7, 26))
+        leaf_entity = LeafEntity("leaf_entity", Vector(-8, 26))
 
         level_ref.register_actor(coal_entity)
         level_ref.register_actor(gold_entity)
@@ -58,6 +60,8 @@ class KeyHandler:
         level_ref.register_actor(stone_entity)
         level_ref.register_actor(dirt_entity)
         level_ref.register_actor(log_entity)
+        level_ref.register_actor(stick_entity)
+        level_ref.register_actor(leaf_entity)
 
 
 
