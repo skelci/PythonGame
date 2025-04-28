@@ -9,6 +9,7 @@ from components.button import Button
 from components.input_box import InputBox
 from components.widget import Widget
 from components.background import Background, BackgroundLayer
+from components.icon import Icon
 
 from .blocks import *
 
@@ -74,9 +75,23 @@ class ClientGame(ClientGameBase):
         def update_inventory(data):
             stevec=0
             #print(data)
+            #print("Actor keys:", self.engine.level.actors.keys())
+            #print("Data keys:", data.keys())
             for key, value in data.items():
                 stevec+=1
-                key= f"slot_{stevec}"
+                #print(key)
+                slot= self.engine.widgets["Inventory"].subwidgets[f"slot_{stevec}"]
+                if key=="DirtEntity":
+                    #print("DirtEntity")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/dirt.png")
+                elif key=="StoneEntity":
+                    #print("StoneEntity")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/stone.png")
+                elif key=="CoalEntity":
+                    #print("CoalEntity")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/coal.png")        
+                key=f"slot_{stevec}" 
+                print("Key:", key)
                 self.engine.widgets["Inventory"].subwidgets[key].subwidgets["item_count"].text = str(value)
         self.engine.regisrer_network_command("update_inventory", update_inventory)
 
@@ -84,13 +99,16 @@ class ClientGame(ClientGameBase):
             def __init__(self, name):
                 super().__init__(name, Vector(0, 0), Vector(50, 50), 0, Color(150, 150, 150), Color(0, 0, 0, 100), True, 5, 
                     subwidgets={
-                        "item_count": Text("item_count", Vector(0, 0), Vector(20, 20), Color(255, 255, 255), "res/fonts/arial.ttf", 0, True, " "),
+                        "item_count": Text("item_count", Vector(0, 0), Vector(15, 15), Color(255, 255, 255), "res/fonts/arial.ttf", 0, True, " "),
+                        "item_icon": Icon("item_icon", Vector(0, 0), Vector(20, 20), Material(Color(255, 255, 255, 0)), 0, False)
                     },
                     subwidget_offsets={
                         "item_count": Vector(-5, -5),
+                        "item_icon": Vector(0, 0),
                     }, 
                     subwidget_alignments={
                         "item_count": Alignment.BOTTOM_RIGHT,
+                        "item_icon": Alignment.CENTER,
                     }
                 )
 
