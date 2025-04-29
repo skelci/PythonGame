@@ -76,13 +76,13 @@ class Text(Widget):
     @property
     def surface(self):
         if self._updated:
-            return self.__surface
+            return self._surface
         
-        self.__surface = self.__fonts[self.__font_code].render(self.text, True, self.color.tuple)
-        self.size.x = self.__surface.get_width()
+        self._surface = Text.__fonts[self.__font_code].render(self.text, True, self.color.tuple)
+        self.size.x = self._surface.get_width()
         self._updated = True
 
-        return self.__surface
+        return self._surface
     
 
     @property

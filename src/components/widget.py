@@ -171,28 +171,37 @@ class Widget:
             self.__subwidget_alignment = value
         else:
             raise TypeError("Subwidget alignment must be a dict of Aligments:", value)
+        
+
+    @property
+    def self_surface(self):
+        """ pygame.Surface - Surface of the widget. This is a colored rectangle. """
+        surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
+        surface.fill(self.color.tuple)
+        return surface
 
 
     @property
     def surface(self):
-        """ pygame.Surface - Surface of the widget. This is a colored rectangle. """
+        """ pygame.Surface - Surface of the widget combined with subwidgets. """
         if self._updated and self._subwidget_updated:
             return self.__combined_surface
-        
-        if not self._updated:
-            surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
-            surface.fill(self.color.tuple)
-            self.__surface = surface
+
+        if self._updated:
+            surface = self._surface
+        else:
+            surface = self.self_surface
+            self._surface = surface
             self._updated = True
 
-        self.__combined_surface = self.__surface.copy()
+        self.__combined_surface = surface.copy()
         if not self.subwidgets:
             self._subwidget_updated = True
             return self.__combined_surface
-        
 
         if not self._subwidget_updated:
-            for widget in self.subwidgets.keys():
+            sorted_widgets = sorted(list(self.subwidgets.keys()), key=lambda x: self.subwidgets[x].layer)
+            for widget in sorted_widgets:
                 self.__combined_surface.blit(self.subwidgets[widget].surface, self.subwidget_pos(widget).tuple)
 
         self._subwidget_updated = True

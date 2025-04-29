@@ -40,6 +40,7 @@ class Border(Widget):
     def border_color(self, value):
         if isinstance(value, Color):
             self.__border_color = value
+            self._updated = False
         else:
             raise TypeError("Border color must be a Color:", value)
 
@@ -54,15 +55,19 @@ class Border(Widget):
     def thickness(self, value):
         if isinstance(value, int) and 0 <= value <= min(*self.size):
             self.__thickness = value
+            self._updated = False
         else:
             raise TypeError("Thickness must be an integer between 0 and the half of the smallest dimension of the widget:", value)
         
 
     @property
-    def surface(self):
-        surface = super().surface
-        rect = pygame.Rect((0, 0), self.size.tuple)
-        pygame.draw.rect(surface, self.border_color.tuple, rect, self.thickness)
+    def self_surface(self):
+        """
+        pygame.Surface - Surface of the border widget. This is a colored rectangle with a border.
+        """
+        surface = pygame.Surface(self.size.tuple, pygame.SRCALPHA)
+        surface.fill(self.color.tuple)
+        pygame.draw.rect(surface, self.border_color.tuple, (0, 0, *self.size.tuple), self.thickness)
 
         return surface
 

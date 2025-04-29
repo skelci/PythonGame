@@ -5,7 +5,11 @@ This module contains the Icon class, which is used to create an icon for the GUI
 """
 
 from .widget import Widget
+
+from .material import Material
 from .datatypes import *
+
+import pygame
 
 
 
@@ -24,9 +28,22 @@ class Icon(Widget):
 
 
     @property
-    def surface(self):
-        surface = super().surface
-        surface.blit(self.material.get_surface(self.size), (0, 0))
-        return surface
+    def material(self):
+        """ Material: The material used to render the icon. """
+        return self.__material
+    
+
+    @material.setter
+    def material(self, value):
+        if isinstance(value, Material):
+            self.__material = value
+            self._updated = False
+        else:
+            raise TypeError("Material must be a Material object:", value)
+
+
+    @property
+    def self_surface(self):
+        return self.material.get_surface(self.size)
     
 

@@ -83,24 +83,24 @@ class ClientGame(ClientGameBase):
                 slot= self.engine.widgets["Inventory"].subwidgets[f"slot_{stevec}"]
                 if key=="DirtEntity":
                     #print("DirtEntity")
-                    slot.subwidgets["item_icon"].material = Material("res/textures/dirt.png")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/dirt_entity.png")
                 elif key=="StoneEntity":
                     #print("StoneEntity")
-                    slot.subwidgets["item_icon"].material = Material("res/textures/stone.png")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/stone_entity.png")
                 elif key=="CoalEntity":
                     #print("CoalEntity")
-                    slot.subwidgets["item_icon"].material = Material("res/textures/coal.png")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/coal_ore_entity.png")
                 elif key=="IronEntity":
                     #print("IronEntity")
-                    slot.subwidgets["item_icon"].material = Material("res/textures/iron.png")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/iron_ore_entity.png")
                 elif key=="GoldEntity": 
                     #print("GoldEntity")
-                    slot.subwidgets["item_icon"].material = Material("res/textures/gold.png")
+                    slot.subwidgets["item_icon"].material = Material("res/textures/gold_ore_entity.png")
                 elif key=="LogEntity":
                     #print("LogEntity")
-                    slot.subwidgets["item_icon"].material = Material("res/textures/log.png")             
+                    slot.subwidgets["item_icon"].material = Material("res/textures/log_entity.png")       
                 key=f"slot_{stevec}" 
-                print("Key:", key)
+                # print("Key:", key)
                 self.engine.widgets["Inventory"].subwidgets[key].subwidgets["item_count"].text = str(value)
         self.engine.regisrer_network_command("update_inventory", update_inventory)
 
@@ -108,8 +108,8 @@ class ClientGame(ClientGameBase):
             def __init__(self, name):
                 super().__init__(name, Vector(0, 0), Vector(50, 50), 0, Color(150, 150, 150), Color(0, 0, 0, 100), True, 5, 
                     subwidgets={
-                        "item_count": Text("item_count", Vector(0, 0), Vector(15, 15), Color(255, 255, 255), "res/fonts/arial.ttf", 0, True, " "),
-                        "item_icon": Icon("item_icon", Vector(0, 0), Vector(20, 20), Material(Color(255, 255, 255, 0)), 0, False)
+                        "item_count": Text("item_count", Vector(0, 0), Vector(0, 20), Color(255, 255, 255), "res/fonts/arial.ttf", 1, True, " "),
+                        "item_icon": Icon("item_icon", Vector(0, 0), Vector(40, 40), Material(Color(255, 255, 255, 0)), 0, False)
                     },
                     subwidget_offsets={
                         "item_count": Vector(-5, -5),
