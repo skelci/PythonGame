@@ -11,6 +11,7 @@ class TunnelGenerator:
         self.width = 1.5
         self.curvature = 0.6 
         self.seed = seed
+        self.min_depth = 6
         
 
     def _center_point(self, region):
@@ -51,12 +52,11 @@ class TunnelGenerator:
             x = int(x1 + dx * t)
             y = int(y1 + dy * t)
             
-            # Random width for organic look
             radius = self.width
             self._dig_circle(cave_data, x, y, radius)
     
     def _find_cave_regions(self, cave_data):
-        # Implementation using flood fill
+        """Find regions of the cave that are connected"""
         regions = []
         visited = set()
         
@@ -83,45 +83,65 @@ class TunnelGenerator:
                                cave_data[ny][nx][1]:
                                 stack.append((nx,ny))
                     
-                    if len(region) >= 2:  # Minimum region size
+                    if len(region) >= 2:
                         regions.append(region)
         return regions
         
     
-    def _connect_regions(self, cave_data, regions):
+    def _connect_regions(self, cave_data, regions, ground_levels):
+        """Connect regions with tunnels"""
         centers = [self._center_point(region) for region in regions]
-        # Connect each region to its nearest neighbor
+
+        depths = {index: ground_levels[center[0]] - center[1] for index, center in enumerate(centers)}
+
         connected = set()
         connected.add(0)
-        
+
+
+        max_iterations = len(regions) * 2
+        iteration_count = 0
+
         while len(connected) < len(regions):
+            iteration_count += 1
+            if iteration_count > max_iterations:
+                break
+
             closest = None
             min_dist = float('inf')
-            
-            # Find closest unconnected region
+
             for i in connected:
                 for j in range(len(regions)):
                     if j not in connected:
                         dist = self._distance(centers[i], centers[j])
-                        if dist < min_dist:  # and dist < self.max_tunnel_length:
-                            min_dist = dist
+                        if dist < min_dist:
                             closest = (i, j)
-            
+                            min_dist = dist
+
             if closest:
                 i, j = closest
-                self._create_tunnel(cave_data, centers[i], centers[j])
+                center_a, center_b = centers[i], centers[j]
+
+                depth_a = depths[i]
+                depth_b = depths[j]
+       
+                if depth_a < self.min_depth and depth_b < self.min_depth:
+                    continue
+
+                self._create_tunnel(cave_data, center_a, center_b)
                 connected.add(j)
+            else:
+                break
                 
 
-    def generate_tunnels(self, cave_data):
-        # Find all cave regions
+    def generate_tunnels(self, cave_data, ground_levels):
+        """Generate tunnels in the cave data"""
         regions = self._find_cave_regions(cave_data)
         
         if len(regions) < 2:
             return False
             
-        # Connect regions with organic tunnels
-        self._connect_regions(cave_data, regions)
+        # Connect regions
+        self._connect_regions(cave_data, regions, ground_levels)
         return True            
 
     
@@ -134,7 +154,7 @@ class TunnelGenerator:
         mid_x = (start[0] + end[0]) / 2
         mid_y = (start[1] + end[1]) / 2
         
-        # Calculate perpendicular direction
+        # Calculate direction
         dx = end[0] - start[0]
         dy = end[1] - start[1]
         length = math.sqrt(dx*dx + dy*dy)
@@ -159,7 +179,8 @@ class TunnelGenerator:
     
 
     def _create_tunnel(self, cave_data, start, end):
-        # Create curved path
+        """Create a tunnel between two points"""
+
         path = self._calculate_curve(start, end)
         
         # Dig a long path
