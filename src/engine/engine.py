@@ -913,16 +913,6 @@ class ServerEngine(Engine):
     def __handle_network(self, delta_time):
         self.network.tick()
 
-        self.__players.update(self.__new_players)
-        self.__new_players.clear()
-        for id in self.__destroyed_players:
-            player = self.__players[id]
-            if player.level:
-                level = self.levels[player.level]
-                level.destroy_actor(level.actors[self.get_player_actor(id)])
-            del self.__players[id]
-        self.__destroyed_players.clear()
-
         for id in self.__players:
             if not self.__players[id].level:
                 continue
@@ -954,12 +944,24 @@ class ServerEngine(Engine):
 
         data_buffer = self.network.get_data(100)
         for id, packed_data in data_buffer:
+            if id not in self.__players:
+                continue
             cmd, data = packed_data
 
             if cmd in self.__network_commands:
                 self.__network_commands[cmd](id, data)
             else:
                 print(f"[Server] Unknown network request: {cmd}")
+        
+        self.__players.update(self.__new_players)
+        self.__new_players.clear()
+        for id in self.__destroyed_players:
+            player = self.__players[id]
+            if player.level:
+                level = self.levels[player.level]
+                level.destroy_actor(level.actors[self.get_player_actor(id)])
+            del self.__players[id]
+        self.__destroyed_players.clear()
 
 
     def __execute_cmd(self, cmd):
