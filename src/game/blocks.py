@@ -194,7 +194,7 @@ class StickEntity(Rigidbody):
         velocity_y = math.sin(angle)
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
-        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(145, 69, 34)), restitution=0, initial_velocity=Initial_velocity)           
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/stick_entity.png"), restitution=0, initial_velocity=Initial_velocity)           
     def on_overlap_begin(self, other_actor):
         pick_me_up(self, other_actor)
 
