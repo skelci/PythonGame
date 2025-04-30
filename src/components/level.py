@@ -293,6 +293,22 @@ class Level:
         actor.chunk = chunk
 
 
+    def update_actor_chunk(self, actor: Actor):
+        """
+        You should call this function if you move an actor which is not a Rigidbody.
+        Args:
+            actor: Actor to update the chunk for.
+        """
+        chk = get_chunk_cords(actor.position)
+        a_chk = actor.chunk
+        if a_chk.x != chk.x or a_chk.y != chk.y:
+            if a_chk not in self.chunks:
+                log(f"Chunk {a_chk} not found in level {self.name} while updating actor {actor.name}.")
+                return
+            self.chunks[a_chk].remove(actor)
+            self.add_actor_to_chunk(actor)
+
+
     #?ifdef SERVER
     def get_updates(self, players):
         """
@@ -340,22 +356,6 @@ class Level:
                     chunks.add(previous_chunk_pos)
 
         return chunks
-
-
-    def update_actor_chunk(self, actor: Actor):
-        """
-        You should call this function if you move an actor which is not a Rigidbody.
-        Args:
-            actor: Actor to update the chunk for.
-        """
-        chk = get_chunk_cords(actor.position)
-        a_chk = actor.chunk
-        if a_chk.x != chk.x or a_chk.y != chk.y:
-            if a_chk not in self.chunks:
-                log(f"Chunk {a_chk} not found in level {self.name} while updating actor {actor.name}.")
-                return
-            self.chunks[a_chk].remove(actor)
-            self.add_actor_to_chunk(actor)
         
 
     def tick(self, delta_time: float):
