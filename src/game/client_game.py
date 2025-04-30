@@ -46,7 +46,7 @@ class WarningWidget:
             WarningWidget.current_warnings[self.widget.name] = (self.widget, 15)
             return
         
-        WarningWidget.current_warnings[self.widget.name] = (self.widget, 15)
+        WarningWidget.current_warnings[self.widget.name] = (self.widget, 10)
         
 
     @classmethod
@@ -212,6 +212,8 @@ class ClientGame(ClientGameBase):
         eng.register_background(Background("main_menu", (BackgroundLayer(Material(Color(19, 3, 31)), eng.camera_width, 0), )))
         eng.current_background = "main_menu"
 
+        eng.regisrer_network_command("connected_from_another_location", lambda _: self.engine.stop())
+
         self.invalid_port_warning = WarningWidget("invalid_port_warning", "Invalid port number")
         self.failed_connection_warning = WarningWidget("failed_connection_warning", "Failed to connect to server")
         self.invalid_credentials_warning = WarningWidget("invalid_credentials_warning", "Invalid username or password")
@@ -228,7 +230,7 @@ class ClientGame(ClientGameBase):
         def connect_to_server(server_address):
             if not server_address:
                 return
-            eng.widgets["main_menu-server_prompt"].subwidgets["prompt_field"].subwidgets["input_box"].current_text = ""
+
             server_address = server_address.split(":")
             server_ip = server_address[0]
             if len(server_address) == 1:
@@ -239,12 +241,10 @@ class ClientGame(ClientGameBase):
                 except ValueError:
                     self.invalid_port_warning.show()
                     return
-            try:
-                eng.connect(server_ip, port)
-            except Exception as e:
-                print(f"Failed to connect: {e}")
+                
+            eng.connect(server_ip, port)
+            if not eng.network.connected:
                 self.failed_connection_warning.show()
-                return
             
         def get_usernname_password():
             username = self.engine.widgets["main_menu-credentials"].subwidgets["prompt_field-username"].subwidgets["input_box"].current_text
@@ -378,7 +378,7 @@ class ClientGame(ClientGameBase):
         ))
 
 
-    #* this method was  made by skelci
+    #* this method was made by skelci
     def handle_login(self):
         if self.engine.network and self.engine.network.connected and not self.switched_to_login_menu:
             self.switched_to_login_menu = True
@@ -386,7 +386,6 @@ class ClientGame(ClientGameBase):
             self.engine.widgets["main_menu-credentials"].visible = True
             #?ifdef ENGINE
             self.engine.network.send("login", ("test", "test"))
-            self.engine.network.send("register", ("test", "test"))
             #?endif
             return False
 

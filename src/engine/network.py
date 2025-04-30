@@ -281,29 +281,32 @@ class ClientNetwork(Network):
                     for payload in parsed_packets:
                         unpriority_data.append(payload)
                         cmd, response_data = payload
-                        if cmd != "register_outcome":
-                            continue
-                        
-                        old_id = self.__id
-                        self.__id = response_data
-                        print(f"[Client] Received register_outcome: {self.__id}")
-                        if old_id > 0 or self.__id <= 0:
-                            continue
-                        
-                        print(f"[Client] Login successful (ID: {self.__id}). Registering UDP.")
-                        udp_reg_msg = self._parse_for_send("register_udp", self.__id)
-                        full_udp_message = (udp_reg_msg + END_OF_MESSAGE_SEPARATOR).encode('ascii')
-                        try:
-                            self.udp_socket.sendto(full_udp_message, (self.address, self.port))
-                            print("[Client] Sent UDP registration.")
-                            # Start the UDP receiving thread only after the first send
-                            if self.udp_recv_thread and not self.udp_recv_thread.is_alive():
-                                print("[Client] Starting UDP receive thread.")
-                                self.udp_recv_thread.start()
-                        except socket.error as e:
-                            print(f"[Client] Failed to send UDP registration: {e}")
-                        except Exception as e:
-                            print(f"[Client] Error encoding/sending UDP registration: {e}")
+
+                        match cmd:
+                            case "register_outcome":
+                                old_id = self.__id
+                                self.__id = response_data
+                                print(f"[Client] Received register_outcome: {self.__id}")
+                                if old_id > 0 or self.__id <= 0:
+                                    continue
+                                
+                                print(f"[Client] Login successful (ID: {self.__id}). Registering UDP.")
+                                udp_reg_msg = self._parse_for_send("register_udp", self.__id)
+                                full_udp_message = (udp_reg_msg + END_OF_MESSAGE_SEPARATOR).encode('ascii')
+                                try:
+                                    self.udp_socket.sendto(full_udp_message, (self.address, self.port))
+                                    print("[Client] Sent UDP registration.")
+                                    if self.udp_recv_thread and not self.udp_recv_thread.is_alive():
+                                        print("[Client] Starting UDP receive thread.")
+                                        self.udp_recv_thread.start()
+                                except socket.error as e:
+                                    print(f"[Client] Failed to send UDP registration: {e}")
+                                except Exception as e:
+                                    print(f"[Client] Error encoding/sending UDP registration: {e}")
+
+                            case "connected_from_another_location":
+                                print("[Client] Connected from another location. Disconnecting.")
+                                self.stop()
 
                     self._receive_unpriority_buffer.add_data_multiple(unpriority_data)
 
@@ -632,11 +635,10 @@ class ServerNetwork(Network):
                         if result_id > 0:
                             client_id = result_id
                             if client_id in self.__connected_ids:
-                                print(f"[Server] User ID {client_id} (from {addr}) is already connected. Disconnecting duplicate.")
-                                self.send(client_id, "register_outcome", -1)
+                                print(f"[Server] User ID {client_id} connected from another location: {addr}.")
+                                self.send(client_id, "connected_from_another_location", client_id)
                                 time.sleep(0.1)
-                                conn.close()
-                                return
+                                self.__cleanup_client(client_id)
 
                             self.__id_to_tcp_conn[client_id] = conn
                             self.__tcp_conn_to_id[conn] = client_id

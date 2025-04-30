@@ -21,7 +21,7 @@ Matevz:
     - ./server_game.py[70 - 380]
 
 Niko:
-    - engine/**
-    - components/**
+    - ../engine/**
+    - ../components/**
 """ 
 

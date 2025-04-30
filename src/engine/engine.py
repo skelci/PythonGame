@@ -117,12 +117,11 @@ class ClientEngine(Engine, Renderer):
         Engine.__init__(self)
         Renderer.__init__(self, 1600, 900, 10, "Game", False, True, Vector())
 
-        self.__update_distance = self.camera_width // (CHUNK_SIZE * 2)
-
         self.fps = 120
         self.tps = 20
 
         self.__network = None
+        self.__update_distance = self.set_camera_width(self.camera_width)
         self.__level = Level("Engine_Level", Character)
         self.__level.engine_ref = self
 
@@ -906,8 +905,9 @@ class ServerEngine(Engine):
         self.__new_players[id] = Player()
 
 
-    def __on_player_disconnect(self, id):        
-        self.__destroyed_players.add(id)
+    def __on_player_disconnect(self, id):
+        if id in self.players:      
+            self.__destroyed_players.add(id)
     
 
     def __handle_network(self, delta_time):
@@ -941,10 +941,20 @@ class ServerEngine(Engine):
         if not self.network:
             print("[Server] You forgot to call start_network")
             return
+        
+        self.__players.update(self.__new_players)
+        ignore_ids = self.__destroyed_players - set(self.__new_players)
+        self.__new_players.clear()
+        for id in self.__destroyed_players:
+            player = self.__players[id]
+            if player.level:
+                level = self.levels[player.level]
+                level.destroy_actor(level.actors[self.get_player_actor(id)])
+            del self.__players[id]
 
         data_buffer = self.network.get_data(100)
         for id, packed_data in data_buffer:
-            if id not in self.__players:
+            if id in ignore_ids:
                 continue
             cmd, data = packed_data
 
@@ -953,14 +963,6 @@ class ServerEngine(Engine):
             else:
                 print(f"[Server] Unknown network request: {cmd}")
         
-        self.__players.update(self.__new_players)
-        self.__new_players.clear()
-        for id in self.__destroyed_players:
-            player = self.__players[id]
-            if player.level:
-                level = self.levels[player.level]
-                level.destroy_actor(level.actors[self.get_player_actor(id)])
-            del self.__players[id]
         self.__destroyed_players.clear()
 
 
