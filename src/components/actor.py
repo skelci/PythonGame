@@ -297,7 +297,7 @@ class Actor:
     
 
     def __repr__(self):
-        return f"Actor({self.name})"
+        return f"{self.__class__.__name__}({self.name})"
     
 
     def __hash__(self):

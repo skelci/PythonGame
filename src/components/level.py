@@ -8,6 +8,8 @@ from .background import Background
 from .rigidbody import Rigidbody
 from .character import Character
 from .game_math import *
+from engine.log import log, LogType
+
 import warnings
 
 
@@ -349,6 +351,9 @@ class Level:
         chk = get_chunk_cords(actor.position)
         a_chk = actor.chunk
         if a_chk.x != chk.x or a_chk.y != chk.y:
+            if a_chk not in self.chunks:
+                log(f"Chunk {a_chk} not found in level {self.name} while updating actor {actor.name}.")
+                return
             self.chunks[a_chk].remove(actor)
             self.add_actor_to_chunk(actor)
         
@@ -440,8 +445,8 @@ class Level:
                     collided_actors_directions[actor1][3] = 1
                 actor1.half_size -= KINDA_SMALL_NUMBER
 
-        for name, direction in collided_actors_directions.items():
-            actor.collided_sides = direction
+        for actor, collided_sides in collided_actors_directions.items():
+            actor.collided_sides = collided_sides
 
         overlaped_actors = {}
         for actor1 in self.__actors_with_overlap_events:

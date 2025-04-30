@@ -563,11 +563,7 @@ class ClientEngine(Engine, Renderer):
 
             if "position" not in data[1]:
                 return
-            chk = get_chunk_cords(actor.position)
-            a_chk = actor.chunk
-            if a_chk.x != chk.x or a_chk.y != chk.y:
-                self.level.chunks[a_chk].remove(actor)
-                self.level.add_actor_to_chunk(actor)
+            self.level.update_actor_chunk(actor)
 
 
     def __destroy_actor(self, data):
