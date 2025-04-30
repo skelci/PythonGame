@@ -68,7 +68,7 @@ class KeyHandler:
 class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
-        self.engine.max_tps = 60
+        self.engine.max_tps = 120
         self.seed = random.randint(0, 9999)
         self.game_map = set()
         self.current_base_chunk = Vector(0, 0)

@@ -118,7 +118,6 @@ class ClientEngine(Engine, Renderer):
         Renderer.__init__(self, 1600, 900, 10, "Game", False, True, Vector())
 
         self.fps = 120
-        self.tps = 20
 
         self.__network = None
         self.__update_distance = self.set_camera_width(self.camera_width)
