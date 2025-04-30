@@ -4,6 +4,8 @@
 Renderer module for the game engine.
 """
 
+from .log import log_client as log
+from .log import LogType
 from components.datatypes import *
 from components.actor import Actor
 from components.widget import Widget
@@ -45,8 +47,7 @@ class Renderer:
         self.__actors_to_draw = {}
         self.__widgets_to_draw = []
 
-        print("[Client] Renderer initialized")
-
+        log("Renderer initialized", LogType.INFO)
 
     @property
     def resolution(self):

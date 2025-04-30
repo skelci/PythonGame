@@ -13,6 +13,7 @@ from .console import Console
 from .builder import *
 #?endif
 from .network import *
+from .log import *
 
 #?ifdef CLIENT
 from components.button import Button
@@ -70,7 +71,17 @@ class Engine(ABC):
     def stop(self):
         """ Stop the engine. It will stop the main loop and end all threads. """
         self.__running = False
-
+        if self.network:
+            self.network.stop()
+        #?ifdef CLIENT
+        log_client("Engine stopped", LogType.INFO)
+        #?endif
+        #?ifdef ENGINE
+        return
+        #?endif
+        #?ifdef SERVER
+        log_server("Engine stopped", LogType.INFO)
+        #?endif
 
 
 
@@ -175,7 +186,7 @@ class ClientEngine(Engine, Renderer):
         self.register_widget(InfoText("widget_render",  6, "widget render: "))
         self.register_widget(InfoText("network",        7, "network: "))
 
-        print("[Client] Engine initialized")
+        log_client("Engine initialized", LogType.INFO)
 
 
     @property
@@ -478,7 +489,7 @@ class ClientEngine(Engine, Renderer):
                 if cmd in self.__network_commands:
                     self.__network_commands[cmd](data)
                 else:
-                    print(f"[Client] Unknown network request: {cmd}")
+                    log_client(f"Unknown command {cmd} from server", LogType.WARNING)
     
 
     def __update_mouse_pos(self, screen_pos):
@@ -497,8 +508,6 @@ class ClientEngine(Engine, Renderer):
             match event.type:
                 case pygame.QUIT:
                     self.stop()
-                    if self.network:
-                        self.network.stop()
 
                 case pygame.MOUSEBUTTONDOWN:
                     self.__pressed_keys.add(Keys(event.button))
@@ -649,7 +658,7 @@ class ServerEngine(Engine):
 
         self.__clock = TPS(self.max_tps)
 
-        print("[Server] Engine initialized")
+        log_server("Engine initialized", LogType.INFO)
 
 
     @property
@@ -948,7 +957,7 @@ class ServerEngine(Engine):
             self.__players[id].triggered_keys.clear()
 
         if not self.network:
-            print("[Server] You forgot to call start_network")
+            log_server("Network is not initialized", LogType.ERROR)
             return
         
         self.__players.update(self.__new_players)
@@ -970,7 +979,7 @@ class ServerEngine(Engine):
             if cmd in self.__network_commands:
                 self.__network_commands[cmd](id, data)
             else:
-                print(f"[Server] Unknown network request: {cmd}")
+                log_server(f"Unknown command {cmd} from client {id}", LogType.WARNING)
         
         self.__destroyed_players.clear()
 
@@ -1010,7 +1019,7 @@ class ServerEngine(Engine):
             self.__players[id].previous_different_chunk = self.__players[id].previous_chunk
             self.on_connect(id)
         else:
-            print(f"Level {level_name} not found")
+            log_server(f"Client {id} tried to join non-existing level {level_name}", LogType.WARNING)
 
 
     def __world_mouse_pos(self, id, data):

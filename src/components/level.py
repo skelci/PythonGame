@@ -88,7 +88,6 @@ class Level:
         if issubclass(value, Character):
             self.__default_character = value
         else:
-            print(value.__class__)
             raise TypeError("Default character must be a subclass of Character:", value)
 
 

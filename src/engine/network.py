@@ -4,6 +4,7 @@ Uses TCP for reliable non-priority messages and UDP for fast priority messages.
 """
 
 from components.datatypes import *
+from .log import *
 
 import socket
 import threading
@@ -105,9 +106,25 @@ class Network(ABC):
                 parsed_data.append(payload)
 
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
-            print(f"Error parsing data chunk: {e} (Data: {data[:100]}...)")
+            #?ifdef CLIENT
+            log_client(f"Error parsing data chunk: {e} (Data: {data[:100]}...)", LogType.WARNING)
+            #?endif
+            #?ifdef ENGINE
+            return parsed_data
+            #?endif
+            #?ifdef SERVER
+            log_server(f"Error parsing data chunk: {e} (Data: {data[:100]}...)", LogType.WARNING)
+            #?endif
         except Exception as e:
-            print(f"Unexpected error parsing data: {e} (Data: {data[:100]}...)")
+            #?ifdef CLIENT
+            log_client(f"Unexpected error parsing data: {e} (Data: {data[:100]}...)", LogType.ERROR)
+            #?endif
+            #?ifdef ENGINE
+            return parsed_data
+            #?endif
+            #?ifdef SERVER
+            log_server(f"Unexpected error parsing data: {e} (Data: {data[:100]}...)", LogType.ERROR)
+            #?endif
         return parsed_data
 
 
@@ -171,10 +188,9 @@ class ClientNetwork(Network):
         self.__server_ip = None
 
         try:
-            print(f"[Client] Connecting TCP to {self.address}:{self.tcp_port}")
             self.tcp_socket.connect((self.address, self.tcp_port))
             self.__server_ip = self.tcp_socket.getpeername()[0]
-            print(f"[Client] TCP Connected to {self.__server_ip}:{self.tcp_port}.")
+            log_client(f"Connected to server at {self.__server_ip}:{self.tcp_port}", LogType.INFO)
 
             self.tcp_conn_thread = threading.Thread(target=self.__handle_tcp_connection, daemon=True)
             self.tcp_conn_thread.start()
@@ -182,7 +198,7 @@ class ClientNetwork(Network):
             self.udp_recv_thread = threading.Thread(target=self.__handle_udp_connection, daemon=True)
 
         except socket.error as e:
-            print(f"[Client] Failed to connect TCP socket: {e}")
+            log_client(f"Failed to connect to server: {e}", LogType.INFO)
             self.__id = -10
             self.stop()
 
@@ -246,20 +262,19 @@ class ClientNetwork(Network):
                 full_udp_message = (RECORD_SEPARATOR.join(udp_payloads) + END_OF_MESSAGE_SEPARATOR).encode('ascii')
                 self.udp_socket.sendto(full_udp_message, (self.address, self.port))
             except socket.error as e:
-                print(f"[Client] UDP send error: {e}")
+                log_client(f"UDP send error: {e}", LogType.WARNING)
             except Exception as e:
-                print(f"[Client] Error encoding/sending UDP data: {e}")
+                log_client(f"Error encoding/sending UDP data: {e}", LogType.ERROR)
 
         if tcp_payloads:
             try:
                 full_tcp_message = (RECORD_SEPARATOR.join(tcp_payloads) + END_OF_MESSAGE_SEPARATOR).encode('ascii')
                 self.tcp_socket.sendall(full_tcp_message)
             except (BrokenPipeError, ConnectionResetError, OSError) as e:
-                print(f"[Client] TCP send error (connection lost): {e}")
+                log_client(f"TCP send error (connection lost): {e}", LogType.WARNING)
                 self.stop()
             except Exception as e:
-                print(f"[Client] Error encoding/sending TCP data: {e}")
-
+                log_client(f"Error encoding/sending TCP data: {e}", LogType.ERROR)
 
     def __handle_tcp_connection(self):
         """ Handles receiving data from the TCP connection. """
@@ -268,7 +283,7 @@ class ClientNetwork(Network):
             try:
                 data = self.tcp_socket.recv(self._packet_size)
                 if not data:
-                    print("[Client] TCP connection closed by server.")
+                    log_client("TCP connection closed by server.", LogType.INFO)
                     break
 
                 buffer += data
@@ -286,38 +301,36 @@ class ClientNetwork(Network):
                             case "register_outcome":
                                 old_id = self.__id
                                 self.__id = response_data
-                                print(f"[Client] Received register_outcome: {self.__id}")
                                 if old_id > 0 or self.__id <= 0:
                                     continue
                                 
-                                print(f"[Client] Login successful (ID: {self.__id}). Registering UDP.")
+                                log_client(f"Registered with ID {self.__id}. Sending UDP registration...", LogType.INFO)
                                 udp_reg_msg = self._parse_for_send("register_udp", self.__id)
                                 full_udp_message = (udp_reg_msg + END_OF_MESSAGE_SEPARATOR).encode('ascii')
                                 try:
                                     self.udp_socket.sendto(full_udp_message, (self.address, self.port))
-                                    print("[Client] Sent UDP registration.")
                                     if self.udp_recv_thread and not self.udp_recv_thread.is_alive():
-                                        print("[Client] Starting UDP receive thread.")
+                                        log_client("Starting UDP receive thread...", LogType.INFO)
                                         self.udp_recv_thread.start()
                                 except socket.error as e:
-                                    print(f"[Client] Failed to send UDP registration: {e}")
+                                    log_client(f"UDP send error (registration): {e}", LogType.INFO)
                                 except Exception as e:
-                                    print(f"[Client] Error encoding/sending UDP registration: {e}")
+                                    log_client(f"Error encoding/sending UDP registration: {e}", LogType.ERROR)
 
                             case "connected_from_another_location":
-                                print("[Client] Connected from another location. Disconnecting.")
+                                log_client(f"Connected from another location. Disconnecting...", LogType.INFO)
                                 self.stop()
 
                     self._receive_unpriority_buffer.add_data_multiple(unpriority_data)
 
             except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError) as e:
-                print(f"[Client] TCP connection error (connection lost): {e}")
+                log_client(f"TCP connection error: {e}", LogType.INFO)
                 break
             except Exception as e:
-                print(f"[Client] Unexpected error in TCP handler: {e}")
+                log_client(f"Unexpected error in TCP handler: {e}", LogType.ERROR)
                 break
 
-        print("[Client] TCP connection handler stopped.")
+        log_client("TCP connection handler stopped.", LogType.INFO)
         self.stop()
 
 
@@ -332,7 +345,7 @@ class ClientNetwork(Network):
                     continue
 
                 if addr != expected_server_addr:
-                    print(f"[Client] Received UDP from unexpected source {addr}. Expected {expected_server_addr}. Ignoring.")
+                    log_client(f"Received UDP data from unknown address {addr}. Ignoring data.", LogType.INFO)
                     continue
 
                 parsed_packets = self._parse_data(data)
@@ -345,20 +358,20 @@ class ClientNetwork(Network):
 
             except socket.error as e:
                 if self.running:
-                    print(f"[Client] UDP receive error: {e}")
+                    log_client(f"UDP receive error: {e}", LogType.INFO)
                 break
             except Exception as e:
-                print(f"[Client] Unexpected error in UDP handler: {e}")
+                log_client(f"Unexpected error in UDP read loop: {e}", LogType.ERROR)
                 break
 
-        print("[Client] UDP connection handler stopped.")
+        log_client("UDP connection handler stopped.", LogType.INFO)
 
 
     def stop(self):
         """ Stops the network threads and closes sockets. """
         if not self._running:
             return
-        print("[Client] Stopping network...")
+        log_client("Stopping network...", LogType.INFO)
         self._running = False
 
         if self.tcp_socket:
@@ -378,7 +391,7 @@ class ClientNetwork(Network):
                 pass
 
         self.__id = -10
-        print("[Client] Network stopped.")
+        log_client("Network stopped.", LogType.INFO)
 
 #?endif
 
@@ -425,9 +438,9 @@ class ServerNetwork(Network):
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             self.udp_socket.bind((self.address, self.port))
-            print(f"[Server] UDP Socket bound to {self.address}:{self.port}")
+            log_server(f"UDP Socket listening on {self.address}:{self.port}", LogType.INFO)
         except socket.error as e:
-            print(f"[Server] Failed to bind UDP socket: {e}")
+            log_server(f"Failed to bind UDP socket: {e}", LogType.ERROR)
             raise
 
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -435,9 +448,9 @@ class ServerNetwork(Network):
         try:
             self.tcp_socket.bind((self.address, self.tcp_port))
             self.tcp_socket.listen(self.max_connections)
-            print(f"[Server] TCP Socket listening on {self.address}:{self.tcp_port}")
+            log_server(f"TCP Socket listening on {self.address}:{self.tcp_port}", LogType.INFO)
         except socket.error as e:
-            print(f"[Server] Failed to bind/listen TCP socket: {e}")
+            log_server(f"Failed to bind TCP socket: {e}", LogType.ERROR)
             self.udp_socket.close()
             raise
 
@@ -490,12 +503,12 @@ class ServerNetwork(Network):
             if client_id in self.__id_to_udp_addr:
                 self._send_priority_buffer.add_data((client_id, parsed_data))
             else:
-                print(f"[Server] Warning: No UDP address for client {client_id}. Cannot send priority message '{cmd}'.")
+                log_server(f"Warning: No UDP address for client {client_id}. Cannot send priority message '{cmd}'.", LogType.DEBUG)
         else:
             if client_id in self.__id_to_tcp_conn:
                 self._send_unpriority_buffer.add_data((client_id, parsed_data))
             else:
-                print(f"[Server] Warning: No TCP connection for client {client_id}. Cannot send non-priority message '{cmd}'.")
+                log_server(f"Warning: No TCP connection for client {client_id}. Cannot send non-priority message '{cmd}'.", LogType.WARNING)
 
 
     def tick(self):
@@ -529,14 +542,14 @@ class ServerNetwork(Network):
                 try:
                     payload_bytes = payload.encode('ascii')
                 except UnicodeEncodeError as e:
-                    print(f"[Server] Warning: Cannot encode UDP payload for client {client_id}: {e}. Skipping payload.")
+                    log_server(f"Error encoding UDP payload for client {client_id}: {e}", LogType.ERROR)
                     continue
 
                 payload_len = len(payload_bytes)
                 separator_len = len(RECORD_SEPARATOR_BYTES) if current_batch else 0
 
                 if payload_len + separator_len + len(END_OF_MESSAGE_SEPARATOR_BYTES) > self._packet_size:
-                    print(f"[Server] Warning: Single UDP payload for client {client_id} is too large ({payload_len} bytes). Skipping.")
+                    log_server(f"Payload size exceeds packet size for client {client_id}: {payload_len + separator_len + len(END_OF_MESSAGE_SEPARATOR_BYTES)} > {self._packet_size}", LogType.WARNING)
                     continue
 
                 if current_batch_size + separator_len + payload_len > self._packet_size:
@@ -544,11 +557,11 @@ class ServerNetwork(Network):
                         batch_message = (RECORD_SEPARATOR.join(current_batch) + END_OF_MESSAGE_SEPARATOR).encode('ascii')
                         self.udp_socket.sendto(batch_message, udp_addr)
                     except socket.error as e:
-                        print(f"[Server] UDP send error (batch) to {udp_addr} (ID: {client_id}): {e}")
+                        log_server(f"UDP send error (batch) to {udp_addr} (ID: {client_id}): {e}", LogType.WARNING)
                         current_batch = []
                         break
                     except Exception as e:
-                        print(f"[Server] Error encoding/sending UDP batch to {udp_addr} (ID: {client_id}): {e}")
+                        log_server(f"Error encoding/sending UDP batch to {udp_addr} (ID: {client_id}): {e}", LogType.ERROR)
                         current_batch = []
                         break
 
@@ -564,9 +577,9 @@ class ServerNetwork(Network):
                 batch_message = (RECORD_SEPARATOR.join(current_batch) + END_OF_MESSAGE_SEPARATOR).encode('ascii')
                 self.udp_socket.sendto(batch_message, udp_addr)
             except socket.error as e:
-                print(f"[Server] UDP send error (final batch) to {udp_addr} (ID: {client_id}): {e}")
+                log_server(f"UDP send error (final batch) to {udp_addr} (ID: {client_id}): {e}", LogType.WARNING)
             except Exception as e:
-                print(f"[Server] Error encoding/sending final UDP batch to {udp_addr} (ID: {client_id}): {e}")
+                log_server(f"Error encoding/sending final UDP batch to {udp_addr} (ID: {client_id}): {e}", LogType.ERROR)
 
         disconnected_clients = []
         for client_id, payloads in data_by_client_tcp.items():
@@ -576,10 +589,10 @@ class ServerNetwork(Network):
                     full_tcp_message = (RECORD_SEPARATOR.join(payloads) + END_OF_MESSAGE_SEPARATOR).encode('ascii')
                     tcp_conn.sendall(full_tcp_message)
                 except (BrokenPipeError, ConnectionResetError, OSError) as e:
-                    print(f"[Server] TCP send error to client {client_id} (connection lost): {e}")
+                    log_server(f"TCP send error (connection lost) to client {client_id}: {e}", LogType.WARNING)
                     disconnected_clients.append(client_id)
                 except Exception as e:
-                    print(f"[Server] Error encoding/sending TCP to client {client_id}: {e}")
+                    log_server(f"Error encoding/sending TCP data to client {client_id}: {e}", LogType.ERROR)
                     disconnected_clients.append(client_id)
 
         for client_id in disconnected_clients:
@@ -591,10 +604,10 @@ class ServerNetwork(Network):
         while self.running:
             try:
                 conn, addr = self.tcp_socket.accept()
-                print(f"[Server] Accepted TCP connection from {addr}")
+                log_server(f"Accepted TCP connection from {addr}", LogType.INFO)
 
                 if len(self.__connected_ids) >= self.max_connections:
-                    print(f"[Server] Max connections ({self.max_connections}) reached. Rejecting {addr}.")
+                    log_server(f"Max connections reached. Closing connection from {addr}.", LogType.INFO)
                     conn.close()
                     continue
 
@@ -603,10 +616,11 @@ class ServerNetwork(Network):
 
             except socket.error as e:
                 if self.running:
-                    print(f"[Server] Error accepting TCP connections: {e}")
+                    log_server(f"TCP accept error: {e}", LogType.WARNING)
                 break
             except Exception as e:
-                print(f"[Server] Unexpected error in TCP accept loop: {e}")
+                log_server(f"Unexpected error in TCP accept loop: {e}", LogType.ERROR)
+                break
 
 
     def __handle_client_tcp(self, conn: socket.socket, addr: tuple):
@@ -618,7 +632,7 @@ class ServerNetwork(Network):
             while self.running and client_id == 0:
                 data = conn.recv(self._packet_size)
                 if not data:
-                    print(f"[Server] Client {addr} disconnected before login.")
+                    log_server(f"TCP connection closed by client {addr}.", LogType.INFO)
                     conn.close()
                     return
 
@@ -635,7 +649,7 @@ class ServerNetwork(Network):
                         if result_id > 0:
                             client_id = result_id
                             if client_id in self.__connected_ids:
-                                print(f"[Server] User ID {client_id} connected from another location: {addr}.")
+                                log_server(f"Client {addr} attempted to log in with an existing ID {client_id}. Closing connection.", LogType.INFO)
                                 self.send(client_id, "connected_from_another_location", client_id)
                                 time.sleep(0.1)
                                 self.__cleanup_client(client_id)
@@ -643,7 +657,7 @@ class ServerNetwork(Network):
                             self.__id_to_tcp_conn[client_id] = conn
                             self.__tcp_conn_to_id[conn] = client_id
                             self.__connected_ids.add(client_id)
-                            print(f"[Server] Client {addr} logged in as ID {client_id}.")
+                            log_server(f"Client {addr} logged in with ID {client_id}.", LogType.INFO)
                             self.send(client_id, "register_outcome", client_id)
                             self.__on_connect(client_id)
                             break
@@ -659,7 +673,7 @@ class ServerNetwork(Network):
             while self.running and client_id > 0:
                 data = conn.recv(self._packet_size)
                 if not data:
-                    print(f"[Server] Client {client_id} (TCP) disconnected.")
+                    log_server(f"TCP connection closed by client {client_id if client_id > 0 else addr}.", LogType.INFO)
                     break
 
                 buffer += data
@@ -674,9 +688,9 @@ class ServerNetwork(Network):
                     self._receive_unpriority_buffer.add_data_multiple(unpriority_packets)
 
         except (ConnectionResetError, BrokenPipeError, OSError) as e:
-            print(f"[Server] TCP connection error with client {client_id if client_id > 0 else addr}: {e}")
+            log_server(f"TCP connection error: {e}", LogType.INFO)
         except Exception as e:
-            print(f"[Server] Unexpected error in TCP handler for {client_id if client_id > 0 else addr}: {e}")
+            log_server(f"Unexpected error in TCP handler for {client_id if client_id > 0 else addr}: {e}", LogType.ERROR)
         finally:
             if client_id > 0:
                 self.__cleanup_client(client_id)
@@ -684,7 +698,7 @@ class ServerNetwork(Network):
                 try:
                     conn.close()
                 except: pass
-            print(f"[Server] TCP handler stopped for {client_id if client_id > 0 else addr}.")
+            log_server(f"TCP handler for {client_id if client_id > 0 else addr} stopped.", LogType.INFO)
 
 
     def __handle_udp_reads(self):
@@ -706,28 +720,28 @@ class ServerNetwork(Network):
                     if cmd == "register_udp":
                         reg_id = packet_data
                         if reg_id in self.__id_to_tcp_conn and reg_id not in self.__id_to_udp_addr:
-                            print(f"[Server] Registered UDP address {addr} for client ID {reg_id}.")
+                            log_server(f"Client {reg_id} registered UDP address {addr}.", LogType.INFO)
                             self.__id_to_udp_addr[reg_id] = addr
                             self.__udp_addr_to_id[addr] = reg_id
                             client_id = reg_id
                         else:
-                            print(f"[Server] Warning: Received UDP registration for unknown/already registered ID {reg_id} from {addr}.")
+                            log_server(f"Client {reg_id} attempted to register UDP address {addr}, but ID not found or already registered. Ignoring.", LogType.INFO)
                         continue
 
                     if client_id is not None:
                         priority_packets.append((client_id, payload))
                     else:
-                        print(f"[Server] Received UDP from unknown address {addr}. Ignoring data.")
+                        log_server(f"Received UDP data from unknown client {addr}. Ignoring.", LogType.INFO)
 
                 if client_id is not None:
                     self._receive_priority_buffer.add_data_multiple(priority_packets)
 
             except socket.error as e:
                 if self.running:
-                    print(f"[Server] UDP receive error: {e}")
+                    log_server(f"UDP receive error: {e}", LogType.INFO)
                 continue
             except Exception as e:
-                print(f"[Server] Unexpected error in UDP read loop: {e}")
+                log_server(f"Unexpected error in UDP read loop: {e}", LogType.ERROR)
                 break
 
 
@@ -744,7 +758,7 @@ class ServerNetwork(Network):
         try:
             username, password = data
         except (TypeError, ValueError):
-            print(f"[Server] Invalid login data format from {conn.getpeername()}.")
+            log_server(f"Invalid login data format from {conn.getpeername()}.", LogType.WARNING)
             return 0
 
         match request:
@@ -761,7 +775,7 @@ class ServerNetwork(Network):
                 return result
 
             case _:
-                print(f"[Server] Invalid login request type '{request}' from {conn.getpeername()}.")
+                log_server(f"Invalid request type '{request}' from {conn.getpeername()}.", LogType.WARNING)
                 return
 
 
@@ -776,7 +790,7 @@ class ServerNetwork(Network):
             user_id = self.__db_cursor.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
             return user_id[0] if user_id else -1
         except sql.Error as e:
-            print(f"[Server] Database error during registration: {e}")
+            log_server(f"Database error during registration: {e}", LogType.ERROR)
             self.__db_conn.rollback()
             return -1
 
@@ -789,7 +803,7 @@ class ServerNetwork(Network):
                 return -1
             return user[0]
         except sql.Error as e:
-            print(f"[Server] Database error during login: {e}")
+            log_server(f"Database error during login: {e}", LogType.ERROR)
             return -1
 
 
@@ -798,7 +812,7 @@ class ServerNetwork(Network):
         if client_id not in self.__connected_ids:
             return
 
-        print(f"[Server] Cleaning up client ID {client_id}.")
+        log_server(f"Cleaning up client {client_id}.", LogType.INFO)
         self.__connected_ids.remove(client_id)
 
         tcp_conn = self.__id_to_tcp_conn.pop(client_id, None)
@@ -824,7 +838,7 @@ class ServerNetwork(Network):
         """ Stops the server network threads and closes sockets. """
         if not self._running:
             return
-        print("[Server] Stopping network...")
+        log_server("Stopping network...", LogType.INFO)
         self._running = False
 
         if self.tcp_socket:
@@ -847,7 +861,7 @@ class ServerNetwork(Network):
             self.__db_conn.close()
             self.__db_conn = None
 
-        print("[Server] Network stopped.")
+        log_server("Network stopped.", LogType.INFO)
 
 #?endif
 
