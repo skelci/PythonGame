@@ -38,8 +38,8 @@ class Level:
         self.gravity = gravity
 
         self.__actors = {}
-        self.__rigidbodies = {}
-        self.__actors_with_overlap_events = {}
+        self.__rigidbodies = set()
+        self.__actors_with_overlap_events = set()
         self.__chunks = {}
         self.__actors_to_destroy = set()
         self.__actors_to_create = set()
@@ -114,7 +114,7 @@ class Level:
 
     @property
     def rigidbodies(self):
-        """ dict[str, Rigidbody] - Dictionary of all rigidbodies in the level. The key is the actor's name and the value is the actor object. """
+        """ set[Rigidbody] - Set of all rigidbodies in the level. """
         return self.__rigidbodies
     
 
@@ -160,7 +160,7 @@ class Level:
 
     @property
     def actors_with_overlap_events(self):
-        """ dict[str, Actor] - Dictionary of all actors that have overlap events. The key is the actor's name and the value is the actor object. """
+        """ set[Actor] - Set of all actors that have overlap events. """
         return self.__actors_with_overlap_events
         
 
@@ -231,9 +231,9 @@ class Level:
             actor.level_ref = self
             self.actors[actor.name] = actor
             if isinstance(actor, Rigidbody):
-                self.rigidbodies[actor.name] = actor
+                self.rigidbodies.add(actor)
             if actor.generate_overlap_events:
-                self.__actors_with_overlap_events[actor.name] = actor
+                self.__actors_with_overlap_events.add(actor)
             if actor.visible:
                 new_actors.append(actor)
             self.add_actor_to_chunk(actor)
@@ -252,9 +252,9 @@ class Level:
         for actor in actors_to_destroy:
             destroyed.append(self.actors.pop(actor.name))
             if isinstance(actor, Rigidbody):
-                self.rigidbodies.pop(actor.name)
-            if actor.name in self.__actors_with_overlap_events:
-                self.__actors_with_overlap_events.pop(actor.name)
+                self.rigidbodies.remove(actor)
+            if actor in self.__actors_with_overlap_events:
+                self.__actors_with_overlap_events.remove(actor)
             self.chunks[actor.chunk].remove(actor)
         
         self.__actors_to_destroy.clear()
@@ -376,7 +376,7 @@ class Level:
             collisions_not_resolved = False
             corrected_actors = {}
 
-            for actor1 in self.rigidbodies.values():
+            for actor1 in self.rigidbodies:
                 if not actor1.simulate_physics:
                     continue
 
@@ -414,38 +414,38 @@ class Level:
             collided_actors[name][0].normal = collided_actors[name][1].normalized
             self.actors[name].on_collision(collided_actors[name][0])
 
-        for actor in self.rigidbodies.values():
+        for actor in self.rigidbodies:
             self.update_actor_chunk(actor)
 
         collided_actors_directions = {}
-        for actor1 in self.rigidbodies.values():
+        for actor1 in self.rigidbodies:
             if not actor1.simulate_physics:
                 continue
 
+            collided_actors_directions[actor1] = [0, 0, 0, 0]
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                 if not_should_colide_with(actor1, actor2):
                     continue
 
                 actor1.half_size += KINDA_SMALL_NUMBER
                 direction = actor1.collision_response_direction(actor2)
-                if actor1.name not in collided_actors_directions:
-                    collided_actors_directions[actor1.name] = [0, 0, 0, 0]
+
                 # right, left, top, bottom
                 if direction.x < 0:
-                    collided_actors_directions[actor1.name][0] = 1
+                    collided_actors_directions[actor1][0] = 1
                 if direction.x > 0:
-                    collided_actors_directions[actor1.name][1] = 1
+                    collided_actors_directions[actor1][1] = 1
                 if direction.y < 0:
-                    collided_actors_directions[actor1.name][2] = 1
+                    collided_actors_directions[actor1][2] = 1
                 if direction.y > 0:
-                    collided_actors_directions[actor1.name][3] = 1
+                    collided_actors_directions[actor1][3] = 1
                 actor1.half_size -= KINDA_SMALL_NUMBER
 
         for name, direction in collided_actors_directions.items():
-            self.actors[name].collided_sides = direction
+            actor.collided_sides = direction
 
         overlaped_actors = {}
-        for actor1 in self.__actors_with_overlap_events.values():
+        for actor1 in self.__actors_with_overlap_events:
             actor1.half_size += KINDA_SMALL_NUMBER
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                 if actor1 is actor2 or not is_overlapping_rect(actor1, actor2):
