@@ -103,7 +103,7 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
         self.engine.register_key(Keys.C, KeyPressType.TRIGGER, KeyHandler.key_C)
-        self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.TRIGGER, breaking_blocks)
+        self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.HOLD, breaking_blocks)
 
         #?ifdef ENGINE
         self.engine.console.handle_cmd("build_server")
@@ -384,7 +384,21 @@ Indestructible_classes = (
     "LeafEntity", "StickEntity", "LogEntity", "GrassEntity", 
     "DirtEntity", "StoneEntity", "CoalEntity", "IronEntity", "GoldEntity"
 )
-def breaking_blocks(engine_ref, level_ref, id):
+
+BREAK_DURATIONS = {
+    "Grass": 1.0,
+    "Dirt": 1.5,
+    "Stone": 5.0,
+    "Coal": 6.0,
+    "Iron": 7.0,
+    "Gold": 8.0,
+    "Log": 3.0,
+    "Leaf": 1.0,
+}
+
+break_progress = {}
+
+def breaking_blocks(engine_ref, level_ref, id, delta_time):
     
     #print('breaking_blocks')
     # Get the player's position
@@ -398,7 +412,7 @@ def breaking_blocks(engine_ref, level_ref, id):
     #Get the mouse position 
     mouse_pos = engine_ref.players[id].world_mouse_pos
     mouse_pos = mouse_pos.rounded
-    # print(mouse_pos)   
+    print(mouse_pos)   
 
     #allowed to break this blocks
     #allowed_blocks=tuple(("grass", "dirt", "stone", "log", "leaves", "Leaves", "LEAVES", "leaf", "Leaf", "LEAF", "Coal", "Iron", "Gold"))
@@ -406,20 +420,49 @@ def breaking_blocks(engine_ref, level_ref, id):
     for actor in function_3x3:
         #print(actor)
         actor_position = actor.position.rounded
-        #print(actor_position)
-        #print("actor class", actor.__class__.__name__)
+        print(actor_position, actor.name)
+        #print("actor class", actor_position.__class__.__name__)
 
         if actor_position == mouse_pos:
+            block_type = "_".join(actor.name.split("_")[:-2])
+            #print(delta_time)
+            print('block_type:', block_type)
             #print('actor:', actor_position)
             #print(EntityPosition)
-            #print(Indestructible_classes)
+
             if actor.__class__.__name__ in Indestructible_classes:
                 #print('indestructible')
-                break
+                break           
+
+            if block_type in Indestructible_classes:
+                return
+            
+            break_duration=BREAK_DURATIONS.get(block_type.capitalize(), None)
+            print('break_duration:', break_duration, block_type)
+            if break_duration is None:
+                return
+            
+            if actor_position not in break_progress:
+                #print(actor.position.rounded)
+                print("break progress starting")
+                break_progress[actor_position] = 0.0
+
+            break_progress[actor_position] += delta_time
+            print(f"Breaking '{block_type}' at {actor_position}: {break_progress[actor_position]:.2f}/{break_duration:.2f}")
+            print(f"Break duration for '{block_type}': {break_duration}")
+            #print(break_progress[actor.position])
+
+            if break_progress[actor_position] >= break_duration:
+                print("destroying actor")
+                engine_ref.levels["Test_Level"].destroy_actor(actor)
+                del break_progress[actor_position]
+
+            #print(Indestructible_classes)
+
 
             if actor.name.startswith("__Player_"):
                 break
             
-            engine_ref.levels["Test_Level"].destroy_actor(actor)          
+            #engine_ref.levels["Test_Level"].destroy_actor(actor)          
             break
 
