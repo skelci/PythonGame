@@ -230,6 +230,9 @@ class Level:
         for actor in actors_to_create:
             actor.engine_ref = self.engine_ref
             actor.level_ref = self
+            if actor.name in self.actors:
+                warnings.warn(f"Actor with the same name already exists in level: {actor.name}", UserWarning, 3)
+                continue
             self.actors[actor.name] = actor
             if isinstance(actor, Rigidbody):
                 self.rigidbodies.add(actor)
@@ -302,10 +305,6 @@ class Level:
         chk = get_chunk_cords(actor.position)
         a_chk = actor.chunk
         if a_chk.x != chk.x or a_chk.y != chk.y:
-            if actor not in self.chunks[a_chk]:
-                log(f"Actor {actor} not found in chunk {a_chk} while updating actor {actor.name}.")
-                log(f"{actor.name in self.actors} {actor.position} {chk} {self.chunks[a_chk]}")
-                return
             self.chunks[a_chk].remove(actor)
             self.add_actor_to_chunk(actor)
 

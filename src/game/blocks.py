@@ -72,7 +72,7 @@ class Dirt(Actor):
 
         chance=random.randint(1,4)
         if chance==1:
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))
+            self.level_ref.register_actor(StoneEntity(f"stone_{self.name}", self.position))
             #print('stone iz dirta')    
  
 class Stone(Actor):
