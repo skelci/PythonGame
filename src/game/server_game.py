@@ -455,6 +455,7 @@ def breaking_blocks(engine_ref, level_ref, id, delta_time):
             if break_progress[actor_position] >= break_duration:
                 # print("destroying actor")
                 engine_ref.levels["Test_Level"].destroy_actor(actor)
+                actor.on_destroyed()
                 del break_progress[actor_position]
 
             #print(Indestructible_classes)

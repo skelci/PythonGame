@@ -14,7 +14,7 @@ class Log(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5),collidable=False, material = Material("res/textures/log.png"))
         self.position = position
-    def __del__(self):
+    def on_destroyed(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         
@@ -28,7 +28,7 @@ class Leaf(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), collidable=False, material = Material("res/textures/leaf_block.png"), render_layer=1)
         self.position = position
-    def __del__(self):
+    def on_destroyed(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         
@@ -47,7 +47,7 @@ class Grass(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/grass_block.png"))
         self.position = position
-    def __del__(self):
+    def on_destroyed(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         count=4
@@ -60,7 +60,7 @@ class Dirt(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/dirt.png"))
         self.position = position
-    def __del__(self):
+    def on_destroyed(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         
@@ -79,7 +79,7 @@ class Stone(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/stone.png"))
         self.position = position
-    def __del__(self):
+    def on_destroyed(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         count=random.randint(3,5)
@@ -92,7 +92,7 @@ class Coal(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/coal_ore.png"))
         self.position = position
-    def __del__(self):
+    def on_destroyed(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         
@@ -109,7 +109,7 @@ class Iron(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/iron_ore.png"))
         self.position = position
-    def __del__(self):
+    def on_destroyed(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         
@@ -129,7 +129,7 @@ class Gold(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/gold_ore.png"))
         self.position = position
-    def __del__(self):
+    def on_destroyed(self):
         if self.engine_ref.__class__.__name__ == "ClientEngine":
             return
         
