@@ -8,6 +8,7 @@ from .background import Background
 from .rigidbody import Rigidbody
 from .character import Character
 from .game_math import *
+import warnings
 
 
 
@@ -185,12 +186,37 @@ class Level:
         Args:
             actor: Actor to be destroyed.
         Raises:
-            ValueError: If the actor is not in the level.
+            UserWarning: If the actor is not in the level.
         """
         if actor.name in self.actors:
             self.__actors_to_destroy.add(actor)
+        elif actor.name in self.__actors_to_create:
+            self.__actors_to_create.remove(actor)
         else:
-            raise ValueError("Actor not found in level:", actor)
+            warnings.warn(f"Actor not found in level while destroying it: {actor.name}", UserWarning, 3)
+        
+
+    def destroy_actor_by_name(self, name: str):
+        """
+        Marks an actor for destruction by name. The actor will be removed from the level in the next tick.
+        Args:
+            name: Name of the actor to be destroyed.
+        Raises:
+            UserWarning: If the actor is not in the level.
+        """
+        if name in self.actors:
+            self.__actors_to_destroy.add(self.actors[name])
+            return
+    
+        was_found = False
+        for actor in self.__actors_to_create:
+            if actor.name == name:
+                self.__actors_to_destroy.add(actor)
+                was_found = True
+                break
+
+        if not was_found:
+            warnings.warn(f"Actor not found in level while destroying it: {name}", UserWarning, 3)
 
 
     def get_new_actors(self):
