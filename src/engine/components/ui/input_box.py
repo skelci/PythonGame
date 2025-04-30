@@ -6,8 +6,8 @@ This module contains the InputBox class, which is used to create an input box wi
 
 from .text import Text
 
-from .game_math import *
-from .datatypes import *
+from engine.game_math import *
+from engine.datatypes import *
 
 from typing import Callable
 

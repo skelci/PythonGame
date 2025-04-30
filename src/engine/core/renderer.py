@@ -6,10 +6,10 @@ Renderer module for the game engine.
 
 from .log import log_client as log
 from .log import LogType
-from components.datatypes import *
-from components.actor import Actor
-from components.widget import Widget
-from components.background import Background
+from engine.datatypes import *
+from engine.components.actors.actor import Actor
+from engine.components.ui.widget import Widget
+from engine.components.background import Background
 
 import pygame
 

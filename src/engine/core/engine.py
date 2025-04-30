@@ -16,18 +16,18 @@ from .network import *
 from .log import *
 
 #?ifdef CLIENT
-from components.button import Button
-from components.input_box import InputBox
-from components.text import Text
-from components.widget import Widget
+from engine.components.ui.button import Button
+from engine.components.ui.input_box import InputBox
+from engine.components.ui.text import Text
+from engine.components.ui.widget import Widget
 #?endif
-from components.actor import Actor
-from components.rigidbody import Rigidbody
-from components.character import Character
-from components.background import Background
-from components.level import Level
-from components.datatypes import *
-from components.game_math import *
+from engine.components.actors.actor import Actor
+from engine.components.actors.rigidbody import Rigidbody
+from engine.components.actors.character import Character
+from engine.components.background import Background
+from engine.components.level import Level
+from engine.datatypes import *
+from engine.game_math import *
 
 #?ifdef CLIENT
 import pygame

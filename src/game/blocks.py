@@ -1,8 +1,8 @@
-from components.datatypes import *
-from components.actor import Actor
-from components.character import Character
-from components.rigidbody import Rigidbody
-from components.material import Material
+from engine.datatypes import *
+from engine.components.actors.actor import Actor
+from engine.components.actors.character import Character
+from engine.components.actors.rigidbody import Rigidbody
+from engine.components.material import Material
 
 import random
 

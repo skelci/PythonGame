@@ -2,7 +2,7 @@
 This module contains the Material class, which is used to create a material for rendering.
 """
 
-from .datatypes import *
+from engine.datatypes import *
 
 #?ifdef CLIENT
 import pygame

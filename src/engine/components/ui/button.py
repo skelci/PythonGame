@@ -6,9 +6,8 @@ This module contains the Button class, which is used to create a button widget.
 
 from .border import Border
 
-from .text import Text
-from .datatypes import *
-from .game_math import *
+from engine.datatypes import *
+from engine.game_math import *
 from .widget import Widget
 
 from typing import Callable

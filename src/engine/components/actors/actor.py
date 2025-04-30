@@ -2,8 +2,8 @@
 This module contains the Actor class, which is used to create an objects inside the level.
 """
 
-from .datatypes import *
-from .material import Material
+from engine.datatypes import *
+from engine.components.material import Material
 
 
 class Actor:

@@ -4,8 +4,8 @@ This module contains the Rigidbody class, which is used to create a rigid body p
 
 from .actor import Actor
 
-from .material import Material
-from .datatypes import *
+from engine.components.material import Material
+from engine.datatypes import *
 
 
 

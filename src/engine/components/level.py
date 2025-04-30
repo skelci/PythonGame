@@ -2,13 +2,13 @@
 This module contains the Level class, which is used to create a level in the game.
 """
 
-from .datatypes import *
-from .actor import Actor
+from engine.datatypes import *
+from engine.components.actors.actor import Actor
 from .background import Background
-from .rigidbody import Rigidbody
-from .character import Character
-from .game_math import *
-from engine.log import log, LogType
+from engine.components.actors.rigidbody import Rigidbody
+from engine.components.actors.character import Character
+from engine.game_math import *
+from engine.core.log import log, LogType
 
 import warnings
 
@@ -302,8 +302,9 @@ class Level:
         chk = get_chunk_cords(actor.position)
         a_chk = actor.chunk
         if a_chk.x != chk.x or a_chk.y != chk.y:
-            if a_chk not in self.chunks:
-                log(f"Chunk {a_chk} not found in level {self.name} while updating actor {actor.name}.")
+            if actor not in self.chunks[a_chk]:
+                log(f"Actor {actor} not found in chunk {a_chk} while updating actor {actor.name}.")
+                log(f"{actor.name in self.actors} {actor.position} {chk} {self.chunks[a_chk]}")
                 return
             self.chunks[a_chk].remove(actor)
             self.add_actor_to_chunk(actor)
@@ -396,27 +397,27 @@ class Level:
 
                     collisions_not_resolved = True
 
-                    if actor1.name not in corrected_actors:
-                        corrected_actors[actor1.name] = Vector(0, 0)
-                    corrected_actors[actor1.name] += direction
+                    if actor1 not in corrected_actors:
+                        corrected_actors[actor1] = Vector(0, 0)
+                    corrected_actors[actor1] += direction
 
                     if actor1.name not in collided_actors:
-                        collided_actors[actor1.name] = [None, Vector(0, 0)]
-                    collided_actors[actor1.name][0] = CollisionData( direction.normalized, actor2.velocity if hasattr(actor2, "velocity") else Vector(0, 0), actor2.restitution, actor2.mass if hasattr(actor2, "mass") else float("inf"), actor2)
+                        collided_actors[actor1] = [None, Vector(0, 0)]
+                    collided_actors[actor1][0] = CollisionData( direction.normalized, actor2.velocity if hasattr(actor2, "velocity") else Vector(0, 0), actor2.restitution, actor2.mass if hasattr(actor2, "mass") else float("inf"), actor2)
                     if actor2.name not in collided_actors:
-                        collided_actors[actor2.name] = [None, Vector(0, 0)]
-                    collided_actors[actor2.name][0] = CollisionData(-direction.normalized, actor1.velocity, actor1.restitution, actor1.mass, actor1)
+                        collided_actors[actor2] = [None, Vector(0, 0)]
+                    collided_actors[actor2][0] = CollisionData(-direction.normalized, actor1.velocity, actor1.restitution, actor1.mass, actor1)
 
-                    collided_actors[actor1.name][1] += direction
+                    collided_actors[actor1][1] += direction
 
-            for name, direction in corrected_actors.items():
-                self.actors[name].position += direction
+            for actor, direction in corrected_actors.items():
+                actor.position += direction
 
             max_iterations -= 1
 
-        for name in collided_actors:
-            collided_actors[name][0].normal = collided_actors[name][1].normalized
-            self.actors[name].on_collision(collided_actors[name][0])
+        for actor, collision_data in collided_actors.items():
+            collision_data[0].normal = collision_data[1].normalized
+            actor.on_collision(collision_data[0])
 
         for actor in self.rigidbodies:
             self.update_actor_chunk(actor)

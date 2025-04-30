@@ -3,7 +3,7 @@ Network module for the game engine.
 Uses TCP for reliable non-priority messages and UDP for fast priority messages.
 """
 
-from components.datatypes import *
+from engine.datatypes import *
 from .log import *
 
 import socket

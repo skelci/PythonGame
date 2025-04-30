@@ -5,7 +5,7 @@ This module contains the Border class, which is used to create a border widget.
 """
 
 from .widget import Widget
-from .datatypes import *
+from engine.datatypes import *
 
 import pygame
 

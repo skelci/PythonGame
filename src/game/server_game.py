@@ -1,9 +1,9 @@
 #?attr SERVER
 
-from engine.game_base import ServerGameBase
+from engine.core.game_base import ServerGameBase
 
-from components.level import Level
-from components.game_math import *
+from engine.components.level import Level
+from engine.game_math import *
 
 from .blocks import *
 from .tunnel_generator import TunnelGenerator

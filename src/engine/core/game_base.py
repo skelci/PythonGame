@@ -12,7 +12,7 @@ class ServerGame(ServerGameBase):
 
 from .engine import *
 
-from components.datatypes import *
+from engine.datatypes import *
 
 
 

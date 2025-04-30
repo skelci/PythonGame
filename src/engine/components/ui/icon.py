@@ -6,8 +6,8 @@ This module contains the Icon class, which is used to create an icon for the GUI
 
 from .widget import Widget
 
-from .material import Material
-from .datatypes import *
+from engine.components.material import Material
+from engine.datatypes import *
 
 import pygame
 
