@@ -149,6 +149,7 @@ class ClientEngine(Engine, Renderer):
             "update_actor": self.__update_actor,
             "destroy_actor": self.__destroy_actor,
             "background": self.__background,
+            "play_sound": self.__play_sound,
         }
 
         network_thread = threading.Thread(target=self.__handle_network)
@@ -162,6 +163,7 @@ class ClientEngine(Engine, Renderer):
         }
         
         pygame.init()
+        pygame.mixer.init(channels=16)
 
         self.__clock = pygame.time.Clock()
         self.__world_mouse_pos = Vector()
@@ -374,6 +376,45 @@ class ClientEngine(Engine, Renderer):
         self.network.send("update_distance", self.__update_distance)
 
 
+    def play_sound(self, sound: str, location: Vector | None, distance: float, volume: float = 1.0):
+        """
+        Plays sound on the client. It is used to play sound effects.
+        Args:
+            sound: Sound file path.
+            location: Sound location in world coordinates. If None, sound will be played as global sound.
+            distance: Maximum distance from the sound source to the listener.
+            volume: Sound volume. Must be between 0 and 1.
+        """
+        if location is None:
+            sound_obj = pygame.mixer.Sound(sound)
+            sound_obj.set_volume(volume)
+            sound_obj.play()
+            return
+        
+        direction = location - self.camera_position
+        actual_distance = direction.length
+        volume = volume * math.sqrt(clamp((distance - actual_distance) / distance))
+
+        if volume > 0:
+            sound_obj = pygame.mixer.Sound(sound)
+
+            dx = direction.normalized.x 
+            pan_inc = 1 - abs(dx)
+            pan = (dx + 1) / 2
+
+            dy = direction.normalized.y
+            vertical_factor = 0.8 + (dy * 0.2)
+            
+            volume *= vertical_factor
+            
+            left_vol = volume * (1 - pan + pan_inc)
+            right_vol = volume * (pan + pan_inc)
+            
+            channel = pygame.mixer.find_channel(True)
+            channel.set_volume(left_vol, right_vol)
+            channel.play(sound_obj)
+
+
     def set_camera_width(self, width: float):
         """
         Sets the camera width.
@@ -573,6 +614,10 @@ class ClientEngine(Engine, Renderer):
     def __background(self, data):
         self.current_background = data
 
+
+    def __play_sound(self, data):
+        self.play_sound(*data)
+
 #?endif
 
 
@@ -764,6 +809,25 @@ class ServerEngine(Engine):
             max_connections: Maximum number of connections. It must be a positive integer.
         """
         self.__network = ServerNetwork(address, port, max_connections, self.__on_player_connect, self.__on_player_disconnect)
+
+
+    def play_sound(self, sound: str, level: str, location: Vector | None, distance: float, volume: float = 1.0):
+        """
+        Sends to client to play sound.
+        Args:
+            sound: Sound file path.
+            level: Name of the level where the sound will be played.
+            location: Sound location in world coordinates. If None, sound will be played as global sound.
+            distance: Maximum distance from the sound source to the listener.
+            volume: Sound volume. Must be between 0 and 1.
+        """
+        for player_id, player in self.__players.items():
+            if player.level != level:
+                continue
+            if distance < self.levels[level].actors[self.get_player_actor(player_id)].position.distance_to(location):
+                continue
+
+            self.network.send(player_id, "play_sound", (sound, location, distance, volume), True)
 
 
     def get_stat(self, stat_name: str):

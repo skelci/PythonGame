@@ -216,7 +216,7 @@ class Level:
                 break
 
         if not was_found:
-            warnings.warn(f"Actor not found in level while destroying it: {name}", UserWarning, 3)
+            warnings.warn(f"Actor not found in level {self.name} while destroying it: {name}", UserWarning, 4)
 
 
     def get_new_actors(self):
@@ -230,7 +230,7 @@ class Level:
             actor.engine_ref = self.engine_ref
             actor.level_ref = self
             if actor.name in self.actors:
-                warnings.warn(f"Actor with the same name already exists in level: {actor.name}", UserWarning, 3)
+                warnings.warn(f"Actor with the same name already exists in level {self.name}: {actor.name}", UserWarning, 4)
                 continue
             self.actors[actor.name] = actor
             if isinstance(actor, Rigidbody):
@@ -456,7 +456,7 @@ class Level:
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                 if actor1 is actor2 or not is_overlapping_rect(actor1, actor2):
                     continue
-                
+
                 if actor2 not in overlaped_actors:
                     overlaped_actors[actor2] = set()
                 overlaped_actors[actor2].add(actor1)

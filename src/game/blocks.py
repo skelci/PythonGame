@@ -55,6 +55,7 @@ class Grass(Actor):
         GrassDirtEntity= DirtEntity(GrassDirtName, self.position, count=count)
         self.level_ref.register_actor(GrassDirtEntity)
         #print("entity dirt iz grasa")
+        self.engine_ref.play_sound("res/sounds/grass_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
 
 class Dirt(Actor):
     def __init__(self, name, position):
