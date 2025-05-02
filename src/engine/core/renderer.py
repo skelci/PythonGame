@@ -4,8 +4,8 @@
 Renderer module for the game engine.
 """
 
-from .log import log_client as log
-from .log import LogType
+from engine.log import log_client as log
+from engine.log import LogType
 from engine.datatypes import *
 from engine.components.actors.actor import Actor
 from engine.components.ui.widget import Widget

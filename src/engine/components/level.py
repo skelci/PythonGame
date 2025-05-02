@@ -8,7 +8,6 @@ from .background import Background
 from engine.components.actors.rigidbody import Rigidbody
 from engine.components.actors.character import Character
 from engine.game_math import *
-from engine.core.log import log, LogType
 
 import warnings
 
@@ -430,7 +429,8 @@ class Level:
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                 if not_should_colide_with(actor1, actor2):
                     continue
-
+                
+                was_outdated = actor1.outdated["half_size"]
                 actor1.half_size += KINDA_SMALL_NUMBER
                 direction = actor1.collision_response_direction(actor2)
 
@@ -444,22 +444,25 @@ class Level:
                 if direction.y > 0:
                     collided_actors_directions[actor1][3] = 1
                 actor1.half_size -= KINDA_SMALL_NUMBER
+                actor1.outdated["half_size"] = was_outdated
 
         for actor, collided_sides in collided_actors_directions.items():
             actor.collided_sides = collided_sides
 
         overlaped_actors = {}
         for actor1 in self.__actors_with_overlap_events:
+            was_outdated = actor1.outdated["half_size"]
             actor1.half_size += KINDA_SMALL_NUMBER
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                 if actor1 is actor2 or not is_overlapping_rect(actor1, actor2):
                     continue
-
+                
                 if actor2 not in overlaped_actors:
                     overlaped_actors[actor2] = set()
                 overlaped_actors[actor2].add(actor1)
 
             actor1.half_size -= KINDA_SMALL_NUMBER
+            actor1.outdated["half_size"] = was_outdated
 
         for actor, overlaped_set in overlaped_actors.items():
             for other_actor in overlaped_set - self.__previously_collided.get(actor, set()):

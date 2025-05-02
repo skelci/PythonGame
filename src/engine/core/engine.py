@@ -13,7 +13,7 @@ from .console import Console
 from .builder import *
 #?endif
 from .network import *
-from .log import *
+from engine.log import *
 
 #?ifdef CLIENT
 from engine.components.ui.button import Button
@@ -498,7 +498,7 @@ class ClientEngine(Engine, Renderer):
             scr_world_pos = screen_pos - self.resolution / 2
             scr_world_pos.y = -scr_world_pos.y
             world_mouse_pos = scr_world_pos * self.camera_width / self.resolution.x + self.camera_position
-            self.network.send("world_mouse_pos", world_mouse_pos)
+            self.network.send("world_mouse_pos", world_mouse_pos, True)
 
 
     def __handle_events(self):

@@ -4,8 +4,8 @@
 Preprocessor for building and packaging server and client files.
 """
 
-from .log import log_engine as log
-from .log import LogType
+from engine.log import log_engine as log
+from engine.log import LogType
 
 from enum import IntEnum
 import os

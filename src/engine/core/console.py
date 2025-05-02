@@ -4,8 +4,8 @@
 Console module for the engine.
 """
 
-from .log import log_server as log
-from .log import LogType
+from engine.log import log_server as log
+from engine.log import LogType
 
 
 

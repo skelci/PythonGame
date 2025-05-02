@@ -4,7 +4,7 @@ Uses TCP for reliable non-priority messages and UDP for fast priority messages.
 """
 
 from engine.datatypes import *
-from .log import *
+from engine.log import *
 
 import socket
 import threading

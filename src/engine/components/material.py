@@ -92,4 +92,10 @@ class Material:
     #?endif
 
 
+    def __eq__(self, value):
+        if isinstance(value, Material):
+            return self.texture_str == value.texture_str
+        return False
+
+
 
