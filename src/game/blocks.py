@@ -21,7 +21,8 @@ class Log(Actor):
         count=random.randint(3,5)
         LogName = f"log_{self.name}"
         LogEntity_ = LogEntity(LogName, self.position, count=count)
-        self.level_ref.register_actor(LogEntity_) 
+        self.level_ref.register_actor(LogEntity_)
+        self.engine_ref.play_sound("res/sounds/log_destroyed.mp3", self.level_ref.name, self.position, 8, 2)
         #print('wood iz log')
 
 class Leaf(Actor):
@@ -69,6 +70,8 @@ class Dirt(Actor):
         DirtName = f"dirt_{self.name}"
         dirt_entity = DirtEntity(DirtName, self.position, count=count)
         self.level_ref.register_actor(dirt_entity)
+        self.engine_ref.play_sound("res/sounds/dirt_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
+        
         #print('dirt iz dirta')
 
         chance=random.randint(1,4)
@@ -87,6 +90,7 @@ class Stone(Actor):
         StoneName = f"stone_{self.name}"
         stone_entity = StoneEntity(StoneName, self.position, count=count)
         self.level_ref.register_actor(stone_entity)
+        self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
         #print('rock iz stone')     
 
 class Coal(Actor):
@@ -103,7 +107,8 @@ class Coal(Actor):
         self.level_ref.register_actor(CoalEntity(self.name, self.position))  
         RockCoalName = f"rock_coal_{self.name}"
         RockCoalEntity = StoneEntity(RockCoalName, self.position, count=stone_count)
-        self.level_ref.register_actor(RockCoalEntity) 
+        self.level_ref.register_actor(RockCoalEntity)
+        self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
         #print("rock iz coala")  
 
 class Iron(Actor):
@@ -124,6 +129,7 @@ class Iron(Actor):
         RockIronName = f"rock_iron_{self.name}"
         RockIronEntity = StoneEntity(RockIronName, self.position, count=stone_count)
         self.level_ref.register_actor(RockIronEntity)
+        self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
         #print("rock iz irona")   
 
 class Gold(Actor):
@@ -143,7 +149,8 @@ class Gold(Actor):
 
         RockGoldName = f"rock_gold_{self.name}"
         RockGoldEntity = StoneEntity(RockGoldName, self.position, count=stone_count)
-        self.level_ref.register_actor(RockGoldEntity)  
+        self.level_ref.register_actor(RockGoldEntity)
+        self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
         #print("rock iz golda")  
 
 class DebugTunnel(Actor):
