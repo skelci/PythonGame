@@ -172,6 +172,7 @@ class TestPlayer(Character):
 def pick_me_up(self, other_actor):
         #print("pick me up")
         if isinstance(other_actor, Character):
+            self.engine_ref.play_sound("res/sounds/pick_up.mp3", self.level_ref.name, self.position, 4, 0.5)
             other_actor.add_to_inventory(self.__class__.__name__, self.count)
             self.level_ref.destroy_actor(self)
 
