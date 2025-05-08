@@ -191,6 +191,7 @@ class ClientGame(ClientGameBase):
         eng.add_actor_template(Iron)
         eng.add_actor_template(Gold)
         eng.add_actor_template(Diamond)
+        eng.add_actor_template(Furnace)
         eng.add_actor_template(DebugTunnel)
         eng.add_actor_template(GrassEntity)
         eng.add_actor_template(SandEntity)

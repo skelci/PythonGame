@@ -186,6 +186,19 @@ class Diamond(Actor):
         RockDiamondEntity = StoneEntity(RockDiamondName, self.position, count=stone_count)
         self.level_ref.register_actor(RockDiamondEntity)
         self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
+    
+class Furnace(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(1, 1), material = Material(0, 0, 0), collidable=False)
+        self.position = position
+    def on_destroyed(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        count = 4
+        StoneName = f"stone_{self.name}"
+        stone_entity = StoneEntity(StoneName, self.position, count=count)
+        self.level_ref.register_actor(stone_entity)
+        self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
 
 
 class DebugTunnel(Actor):
@@ -333,6 +346,17 @@ class DiamondEntity(Rigidbody):
     def on_overlap_begin(self, other_actor):
         pick_me_up(self, other_actor)
 
+class FurnaceEntity(Rigidbody):
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(0, 0, 0)), restitution=0, initial_velocity=Initial_velocity)                       
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
 class LeafEntity(Rigidbody):
     def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
@@ -343,3 +367,4 @@ class LeafEntity(Rigidbody):
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/leaf_entity.png"), restitution=0, initial_velocity=Initial_velocity)                       
     def on_overlap_begin(self, other_actor):
         pick_me_up(self, other_actor)
+

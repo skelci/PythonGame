@@ -67,7 +67,6 @@ class KeyHandler:
         level_ref.register_actor(diamond_entity)
         level_ref.register_actor(sand_entity)
 
-
 class ServerGame(ServerGameBase):
     def __init__(self):
         super().__init__()
