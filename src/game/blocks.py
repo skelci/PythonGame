@@ -33,6 +33,8 @@ class Leaf(Actor):
             return
         
         count=random.randint(0,5)
+        if count==0:
+            return
         StickName = f"stick_{self.name}"
         StickEntity_ = StickEntity(StickName, self.position, count=count)
         self.level_ref.register_actor(StickEntity_)
@@ -174,13 +176,15 @@ def pick_me_up(self, other_actor):
             other_actor.add_to_inventory(self.__class__.__name__, self.count)
             self.level_ref.destroy_actor(self)
 
+def initial_velocity():
+    angle = random.uniform(0,2*math.pi)
+    velocity_x = math.cos(angle) 
+    velocity_y = math.sin(angle)
+    return Vector(velocity_x, velocity_y)
 
 class LogEntity(Rigidbody):
     def __init__(self, name, position, count=1):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y) 
+        Initial_velocity = initial_velocity() 
         self.count = count
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/log_entity.png"), restitution=0, initial_velocity=Initial_velocity)   
     def on_overlap_begin(self, other_actor):
@@ -189,10 +193,7 @@ class LogEntity(Rigidbody):
 
 class StickEntity(Rigidbody):    
     def __init__(self, name, position, count=1):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
+        Initial_velocity = initial_velocity()
         self.count = count
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/stick_entity.png"), restitution=0, initial_velocity=Initial_velocity)           
     def on_overlap_begin(self, other_actor):
@@ -200,10 +201,7 @@ class StickEntity(Rigidbody):
 
 class DirtEntity(Rigidbody):        
     def __init__(self, name, position, count=1):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
+        Initial_velocity = initial_velocity()
         self.count = count
         #print(self.count)
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/dirt_entity.png"), restitution=0, initial_velocity=Initial_velocity)
@@ -212,10 +210,7 @@ class DirtEntity(Rigidbody):
 
 class GrassEntity(Rigidbody):        
     def __init__(self, name, position, count=1):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
+        Initial_velocity = initial_velocity()
         self.count = count
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(255, 0, 0)), restitution=0, initial_velocity=Initial_velocity)
     def on_overlap_begin(self, other_actor):
@@ -224,9 +219,7 @@ class GrassEntity(Rigidbody):
 class StoneEntity(Rigidbody):    
     def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
+        Initial_velocity = initial_velocity()
         self.count = count
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/stone_entity.png"), restitution=0, initial_velocity=Initial_velocity)
     def on_overlap_begin(self, other_actor):
@@ -234,10 +227,7 @@ class StoneEntity(Rigidbody):
 
 class CoalEntity(Rigidbody):    
     def __init__(self, name, position, count=1):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
+        Initial_velocity = initial_velocity()
         self.count = count
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/coal_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
     def on_overlap_begin(self, other_actor):
@@ -245,10 +235,7 @@ class CoalEntity(Rigidbody):
 
 class IronEntity(Rigidbody):    
     def __init__(self, name, position, count=1):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
+        Initial_velocity = initial_velocity()
         self.count = count
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/iron_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
     def on_overlap_begin(self, other_actor):
@@ -256,10 +243,7 @@ class IronEntity(Rigidbody):
 
 class GoldEntity(Rigidbody):    
     def __init__(self, name, position, count=1):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
+        Initial_velocity = initial_velocity()
         self.count = count
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/gold_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
     def on_overlap_begin(self, other_actor):
@@ -267,10 +251,7 @@ class GoldEntity(Rigidbody):
 
 class LeafEntity(Rigidbody):
     def __init__(self, name, position, count=1):
-        angle = random.uniform(0,2*math.pi)
-        velocity_x = math.cos(angle) 
-        velocity_y = math.sin(angle)
-        Initial_velocity = Vector(velocity_x, velocity_y)
+        Initial_velocity = initial_velocity()
         self.count = count
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/leaf_entity.png"), restitution=0, initial_velocity=Initial_velocity)                       
     def on_overlap_begin(self, other_actor):
