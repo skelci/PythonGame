@@ -53,6 +53,8 @@ class KeyHandler:
         log_entity = LogEntity("log_entity", Vector(-6, 26))
         stick_entity = StickEntity("stick_entity", Vector(-7, 26))
         leaf_entity = LeafEntity("leaf_entity", Vector(-8, 26))
+        diamond_entity = DiamondEntity("diamond_entity", Vector(-9, 26))
+        sand_entity = SandEntity("sand_entity", Vector(-10, 26))
 
         level_ref.register_actor(coal_entity)
         level_ref.register_actor(gold_entity)
@@ -62,7 +64,8 @@ class KeyHandler:
         level_ref.register_actor(log_entity)
         level_ref.register_actor(stick_entity)
         level_ref.register_actor(leaf_entity)
-
+        level_ref.register_actor(diamond_entity)
+        level_ref.register_actor(sand_entity)
 
 
 class ServerGame(ServerGameBase):
@@ -78,7 +81,7 @@ class ServerGame(ServerGameBase):
         self.ore_parameters = {
             "coal": {
                 "scale": 0.042,
-                "threshold": 0.76,
+                "threshold": 0.77,
                 "base": self.seed + 500,        
                 "min_depth": 10,
             },
@@ -93,6 +96,12 @@ class ServerGame(ServerGameBase):
                 "threshold": 0.8,
                 "base": self.seed + 1500,
                 "min_depth": 40,
+            },
+            "diamond": {
+                "scale": 0.055,
+                "threshold": 0.8,
+                "base": self.seed + 2000,
+                "min_depth": 10,
             }
         }
         
@@ -229,10 +238,10 @@ class ServerGame(ServerGameBase):
         for x_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
             pos_x = chunk_origin.x + x_pos
             terrain_height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=self.seed)
-            ground_levels.append(16 - math.floor(terrain_height_noise * 25))
+            ground_levels.append(16 - math.floor(terrain_height_noise * 20))
         
             dirt_height_noise = noise.pnoise1(pos_x * dirt_scale, repeat=9999999, base=self.seed)
-            dirt_levels.append(10 - math.floor(dirt_height_noise * 18))
+            dirt_levels.append(10 - math.floor(dirt_height_noise * 15))
 
         cave_scale_x = 0.02
         cave_scale_y = 0.025
@@ -334,6 +343,8 @@ class ServerGame(ServerGameBase):
                 new_actor = Gold(actor_name, Vector(pos[0], pos[1]))
             elif tile_type == "iron":
                 new_actor = Iron(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "diamond":
+                new_actor = Diamond(actor_name, Vector(pos[0], pos[1]))
             elif tile_type == "tunnel_debug":
                 new_actor = DebugTunnel(actor_name, Vector(pos[0], pos[1]))
             if new_actor is not None:

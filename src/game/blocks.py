@@ -58,6 +58,20 @@ class Grass(Actor):
         #print("entity dirt iz grasa")
         self.engine_ref.play_sound("res/sounds/grass_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
 
+class Sand(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(255, 255, 0)))
+        self.position = position
+    def on_destroyed(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        count=2
+        SandName = f"sand_{self.name}"
+        SandEntity= SandEntity(SandName, self.position, count=count)
+        self.level_ref.register_actor(SandEntity)
+        #print("entity sand iz sanda")
+        #self.engine_ref.play_sound("res/sounds/dirt_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
+
 class Dirt(Actor):
     def __init__(self, name, position):
         super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material("res/textures/dirt.png"))
@@ -77,7 +91,7 @@ class Dirt(Actor):
         chance=random.randint(1,4)
         if chance==1:
             self.level_ref.register_actor(StoneEntity(f"stone_{self.name}", self.position))
-            #print('stone iz dirta')    
+            #print('stone iz dirta') 
  
 class Stone(Actor):
     def __init__(self, name, position):
@@ -151,7 +165,28 @@ class Gold(Actor):
         RockGoldEntity = StoneEntity(RockGoldName, self.position, count=stone_count)
         self.level_ref.register_actor(RockGoldEntity)
         self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
-        #print("rock iz golda")  
+        #print("rock iz golda")
+
+class Diamond(Actor):
+    def __init__(self, name, position):
+        super().__init__(name, position = position, half_size = Vector(0.5, 0.5), material = Material(Color(0, 0, 255)))
+        self.position = position
+    def on_destroyed(self):
+        if self.engine_ref.__class__.__name__ == "ClientEngine":
+            return
+        
+        DiamondName = f"diamond_{self.name}"
+        DiamondEntity = DiamondEntity(DiamondName, self.position, count=1)
+        self.level_ref.register_actor(DiamondEntity) 
+
+        spawn_extra_stones = random.randint(1, 2)
+        stone_count = 3 if spawn_extra_stones == 1 else 2
+
+        RockDiamondName = f"rock_diamond_{self.name}"
+        RockDiamondEntity = StoneEntity(RockDiamondName, self.position, count=stone_count)
+        self.level_ref.register_actor(RockDiamondEntity)
+        self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
+
 
 class DebugTunnel(Actor):
     def __init__(self, name, position):
@@ -219,6 +254,19 @@ class DirtEntity(Rigidbody):
     def on_overlap_begin(self, other_actor):
         pick_me_up(self, other_actor)
 
+class SandEntity(Rigidbody):
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        #print(self.count)
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(255, 255, 0)), restitution=0, initial_velocity=Initial_velocity)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
+
 class GrassEntity(Rigidbody):        
     def __init__(self, name, position, count=1):
         angle = random.uniform(0,2*math.pi)
@@ -271,6 +319,17 @@ class GoldEntity(Rigidbody):
         Initial_velocity = Vector(velocity_x, velocity_y)
         self.count = count
         super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material("res/textures/gold_ore_entity.png"), restitution=0, initial_velocity=Initial_velocity)
+    def on_overlap_begin(self, other_actor):
+        pick_me_up(self, other_actor)
+
+class DiamondEntity(Rigidbody):    
+    def __init__(self, name, position, count=1):
+        angle = random.uniform(0,2*math.pi)
+        velocity_x = math.cos(angle) 
+        velocity_y = math.sin(angle)
+        Initial_velocity = Vector(velocity_x, velocity_y)
+        self.count = count
+        super().__init__(name, position=position, half_size=Vector(0.25, 0.25), collidable=False, material=Material(Color(0, 0, 255)), restitution=0, initial_velocity=Initial_velocity)
     def on_overlap_begin(self, other_actor):
         pick_me_up(self, other_actor)
 
