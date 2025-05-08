@@ -231,7 +231,7 @@ class ServerGame(ServerGameBase):
     def generate_chunk(self, x, y):
         chunk_origin = Vector(x, y) * TERRAIN_GENERATION_CHUNK_SIZE
         terrain_scale = 0.03
-        dirt_scale = 0.02
+        dirt_scale = 0.03
         
         dirt_levels = []
         ground_levels = []
