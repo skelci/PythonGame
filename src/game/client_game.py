@@ -1,22 +1,22 @@
 #?attr CLIENT
 
-from engine.game_base import ClientGameBase
+from engine.core.game_base import ClientGameBase
 
-from components.datatypes import *
-from components.border import Border
-from components.text import Text
-from components.button import Button
-from components.input_box import InputBox
-from components.widget import Widget
-from components.background import Background, BackgroundLayer
-from components.icon import Icon
+from engine.datatypes import *
+from engine.components.ui.border import Border
+from engine.components.ui.text import Text
+from engine.components.ui.button import Button
+from engine.components.ui.input_box import InputBox
+from engine.components.ui.widget import Widget
+from engine.components.ui.icon import Icon
+from engine.components.background import Background, BackgroundLayer
 
 from .blocks import *
 
 
 
 CAMERA_OFFSET_X = 0
-CAMERA_OFFSET_Y = 1
+CAMERA_OFFSET_Y = 0
 
 
 

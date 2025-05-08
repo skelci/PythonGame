@@ -1,9 +1,9 @@
 #?attr SERVER
 
-from engine.game_base import ServerGameBase
+from engine.core.game_base import ServerGameBase
 
-from components.level import Level
-from components.game_math import *
+from engine.components.level import Level
+from engine.game_math import *
 
 from .blocks import *
 from .tunnel_generator import TunnelGenerator
@@ -221,15 +221,18 @@ class ServerGame(ServerGameBase):
 
     def generate_chunk(self, x, y):
         chunk_origin = Vector(x, y) * TERRAIN_GENERATION_CHUNK_SIZE
-        terrain_scale = 0.02
+        terrain_scale = 0.03
+        dirt_scale = 0.02
         
-        
+        dirt_levels = []
         ground_levels = []
         for x_pos in range(TERRAIN_GENERATION_CHUNK_SIZE):
             pos_x = chunk_origin.x + x_pos
-            height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=self.seed)
-            ground_levels.append(16 - math.floor(height_noise * 15))
-           
+            terrain_height_noise = noise.pnoise1(pos_x * terrain_scale, repeat=9999999, base=self.seed)
+            ground_levels.append(16 - math.floor(terrain_height_noise * 25))
+        
+            dirt_height_noise = noise.pnoise1(pos_x * dirt_scale, repeat=9999999, base=self.seed)
+            dirt_levels.append(10 - math.floor(dirt_height_noise * 18))
 
         cave_scale_x = 0.02
         cave_scale_y = 0.025
@@ -272,6 +275,7 @@ class ServerGame(ServerGameBase):
 
                 pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
                 ground_level = ground_levels[x_pos]
+                dirt_level = dirt_levels[x_pos]
                 if any(block[0] == (pos.x, pos.y) for block in chunk_data):
                     continue
 
@@ -281,9 +285,9 @@ class ServerGame(ServerGameBase):
                     self.tree_generation(self, chunk_origin,ground_level, pos, tree_threshold, tree_positions, chunk_data)
                     chunk_data.append([(pos.x, pos.y), "grass"])
                     
-                elif pos.y < ground_level and pos.y > ground_level - 5:
+                elif pos.y < ground_level and pos.y > dirt_level:
                     chunk_data.append([(pos.x, pos.y), "dirt"])
-                elif pos.y <= ground_level - 5: 
+                elif pos.y <= dirt_level: 
                     chunk_data.append([(pos.x, pos.y), "stone"])
 
         return chunk_data

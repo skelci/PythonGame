@@ -4,8 +4,8 @@ This module defines the Character class, which is used to create a character obj
 
 from .rigidbody import Rigidbody
 
-from .datatypes import *
-from .material import Material
+from engine.datatypes import *
+from engine.components.material import Material
 
 
 

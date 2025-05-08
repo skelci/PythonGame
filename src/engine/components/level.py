@@ -2,12 +2,13 @@
 This module contains the Level class, which is used to create a level in the game.
 """
 
-from .datatypes import *
-from .actor import Actor
+from engine.datatypes import *
+from engine.components.actors.actor import Actor
 from .background import Background
-from .rigidbody import Rigidbody
-from .character import Character
-from .game_math import *
+from engine.components.actors.rigidbody import Rigidbody
+from engine.components.actors.character import Character
+from engine.game_math import *
+
 import warnings
 
 
@@ -88,7 +89,6 @@ class Level:
         if issubclass(value, Character):
             self.__default_character = value
         else:
-            print(value.__class__)
             raise TypeError("Default character must be a subclass of Character:", value)
 
 
@@ -216,7 +216,7 @@ class Level:
                 break
 
         if not was_found:
-            warnings.warn(f"Actor not found in level while destroying it: {name}", UserWarning, 3)
+            warnings.warn(f"Actor not found in level {self.name} while destroying it: {name}", UserWarning, 4)
 
 
     def get_new_actors(self):
@@ -229,6 +229,9 @@ class Level:
         for actor in actors_to_create:
             actor.engine_ref = self.engine_ref
             actor.level_ref = self
+            if actor.name in self.actors:
+                warnings.warn(f"Actor with the same name already exists in level {self.name}: {actor.name}", UserWarning, 4)
+                continue
             self.actors[actor.name] = actor
             if isinstance(actor, Rigidbody):
                 self.rigidbodies.add(actor)
@@ -292,6 +295,19 @@ class Level:
         actor.chunk = chunk
 
 
+    def update_actor_chunk(self, actor: Actor):
+        """
+        You should call this function if you move an actor which is not a Rigidbody.
+        Args:
+            actor: Actor to update the chunk for.
+        """
+        chk = get_chunk_cords(actor.position)
+        a_chk = actor.chunk
+        if a_chk.x != chk.x or a_chk.y != chk.y:
+            self.chunks[a_chk].remove(actor)
+            self.add_actor_to_chunk(actor)
+
+
     #?ifdef SERVER
     def get_updates(self, players):
         """
@@ -339,19 +355,6 @@ class Level:
                     chunks.add(previous_chunk_pos)
 
         return chunks
-
-
-    def update_actor_chunk(self, actor: Actor):
-        """
-        You should call this function if you move an actor which is not a Rigidbody.
-        Args:
-            actor: Actor to update the chunk for.
-        """
-        chk = get_chunk_cords(actor.position)
-        a_chk = actor.chunk
-        if a_chk.x != chk.x or a_chk.y != chk.y:
-            self.chunks[a_chk].remove(actor)
-            self.add_actor_to_chunk(actor)
         
 
     def tick(self, delta_time: float):
@@ -392,27 +395,27 @@ class Level:
 
                     collisions_not_resolved = True
 
-                    if actor1.name not in corrected_actors:
-                        corrected_actors[actor1.name] = Vector(0, 0)
-                    corrected_actors[actor1.name] += direction
+                    if actor1 not in corrected_actors:
+                        corrected_actors[actor1] = Vector(0, 0)
+                    corrected_actors[actor1] += direction
 
                     if actor1.name not in collided_actors:
-                        collided_actors[actor1.name] = [None, Vector(0, 0)]
-                    collided_actors[actor1.name][0] = CollisionData( direction.normalized, actor2.velocity if hasattr(actor2, "velocity") else Vector(0, 0), actor2.restitution, actor2.mass if hasattr(actor2, "mass") else float("inf"), actor2)
+                        collided_actors[actor1] = [None, Vector(0, 0)]
+                    collided_actors[actor1][0] = CollisionData( direction.normalized, actor2.velocity if hasattr(actor2, "velocity") else Vector(0, 0), actor2.restitution, actor2.mass if hasattr(actor2, "mass") else float("inf"), actor2)
                     if actor2.name not in collided_actors:
-                        collided_actors[actor2.name] = [None, Vector(0, 0)]
-                    collided_actors[actor2.name][0] = CollisionData(-direction.normalized, actor1.velocity, actor1.restitution, actor1.mass, actor1)
+                        collided_actors[actor2] = [None, Vector(0, 0)]
+                    collided_actors[actor2][0] = CollisionData(-direction.normalized, actor1.velocity, actor1.restitution, actor1.mass, actor1)
 
-                    collided_actors[actor1.name][1] += direction
+                    collided_actors[actor1][1] += direction
 
-            for name, direction in corrected_actors.items():
-                self.actors[name].position += direction
+            for actor, direction in corrected_actors.items():
+                actor.position += direction
 
             max_iterations -= 1
 
-        for name in collided_actors:
-            collided_actors[name][0].normal = collided_actors[name][1].normalized
-            self.actors[name].on_collision(collided_actors[name][0])
+        for actor, collision_data in collided_actors.items():
+            collision_data[0].normal = collision_data[1].normalized
+            actor.on_collision(collision_data[0])
 
         for actor in self.rigidbodies:
             self.update_actor_chunk(actor)
@@ -426,7 +429,8 @@ class Level:
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                 if not_should_colide_with(actor1, actor2):
                     continue
-
+                
+                was_outdated = actor1.outdated["half_size"]
                 actor1.half_size += KINDA_SMALL_NUMBER
                 direction = actor1.collision_response_direction(actor2)
 
@@ -440,12 +444,14 @@ class Level:
                 if direction.y > 0:
                     collided_actors_directions[actor1][3] = 1
                 actor1.half_size -= KINDA_SMALL_NUMBER
+                actor1.outdated["half_size"] = was_outdated
 
-        for name, direction in collided_actors_directions.items():
-            actor.collided_sides = direction
+        for actor, collided_sides in collided_actors_directions.items():
+            actor.collided_sides = collided_sides
 
         overlaped_actors = {}
         for actor1 in self.__actors_with_overlap_events:
+            was_outdated = actor1.outdated["half_size"]
             actor1.half_size += KINDA_SMALL_NUMBER
             for actor2 in self.get_actors_in_chunks_3x3(get_chunk_cords(actor1.position)):
                 if actor1 is actor2 or not is_overlapping_rect(actor1, actor2):
@@ -456,6 +462,7 @@ class Level:
                 overlaped_actors[actor2].add(actor1)
 
             actor1.half_size -= KINDA_SMALL_NUMBER
+            actor1.outdated["half_size"] = was_outdated
 
         for actor, overlaped_set in overlaped_actors.items():
             for other_actor in overlaped_set - self.__previously_collided.get(actor, set()):

@@ -1,4 +1,4 @@
 """
-Game engine module for the game.
+This module contains the engine for the game.
 """
 

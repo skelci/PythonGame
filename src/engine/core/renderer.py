@@ -4,10 +4,12 @@
 Renderer module for the game engine.
 """
 
-from components.datatypes import *
-from components.actor import Actor
-from components.widget import Widget
-from components.background import Background
+from engine.log import log_client as log
+from engine.log import LogType
+from engine.datatypes import *
+from engine.components.actors.actor import Actor
+from engine.components.ui.widget import Widget
+from engine.components.background import Background
 
 import pygame
 
@@ -45,8 +47,7 @@ class Renderer:
         self.__actors_to_draw = {}
         self.__widgets_to_draw = []
 
-        print("[Client] Renderer initialized")
-
+        log("Renderer initialized", LogType.INFO)
 
     @property
     def resolution(self):

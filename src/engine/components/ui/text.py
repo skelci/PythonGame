@@ -5,7 +5,7 @@ This module contains the Text class, which is used to create a text widget.
 """
 
 from .widget import Widget
-from .datatypes import *
+from engine.datatypes import *
 
 import os
 import pygame

@@ -4,6 +4,9 @@
 Console module for the engine.
 """
 
+from engine.log import log_server as log
+from engine.log import LogType
+
 
 
 class Console:
@@ -35,7 +38,7 @@ class Console:
             "stat_all": "for stat in ('tps', 'console_cmds', 'level_updates', 'network'):\n\tprint(stat + ': ' + self.get_stat(stat))",
         }
 
-        print("[Server] Console initialized.")
+        log("Console initialized", LogType.INFO)
 
 
     @property
@@ -119,7 +122,7 @@ class Console:
                     context[f"arg{idx}"] = arg
             try:
                 py_cmd = eval(f"f'''{template}'''", {}, context)
-            except TypeError as e:
+            except TypeError:
                 print("Insufised param count")
 
         else:

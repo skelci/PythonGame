@@ -2,7 +2,7 @@
 This module contains the Material class, which is used to create a material for rendering.
 """
 
-from .datatypes import *
+from engine.datatypes import *
 
 #?ifdef CLIENT
 import pygame
@@ -67,16 +67,13 @@ class Material:
             self.__scaled_textures[self.texture_str] = {}
             return
         
-        if os.path.isfile(self.texture_str):
-            image = pygame.image.load(self.texture_str)
-            if image.get_alpha() is None:
-                image = image.convert()
-            else:
-                image = image.convert_alpha()
-            self.__textures[self.texture_str] = image                
-            self.__scaled_textures[self.texture_str] = {}
+        image = pygame.image.load(self.texture_str)
+        if image.get_alpha() is None:
+            image = image.convert()
         else:
-            print("Texture file not found:", self.texture_str)
+            image = image.convert_alpha()
+        self.__textures[self.texture_str] = image                
+        self.__scaled_textures[self.texture_str] = {}            
 
 
     def get_surface(self, size: Vector) -> pygame.Surface:
@@ -93,6 +90,12 @@ class Material:
         return self.__scaled_textures[self.texture_str][size]
     
     #?endif
+
+
+    def __eq__(self, value):
+        if isinstance(value, Material):
+            return self.texture_str == value.texture_str
+        return False
 
 
 

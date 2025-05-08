@@ -13,20 +13,21 @@ from .console import Console
 from .builder import *
 #?endif
 from .network import *
+from engine.log import *
 
 #?ifdef CLIENT
-from components.button import Button
-from components.input_box import InputBox
-from components.text import Text
-from components.widget import Widget
+from engine.components.ui.button import Button
+from engine.components.ui.input_box import InputBox
+from engine.components.ui.text import Text
+from engine.components.ui.widget import Widget
 #?endif
-from components.actor import Actor
-from components.rigidbody import Rigidbody
-from components.character import Character
-from components.background import Background
-from components.level import Level
-from components.datatypes import *
-from components.game_math import *
+from engine.components.actors.actor import Actor
+from engine.components.actors.rigidbody import Rigidbody
+from engine.components.actors.character import Character
+from engine.components.background import Background
+from engine.components.level import Level
+from engine.datatypes import *
+from engine.game_math import *
 
 #?ifdef CLIENT
 import pygame
@@ -70,7 +71,17 @@ class Engine(ABC):
     def stop(self):
         """ Stop the engine. It will stop the main loop and end all threads. """
         self.__running = False
-
+        if self.network:
+            self.network.stop()
+        #?ifdef CLIENT
+        log_client("Engine stopped", LogType.INFO)
+        #?endif
+        #?ifdef ENGINE
+        return
+        #?endif
+        #?ifdef SERVER
+        log_server("Engine stopped", LogType.INFO)
+        #?endif
 
 
 
@@ -138,6 +149,7 @@ class ClientEngine(Engine, Renderer):
             "update_actor": self.__update_actor,
             "destroy_actor": self.__destroy_actor,
             "background": self.__background,
+            "play_sound": self.__play_sound,
         }
 
         network_thread = threading.Thread(target=self.__handle_network)
@@ -151,6 +163,7 @@ class ClientEngine(Engine, Renderer):
         }
         
         pygame.init()
+        pygame.mixer.init(channels=16)
 
         self.__clock = pygame.time.Clock()
         self.__world_mouse_pos = Vector()
@@ -175,7 +188,7 @@ class ClientEngine(Engine, Renderer):
         self.register_widget(InfoText("widget_render",  6, "widget render: "))
         self.register_widget(InfoText("network",        7, "network: "))
 
-        print("[Client] Engine initialized")
+        log_client("Engine initialized", LogType.INFO)
 
 
     @property
@@ -363,6 +376,45 @@ class ClientEngine(Engine, Renderer):
         self.network.send("update_distance", self.__update_distance)
 
 
+    def play_sound(self, sound: str, location: Vector | None, distance: float, volume: float = 1.0):
+        """
+        Plays sound on the client. It is used to play sound effects.
+        Args:
+            sound: Sound file path.
+            location: Sound location in world coordinates. If None, sound will be played as global sound.
+            distance: Maximum distance from the sound source to the listener.
+            volume: Sound volume. Must be between 0 and 1.
+        """
+        if location is None:
+            sound_obj = pygame.mixer.Sound(sound)
+            sound_obj.set_volume(volume)
+            sound_obj.play()
+            return
+        
+        direction = location - self.camera_position
+        actual_distance = direction.length
+        volume = volume * math.sqrt(clamp((distance - actual_distance) / distance))
+
+        if volume > 0:
+            sound_obj = pygame.mixer.Sound(sound)
+
+            dx = direction.normalized.x 
+            pan_inc = 1 - abs(dx)
+            pan = (dx + 1) / 2
+
+            dy = direction.normalized.y
+            vertical_factor = 0.8 + (dy * 0.2)
+            
+            volume *= vertical_factor
+            
+            left_vol = volume * (1 - pan + pan_inc)
+            right_vol = volume * (pan + pan_inc)
+            
+            channel = pygame.mixer.find_channel(True)
+            channel.set_volume(left_vol, right_vol)
+            channel.play(sound_obj)
+
+
     def set_camera_width(self, width: float):
         """
         Sets the camera width.
@@ -478,7 +530,7 @@ class ClientEngine(Engine, Renderer):
                 if cmd in self.__network_commands:
                     self.__network_commands[cmd](data)
                 else:
-                    print(f"[Client] Unknown network request: {cmd}")
+                    log_client(f"Unknown command {cmd} from server", LogType.WARNING)
     
 
     def __update_mouse_pos(self, screen_pos):
@@ -487,7 +539,7 @@ class ClientEngine(Engine, Renderer):
             scr_world_pos = screen_pos - self.resolution / 2
             scr_world_pos.y = -scr_world_pos.y
             world_mouse_pos = scr_world_pos * self.camera_width / self.resolution.x + self.camera_position
-            self.network.send("world_mouse_pos", world_mouse_pos)
+            self.network.send("world_mouse_pos", world_mouse_pos, True)
 
 
     def __handle_events(self):
@@ -497,8 +549,6 @@ class ClientEngine(Engine, Renderer):
             match event.type:
                 case pygame.QUIT:
                     self.stop()
-                    if self.network:
-                        self.network.stop()
 
                 case pygame.MOUSEBUTTONDOWN:
                     self.__pressed_keys.add(Keys(event.button))
@@ -554,11 +604,7 @@ class ClientEngine(Engine, Renderer):
 
             if "position" not in data[1]:
                 return
-            chk = get_chunk_cords(actor.position)
-            a_chk = actor.chunk
-            if a_chk.x != chk.x or a_chk.y != chk.y:
-                self.level.chunks[a_chk].remove(actor)
-                self.level.add_actor_to_chunk(actor)
+            self.level.update_actor_chunk(actor)
 
 
     def __destroy_actor(self, data):
@@ -567,6 +613,10 @@ class ClientEngine(Engine, Renderer):
 
     def __background(self, data):
         self.current_background = data
+
+
+    def __play_sound(self, data):
+        self.play_sound(*data)
 
 #?endif
 
@@ -649,7 +699,7 @@ class ServerEngine(Engine):
 
         self.__clock = TPS(self.max_tps)
 
-        print("[Server] Engine initialized")
+        log_server("Engine initialized", LogType.INFO)
 
 
     @property
@@ -759,6 +809,25 @@ class ServerEngine(Engine):
             max_connections: Maximum number of connections. It must be a positive integer.
         """
         self.__network = ServerNetwork(address, port, max_connections, self.__on_player_connect, self.__on_player_disconnect)
+
+
+    def play_sound(self, sound: str, level: str, location: Vector | None, distance: float, volume: float = 1.0):
+        """
+        Sends to client to play sound.
+        Args:
+            sound: Sound file path.
+            level: Name of the level where the sound will be played.
+            location: Sound location in world coordinates. If None, sound will be played as global sound.
+            distance: Maximum distance from the sound source to the listener.
+            volume: Sound volume. Must be between 0 and 1.
+        """
+        for player_id, player in self.__players.items():
+            if player.level != level:
+                continue
+            if distance < self.levels[level].actors[self.get_player_actor(player_id)].position.distance_to(location):
+                continue
+
+            self.network.send(player_id, "play_sound", (sound, location, distance, volume), True)
 
 
     def get_stat(self, stat_name: str):
@@ -948,7 +1017,7 @@ class ServerEngine(Engine):
             self.__players[id].triggered_keys.clear()
 
         if not self.network:
-            print("[Server] You forgot to call start_network")
+            log_server("Network is not initialized", LogType.ERROR)
             return
         
         self.__players.update(self.__new_players)
@@ -970,7 +1039,7 @@ class ServerEngine(Engine):
             if cmd in self.__network_commands:
                 self.__network_commands[cmd](id, data)
             else:
-                print(f"[Server] Unknown network request: {cmd}")
+                log_server(f"Unknown command {cmd} from client {id}", LogType.WARNING)
         
         self.__destroyed_players.clear()
 
@@ -1010,7 +1079,7 @@ class ServerEngine(Engine):
             self.__players[id].previous_different_chunk = self.__players[id].previous_chunk
             self.on_connect(id)
         else:
-            print(f"Level {level_name} not found")
+            log_server(f"Client {id} tried to join non-existing level {level_name}", LogType.WARNING)
 
 
     def __world_mouse_pos(self, id, data):

@@ -4,6 +4,9 @@
 Preprocessor for building and packaging server and client files.
 """
 
+from engine.log import log_engine as log
+from engine.log import LogType
+
 from enum import IntEnum
 import os
 import shutil
@@ -99,7 +102,7 @@ class Builder:
 
     def build_server(self):
         """ Builds and packages the server files. """
-        print("[Engine] Building server...")
+        log("Building server...", LogType.INFO)
         build_start = time.time()
 
         for folder in self.server_folders:
@@ -122,12 +125,12 @@ class Builder:
         with open(self.package_dir + "/server/run.bat", "w") as f:
             f.write(self.__run_script)
 
-        print(f"[Engine] Server built in {time.time() - build_start:.3f} seconds.")
+        log(f"Server built in {time.time() - build_start:.3f} seconds.", LogType.INFO)
 
 
     def build_client(self):
         """ Builds and packages the client files. """
-        print("[Engine] Building client...")
+        log("Building client...", LogType.INFO)
         build_start = time.time()
 
         for folder in self.client_folders:
@@ -150,7 +153,7 @@ class Builder:
         with open(self.package_dir + "/client/run.bat", "w") as f:
             f.write(self.__run_script)
 
-        print(f"[Engine] Client built in {time.time() - build_start:.3f} seconds")
+        log(f"Client built in {time.time() - build_start:.3f} seconds.", LogType.INFO)
 
 
     def clear_build(self, build_type = BuildType.COMBINED):
@@ -184,7 +187,7 @@ class Builder:
         if lines[0].startswith("#?attr"):
             attr = lines[0][7:].strip()
             if attr not in ("ENGINE", "SERVER", "CLIENT"):
-                print("[Engine] Invalid attribute:", file, ":", attr)
+                log(f"Invalid attribute in file {f}: {attr}", LogType.ERROR) 
                 return
 
             if attr == "ENGINE":
@@ -207,7 +210,7 @@ class Builder:
             if line.strip().startswith("#?"):
                 line = line.strip()
                 if len(line) < 7:
-                    print("[Engine] Invalid line:", file, ":", line)
+                    log(f"Invalid preprocessor directive in file {f}: {line}", LogType.ERROR)
                     continue
 
                 if build_type == BuildType.SERVER:

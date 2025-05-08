@@ -2,8 +2,8 @@
 This module contains the Background and BackgroundLayer classes.
 """
 
-from .datatypes import *
-from .material import Material
+from engine.datatypes import *
+from engine.components.material import Material
 
 #?ifdef CLIENT
 import pygame

@@ -1,8 +1,8 @@
-from components.datatypes import *
-from components.actor import Actor
-from components.character import Character
-from components.rigidbody import Rigidbody
-from components.material import Material
+from engine.datatypes import *
+from engine.components.actors.actor import Actor
+from engine.components.actors.character import Character
+from engine.components.actors.rigidbody import Rigidbody
+from engine.components.material import Material
 
 import random
 
@@ -21,7 +21,8 @@ class Log(Actor):
         count=random.randint(3,5)
         LogName = f"log_{self.name}"
         LogEntity_ = LogEntity(LogName, self.position, count=count)
-        self.level_ref.register_actor(LogEntity_) 
+        self.level_ref.register_actor(LogEntity_)
+        self.engine_ref.play_sound("res/sounds/log_destroyed.mp3", self.level_ref.name, self.position, 8, 2)
         #print('wood iz log')
 
 class Leaf(Actor):
@@ -57,6 +58,7 @@ class Grass(Actor):
         GrassDirtEntity= DirtEntity(GrassDirtName, self.position, count=count)
         self.level_ref.register_actor(GrassDirtEntity)
         #print("entity dirt iz grasa")
+        self.engine_ref.play_sound("res/sounds/grass_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
 
 class Dirt(Actor):
     def __init__(self, name, position):
@@ -70,11 +72,13 @@ class Dirt(Actor):
         DirtName = f"dirt_{self.name}"
         dirt_entity = DirtEntity(DirtName, self.position, count=count)
         self.level_ref.register_actor(dirt_entity)
+        self.engine_ref.play_sound("res/sounds/dirt_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
+        
         #print('dirt iz dirta')
 
         chance=random.randint(1,4)
         if chance==1:
-            self.level_ref.register_actor(StoneEntity(self.name, self.position))
+            self.level_ref.register_actor(StoneEntity(f"stone_{self.name}", self.position))
             #print('stone iz dirta')    
  
 class Stone(Actor):
@@ -88,6 +92,7 @@ class Stone(Actor):
         StoneName = f"stone_{self.name}"
         stone_entity = StoneEntity(StoneName, self.position, count=count)
         self.level_ref.register_actor(stone_entity)
+        self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
         #print('rock iz stone')     
 
 class Coal(Actor):
@@ -104,7 +109,8 @@ class Coal(Actor):
         self.level_ref.register_actor(CoalEntity(self.name, self.position))  
         RockCoalName = f"rock_coal_{self.name}"
         RockCoalEntity = StoneEntity(RockCoalName, self.position, count=stone_count)
-        self.level_ref.register_actor(RockCoalEntity) 
+        self.level_ref.register_actor(RockCoalEntity)
+        self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
         #print("rock iz coala")  
 
 class Iron(Actor):
@@ -125,6 +131,7 @@ class Iron(Actor):
         RockIronName = f"rock_iron_{self.name}"
         RockIronEntity = StoneEntity(RockIronName, self.position, count=stone_count)
         self.level_ref.register_actor(RockIronEntity)
+        self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
         #print("rock iz irona")   
 
 class Gold(Actor):
@@ -144,7 +151,8 @@ class Gold(Actor):
 
         RockGoldName = f"rock_gold_{self.name}"
         RockGoldEntity = StoneEntity(RockGoldName, self.position, count=stone_count)
-        self.level_ref.register_actor(RockGoldEntity)  
+        self.level_ref.register_actor(RockGoldEntity)
+        self.engine_ref.play_sound("res/sounds/stone_destroyed.mp3", self.level_ref.name, self.position, 8, 1)
         #print("rock iz golda")  
 
 class DebugTunnel(Actor):
@@ -173,6 +181,7 @@ class TestPlayer(Character):
 def pick_me_up(self, other_actor):
         #print("pick me up")
         if isinstance(other_actor, Character):
+            self.engine_ref.play_sound("res/sounds/pick_up.mp3", self.level_ref.name, self.position, 4, 0.5)
             other_actor.add_to_inventory(self.__class__.__name__, self.count)
             self.level_ref.destroy_actor(self)
 

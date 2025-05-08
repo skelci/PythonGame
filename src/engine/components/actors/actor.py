@@ -2,8 +2,8 @@
 This module contains the Actor class, which is used to create an objects inside the level.
 """
 
-from .datatypes import *
-from .material import Material
+from engine.datatypes import *
+from engine.components.material import Material
 
 
 class Actor:
@@ -31,6 +31,10 @@ class Actor:
             "visible": False,
             "material": False,
         }
+        self.__half_size = None
+        self.__position = None
+        self.__visible = None
+        self.__material = None
 
         self.__engine_ref = None
         self.__level_ref = None
@@ -46,9 +50,8 @@ class Actor:
 
         self.previously_collided = set()
 
-        for k, v in self.__outdated.items():
-            if v:
-                self.__outdated[k] = False
+        for k in self.__outdated:
+            self.__outdated[k] = False
 
 
 
@@ -227,6 +230,12 @@ class Actor:
     
 
     #?ifdef SERVER
+    @property
+    def outdated(self):
+        """ dict - Dictionary of all outdated data. """
+        return self.__outdated
+
+
     def get_for_net_sync(self):
         """ Called only by the engine. This function is used to get the actor data which changed and needs to be synced with the client. """
         out = {}
@@ -297,7 +306,7 @@ class Actor:
     
 
     def __repr__(self):
-        return f"Actor({self.name})"
+        return f"{self.__class__.__name__}({self.name})"
     
 
     def __hash__(self):
