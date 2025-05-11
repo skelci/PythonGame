@@ -17,6 +17,7 @@ def register_actor_templates(engine_ref):
     eng.register_actor_template(LeafBlock)
     eng.register_actor_template(GrassBlock)
     eng.register_actor_template(Grass)
+    eng.register_actor_template(Seed)
     eng.register_actor_template(Sand)
     eng.register_actor_template(Dirt)
     eng.register_actor_template(Stone)
@@ -45,7 +46,7 @@ class Player(Character):
         
 
     def add_to_inventory(self, item_name, count):
-        if len(self.inventory) > 10:
+        if len(self.inventory) >= 10 and item_name not in self.inventory:
             return False
         
         if item_name in self.inventory:
@@ -117,7 +118,7 @@ class GrassBlock(WorldBlock):
 
 class Grass(WorldBlock):
     def __init__(self, name, position):
-        super().__init__(name, position, 2, "grass.png", False, render_layer=15)
+        super().__init__(name, position, 0.5, "grass.png", False, render_layer=15)
 
     def on_destroyed(self):
         super().on_destroyed({Seed: (4, 5)}, "grass_destroyed.mp3")
@@ -128,7 +129,7 @@ class Sand(WorldBlock):
         super().__init__(name, position, 2, "sand.png")
 
     def on_destroyed(self):
-        super().on_destroyed({Sand: (1, 1)}, "sand_destroyed.mp3")
+        super().on_destroyed({Sand: (3, 6)}, "sand_destroyed.mp3")
 
 
 class Dirt(WorldBlock):
@@ -197,12 +198,14 @@ class Entity(Rigidbody, ABC):
 
 
     def on_overlap_begin(self, other_actor):
-        if isinstance(other_actor, Player):
-            if not other_actor.add_to_inventory(self.__class__.__name__, self.count):
-                return
-            self.engine_ref.play_sound("res/sounds/pick_up.mp3", self.level_ref.name, self.position, 4, 0.5)
-            self.level_ref.destroy_actor(self)
+        if not isinstance(other_actor, Player):
+            return
+        if not other_actor.add_to_inventory(self.__class__.__name__, self.count):
+            return
         
+        self.engine_ref.play_sound("res/sounds/pick_up.mp3", self.level_ref.name, self.position, 4, 0.5)
+        self.level_ref.destroy_actor(self)
+    
 
 
 class Wood(Entity):
