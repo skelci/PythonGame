@@ -36,8 +36,10 @@ class Renderer:
         self.__screen = None
         self.__fullscreen = False
         self.__windowed = True
+        self.__resizeable = True
 
         self.resolution = Vector(width, height)
+
         self.title = title
         self.camera_width = camera_width
         self.fullscreen = fullscreen
@@ -49,6 +51,18 @@ class Renderer:
 
         log("Renderer initialized", LogType.INFO)
 
+
+    @property
+    def window_flags(self):
+        """ int - The window flags used to create the display. This value is used to set the display mode. """
+        return (
+            pygame.FULLSCREEN if self.fullscreen else 0 |
+            pygame.NOFRAME if not self.windowed else 0 |
+            pygame.RESIZABLE if self.__resizeable else 0 |
+            pygame.DOUBLEBUF | pygame.HWSURFACE
+        )
+
+
     @property
     def resolution(self):
         """ Vector - The window dimensions represented as a vector (width, height). This value is used to set the display mode. """
@@ -59,10 +73,8 @@ class Renderer:
     def resolution(self, value):
         if isinstance(value, Vector) and value.x > 0 and value.y > 0:
             self.__resolution = value
-            self.__screen = pygame.display.set_mode((value.x, value.y),
-                                                    pygame.FULLSCREEN if self.fullscreen else 0 |
-                                                    pygame.NOFRAME if not self.windowed else 0 |
-                                                    pygame.DOUBLEBUF | pygame.HWSURFACE)
+            self.__previous_ressolution = value
+            self.__screen = pygame.display.set_mode((value.x, value.y), self.window_flags)
         else:
             raise TypeError("Width must be a positive integer:", value)
         
@@ -120,11 +132,11 @@ class Renderer:
     def fullscreen(self, value):
         if isinstance(value, bool):
             self.__fullscreen = value
-            self.__resolution = Vector(pygame.display.Info().current_w, pygame.display.Info().current_h) if value else self.resolution
-            self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y),
-                                                    pygame.FULLSCREEN if value else 0 |
-                                                    pygame.NOFRAME if not self.windowed else 0 |
-                                                    pygame.DOUBLEBUF | pygame.HWSURFACE)
+            res = (0, 0)
+            if not value:
+                res = self.__previous_ressolution.tuple
+            self.__screen = pygame.display.set_mode(res, self.window_flags)
+            self.__resolution = Vector(pygame.display.Info().current_w, pygame.display.Info().current_h) if value else self.__previous_ressolution
         else:
             raise TypeError("Fullscreen must be a bool:", value)
         
@@ -139,12 +151,24 @@ class Renderer:
     def windowed(self, value):
         if isinstance(value, bool):
             self.__windowed = value
-            self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y),
-                                                    pygame.FULLSCREEN if self.fullscreen else 0 |
-                                                    pygame.NOFRAME if not value else 0 |
-                                                    pygame.DOUBLEBUF | pygame.HWSURFACE)
+            self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y), self.window_flags)
         else:
             raise TypeError("Windowed must be a bool:", value)
+        
+
+    @property
+    def resizeable(self):
+        """ bool - Indicates whether the display is resizeable. If True, the window can be resized. """
+        return self.__resizeable
+    
+
+    @resizeable.setter
+    def resizeable(self, value):
+        if isinstance(value, bool):
+            self.__resizeable = value
+            self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y), self.window_flags)
+        else:
+            raise TypeError("Resizeable must be a bool:", value)
         
 
     @property

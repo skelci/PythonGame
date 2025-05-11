@@ -547,6 +547,9 @@ class ClientEngine(Engine, Renderer):
                 case pygame.QUIT:
                     self.stop()
 
+                case pygame.VIDEORESIZE:
+                    self.resolution = Vector(event.w, event.h)
+
                 case pygame.MOUSEBUTTONDOWN:
                     self.__pressed_keys.add(Keys(event.button))
                     self.__triggered_keys.add(Keys(event.button))

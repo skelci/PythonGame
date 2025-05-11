@@ -134,6 +134,10 @@ class ClientGame(ClientGameBase):
 
     def tick(self):
         delta_time = super().tick()
+
+        if Keys.F11 in self.engine.triggered_keys:
+            self.engine.fullscreen = not self.engine.fullscreen
+
         WarningWidget.tick(delta_time)
         if not self.handle_login():
             return
