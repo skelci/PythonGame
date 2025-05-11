@@ -115,12 +115,13 @@ class ServerGame(ServerGameBase):
         delta_time = super().tick()
 
         for player in self.engine.players.values():
-            ud = player.update_distance // (self.world_generator.chunk_size / CHUNK_SIZE) + 1
+            divider = self.world_generator.chunk_size / CHUNK_SIZE
+            ud = player.update_distance // divider + 3
             ud = int(clamp(ud, 1, 8))
-            chk = get_chunk_cords(player.position)
+            chk = get_chunk_cords(player.position) // divider
 
-            for offset_y in range(-ud, ud + 1):
-                for offset_x in range(-ud, ud + 1):
+            for offset_y in range(-ud, ud):
+                for offset_x in range(-ud, ud):
                     self.world_generator.generate_and_load_chunks(chk + (offset_x, offset_y))
 
 
