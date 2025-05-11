@@ -51,7 +51,7 @@ class WorldGeneration:
     def tree_generation(self, chunk_origin, ground_level, pos, tree_threshold, shared_tree_positions, chunk_data):
         start_pos = chunk_origin + Vector(pos.x, pos.y)
 
-        if get_random_num(self.tree_seed, start_pos.x) < tree_threshold and start_pos.y == ground_level:
+        if get_random_num(self.tree_seed, start_pos.x) < tree_threshold and start_pos.y == ground_level and "sand" not in chunk_data.get((pos.x, pos.y), []):
             can_spawn = True
             for tree_pos in shared_tree_positions:
                 if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
@@ -91,10 +91,22 @@ class WorldGeneration:
     def grass_generation(self, chunk_origin, ground_level, pos, grass_threshold, shared_grass_positions, chunk_data):
         start_pos = chunk_origin + Vector(pos.x, pos.y)
 
-        if get_random_num(self.grass_seed, start_pos.x) < grass_threshold and start_pos.y == ground_level:
+        if get_random_num(self.grass_seed, start_pos.x) < grass_threshold and start_pos.y == ground_level and "sand" not in chunk_data.get((pos.x, pos.y), []):
             shared_grass_positions.append(pos)
             if (pos.x, pos.y + 1) not in chunk_data or "log" in chunk_data[(pos.x, pos.y + 1)]:
                 chunk_data[(pos.x, pos.y + 1)] = ["grass"]
+    
+    def sand_generation(self, pos, ground_level, sand_threshold, chunk_data):
+
+        noise_val = noise.snoise2(
+            pos.x * 0.015,
+            pos.y * 0.03,
+            octaves=1,
+            base=self.seed + 50,
+        )
+        if noise_val > sand_threshold and pos.y > ground_level - 8:
+            if "dirt" in chunk_data.get((pos.x, pos.y), []) or "grass_block" in chunk_data.get((pos.x, pos.y), []) or "stone" in chunk_data.get((pos.x, pos.y), []):
+                chunk_data[(pos.x, pos.y)] = ["sand"]
 
 
     def ore_generation(self, ore_type, parameters, noise_data, ground_levels, chunk_data):
@@ -199,6 +211,8 @@ class WorldGeneration:
         grass_positions = []
         grass_threshold = 0.1
 
+        sand_threshold = 0.45
+
         for y_pos in range(self.chunk_size):
             for x_pos in range(self.chunk_size):
                 pos, is_cave, is_tunnel = noise_data[y_pos][x_pos]
@@ -211,14 +225,15 @@ class WorldGeneration:
                 if is_cave:
                     continue
                 elif pos.y == ground_level:
-                    self.tree_generation(chunk_origin, ground_level, pos, tree_threshold, tree_positions, chunk_data)
-                    self.grass_generation(chunk_origin, ground_level, pos, grass_threshold, grass_positions, chunk_data)
                     chunk_data[(pos.x, pos.y)] = ["grass_block"]
-
                 elif pos.y < ground_level and pos.y > dirt_level:
                     chunk_data[(pos.x, pos.y)] = ["dirt"]
                 elif pos.y <= dirt_level:
                     chunk_data[(pos.x, pos.y)] = ["stone"]
+
+                self.sand_generation(pos, ground_level, sand_threshold, chunk_data)
+                self.tree_generation(chunk_origin, ground_level, pos, tree_threshold, tree_positions, chunk_data)
+                self.grass_generation(chunk_origin, ground_level, pos, grass_threshold, grass_positions, chunk_data)
 
         return chunk_data
 
