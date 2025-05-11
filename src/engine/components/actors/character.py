@@ -15,8 +15,7 @@ class Character(Rigidbody):
     It inherits from the Rigidbody class and adds functionality for character movement and jumping.
     """
 
-    #                                                                                                                                                                                                                                                             why the f does this bastard of Vector(0, 0) return a new vector object, but Vector() returns the fucking reference to some other vector object? I don't get it. I don't get it at all
-    def __init__(self, name: str, position = Vector(), half_size = Vector(0.4, 0.8), generate_overlap_events = True, collidable = True, simulate_physics = True, visible = True, material: Material = None, render_layer = 1, restitution = 0, initial_velocity = Vector(0, 0), min_velocity = KINDA_SMALL_NUMBER, mass = 70, gravity_scale = 1, air_resistance = 0.1, deceleration = 10, jump_velocity = 6, walk_speed = 3, acceleration = 6, air_control = 0.2):
+    def __init__(self, name: str, position = Vector(), half_size = Vector(0.4, 0.8), generate_overlap_events = True, collidable = True, simulate_physics = True, visible = True, material: Material = None, render_layer = 1, restitution = 0, initial_velocity = Vector(), min_velocity = KINDA_SMALL_NUMBER, mass = 70, gravity_scale = 1, air_resistance = 0.1, deceleration = 10, jump_velocity = 6, walk_speed = 3, acceleration = 6, air_control = 0.2):
         """
         Refer to the Rigidbody class for more information about the parameters.
         Args:

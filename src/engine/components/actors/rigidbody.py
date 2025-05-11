@@ -30,7 +30,7 @@ class Rigidbody(Actor):
         super().__init__(name, position, half_size, generate_overlap_events, collidable, visible, material, render_layer, restitution)
 
         self.simulate_physics = simulate_physics
-        self.velocity = initial_velocity
+        self.velocity = initial_velocity.copy
         self.min_velocity = min_velocity
         self.mass = mass
         self.gravity_scale = gravity_scale

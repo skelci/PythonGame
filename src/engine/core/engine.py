@@ -102,7 +102,7 @@ class InfoText(Widget):
             name,
             Vector(10, pos_y * 24 + 10),
             Vector(220, 24),
-            Color(0, 0, 0, 100),
+            Color(0, 0, 0, 0),
             0,
             True,
             {"pre_text": pre_text, "stat_text": stat_text},
@@ -302,7 +302,7 @@ class ClientEngine(Engine, Renderer):
         return True
 
 
-    def add_actor_template(self, actor: Actor):
+    def register_actor_template(self, actor: Actor):
         """
         Adds actor template to the engine. It is used to create new actors in the level when server sends them.
         Args:
@@ -325,6 +325,8 @@ class ClientEngine(Engine, Renderer):
         """
         if widget.name in self.__widgets or not isinstance(widget, Widget):
             raise Exception(f"Widget {widget.name} is already registered or wrong data type")
+        
+        widget.engine_ref = self
         self.__widgets[widget.name] = widget
 
 
@@ -401,11 +403,6 @@ class ClientEngine(Engine, Renderer):
             dx = direction.normalized.x 
             pan_inc = 1 - abs(dx)
             pan = (dx + 1) / 2
-
-            dy = direction.normalized.y
-            vertical_factor = 0.8 + (dy * 0.2)
-            
-            volume *= vertical_factor
             
             left_vol = volume * (1 - pan + pan_inc)
             right_vol = volume * (pan + pan_inc)
@@ -827,7 +824,7 @@ class ServerEngine(Engine):
             if distance < self.levels[level].actors[self.get_player_actor(player_id)].position.distance_to(location):
                 continue
 
-            self.network.send(player_id, "play_sound", (sound, location, distance, volume), True)
+            self.network.send(player_id, "play_sound", (sound, location, distance, volume))
 
 
     def get_stat(self, stat_name: str):

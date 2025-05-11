@@ -164,20 +164,29 @@ class Level:
         return self.__actors_with_overlap_events
         
 
-    def register_actor(self, actor: Actor):
+    def register_actor(self, actor: Actor | list[Actor]):
         """
         Adds an actor to the level. The actor will be added to the level in the next tick.
         Args:
-            actor: Actor to be added to the level.
+            actor: Actor to be added to the level. It can be a single actor or a list of actors.
         Raises:
             TypeError: If the actor is not a subclass of Actor.
         """
         if isinstance(actor, Actor):
-            actor.engine_ref = self.engine_ref
-            actor.level_ref = self
-            self.__actors_to_create.add(actor)
-        else:
-            raise TypeError("Actor must be a subclass of Actor:", actor)
+            actor = [actor]
+
+        if isinstance(actor, list | set | tuple):
+            for a in actor:
+                if isinstance(a, Actor):
+                    a.engine_ref = self.engine_ref
+                    a.level_ref = self
+                    self.__actors_to_create.add(a)
+                else:
+                    raise TypeError("Actor must be a subclass of Actor:", a)
+                
+            return
+        
+        raise TypeError("Actor must be a subclass of Actor or list:", actor)
         
 
     def destroy_actor(self, actor: Actor):
