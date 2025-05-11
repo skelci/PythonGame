@@ -15,6 +15,7 @@ def register_actor_templates(engine_ref):
     eng.register_actor_template(Player)
     eng.register_actor_template(Log)
     eng.register_actor_template(LeafBlock)
+    eng.register_actor_template(GrassBlock)
     eng.register_actor_template(Grass)
     eng.register_actor_template(Sand)
     eng.register_actor_template(Dirt)
@@ -107,17 +108,24 @@ class LeafBlock(WorldBlock):
         super().on_destroyed({Leaf: (0, 5), Stick: (0, 5)}, "grass_destroyed.mp3")
 
 
-class Grass(WorldBlock):
+class GrassBlock(WorldBlock):
     def __init__(self, name, position):
         super().__init__(name, position, 2, "grass_block.png")
 
     def on_destroyed(self):
         super().on_destroyed({DirtPile: (4, 5)}, "grass_destroyed.mp3")
 
+class Grass(WorldBlock):
+    def __init__(self, name, position):
+        super().__init__(name, position, 2, "grass.png", False, render_layer=15)
+
+    def on_destroyed(self):
+        super().on_destroyed({Seed: (4, 5)}, "grass_destroyed.mp3")
+
 
 class Sand(WorldBlock):
     def __init__(self, name, position):
-        super().__init__(name, position, 2, "stone.png")
+        super().__init__(name, position, 2, "sand.png")
 
     def on_destroyed(self):
         super().on_destroyed({Sand: (1, 1)}, "sand_destroyed.mp3")
@@ -165,7 +173,7 @@ class GoldOre(WorldBlock):
 
 class DiamondOre(WorldBlock):
     def __init__(self, name, position):
-        super().__init__(name, position, 2, "gold_ore.png")
+        super().__init__(name, position, 2, "diamond_ore.png")
 
     def on_destroyed(self):
         super().on_destroyed({Diamond: (1, 3), Rock: (2, 4)}, "stone_destroyed.mp3")
@@ -211,6 +219,9 @@ class Stick(Entity):
     def __init__(self, name, position):
         super().__init__(name, position, "stick.png")
 
+class Seed(Entity):
+    def __init__(self, name, position):
+        super().__init__(name, position, "seed.png")
 
 class DirtPile(Entity):
     def __init__(self, name, position):
@@ -219,7 +230,7 @@ class DirtPile(Entity):
 
 class SandPile(Entity):
     def __init__(self, name, position):
-        super().__init__(name, position, "rock.png")
+        super().__init__(name, position, "sand_pile.png")
 
 
 class Rock(Entity):
@@ -244,5 +255,5 @@ class RawGoldNugget(Entity):
 
 class Diamond(Entity):
     def __init__(self, name, position):
-        super().__init__(name, position, "rock.png")
+        super().__init__(name, position, "diamond.png")
 
