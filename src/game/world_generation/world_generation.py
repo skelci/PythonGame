@@ -25,25 +25,25 @@ class WorldGeneration:
             "coal": {
                 "scale": 0.042,
                 "threshold": 0.77,
-                "base": self.seed + 500,
+                "base": self.seed,
                 "min_depth": 10,
             },
             "iron": {
                 "scale": 0.045,
                 "threshold": 0.76,
-                "base": self.seed + 1000,
+                "base": self.seed + 500,
                 "min_depth": 20,
             },
             "gold": {
                 "scale": 0.052,
                 "threshold": 0.8,
-                "base": self.seed + 1500,
+                "base": self.seed + 1000,
                 "min_depth": 40,
             },
             "diamond": {
                 "scale": 0.055,
                 "threshold": 0.8,
-                "base": self.seed + 2000,
+                "base": self.seed + 1500,
                 "min_depth": 10,
             },
         }
