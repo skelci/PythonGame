@@ -40,7 +40,7 @@ class Actor:
         self.__level_ref = None
         self.name = name
         self.half_size = half_size
-        self.position = position
+        self.position = position.copy
         self.generate_overlap_events = generate_overlap_events
         self.collidable = collidable
         self.material = material
