@@ -99,7 +99,7 @@ class WorldGeneration:
     def sand_generation(self, pos, ground_level, sand_threshold, chunk_data):
 
         noise_val = noise.snoise2(
-            pos.x * 0.015,
+            pos.x * 0.018,
             pos.y * 0.03,
             octaves=1,
             base=self.seed + 50,
@@ -211,7 +211,7 @@ class WorldGeneration:
         grass_positions = []
         grass_threshold = 0.1
 
-        sand_threshold = 0.45
+        sand_threshold = 0.48
 
         for y_pos in range(self.chunk_size):
             for x_pos in range(self.chunk_size):
