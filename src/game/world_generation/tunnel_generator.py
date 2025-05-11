@@ -1,10 +1,9 @@
 #?attr SERVER
 
 import math
-import random as r
-from .random_num import get_random_num
+from game.helper_functions import get_random_num
 
-#    MATEVŽ   veliko pomagal Deepseek
+
 
 class TunnelGenerator:
     def __init__(self, seed):
@@ -20,6 +19,7 @@ class TunnelGenerator:
         avg_y = sum(p[1] for p in region) // len(region)
         return (avg_x, avg_y)
     
+
     def _distance(self, p1, p2):
         """Euclidean distance"""
         dx = p1[0] - p2[0]
@@ -55,6 +55,7 @@ class TunnelGenerator:
             radius = self.width
             self._dig_circle(cave_data, x, y, radius)
     
+
     def _find_cave_regions(self, cave_data):
         """Find regions of the cave that are connected"""
         regions = []
@@ -96,7 +97,6 @@ class TunnelGenerator:
 
         connected = set()
         connected.add(0)
-
 
         max_iterations = len(regions) * 2
         iteration_count = 0
@@ -188,3 +188,6 @@ class TunnelGenerator:
             x1, y1 = path[i]
             x2, y2 = path[i+1]
             self._dig_line(cave_data, x1, y1, x2, y2)
+
+
+

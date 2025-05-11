@@ -1,8 +1,4 @@
-# 2D Game Engine
-
-## Repo
-
-[Github Repo](https://www.github.com/skelci/PythonGame)
+# Survival Game
 
 ## Dependencies
 
@@ -32,27 +28,12 @@ python ./src/main.py
 - [Jure](https://github.com/Gamer1234-gif)
 - [Niko](https://github.com/skelci)
 
-## TODO
-
-### Matevž
-
-- terrain generation
-
-### Jure
-
-- actor destruction
-- inventory
-
-### Niko
-
-- engine
-
 ## Items
 
 ### World Blocks
 
-- grass block   -> dirt(4)
-- dirt          -> dirt(3.5),           rock(0.25)
+- grass block   -> dirt_pile(4)
+- dirt          -> dirt_pile(3.5),           rock(0.25)
 - log           -> wood(3.5)
 - stone         -> rock(3.5)
 - coal ore      -> coal(1),             rock(2.5)
@@ -63,7 +44,7 @@ python ./src/main.py
 
 ### Item List
 
-- dirt
+- dirt_pile
 - wood
 - rock
 - coal
