@@ -69,7 +69,7 @@ class ClientGame(ClientGameBase):
         NetworkHandler.init(eng)
         register_actor_templates(eng)
 
-        eng.set_camera_width(16 * 4)
+        eng.set_camera_width(16 * 2)
         eng.resolution = Vector(1600, 900)
 
         self.true_scroll = [0, 0]
