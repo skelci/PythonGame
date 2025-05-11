@@ -17,6 +17,8 @@ class WorldGeneration:
         self.game_map = set()
         self.tunnel_generator = TunnelGenerator(self.seed + 1)
         self.cave_seed = self.seed + 2
+        self.tree_seed = self.seed + 3
+        self.grass_seed = self.seed + 4
         self.chunk_size = 32
     
         self.ore_parameters = {
@@ -50,7 +52,7 @@ class WorldGeneration:
     def tree_generation(self, chunk_origin, ground_level, pos, tree_threshold, shared_tree_positions, chunk_data):
         start_pos = chunk_origin + Vector(pos.x, pos.y)
         
-        if get_random_num(self.seed, start_pos.x) < tree_threshold and start_pos.y == ground_level:
+        if get_random_num(self.tree_seed, start_pos.x) < tree_threshold and start_pos.y == ground_level:
             can_spawn = True
             for tree_pos in shared_tree_positions:
                 if abs(tree_pos.x - pos.x) < 4 and abs(tree_pos.y - pos.y) < 4:
@@ -76,6 +78,14 @@ class WorldGeneration:
                         if (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1:
                             leaf_pos = top + Vector(dx, dy-1)
                             chunk_data.append(((leaf_pos.x, leaf_pos.y), "leaf"))
+    
+
+    def grass_generation(self, chunk_origin, ground_level, pos, grass_threshold, shared_grass_positions, chunk_data):
+        start_pos = chunk_origin + Vector(pos.x, pos.y)
+        
+        if get_random_num(self.grass_seed, start_pos.x) < grass_threshold and start_pos.y == ground_level:    
+            shared_grass_positions.append(pos)
+            chunk_data.append(((pos.x, pos.y + 1), "grass"))
 
 
     def ore_generation(self, ore_type, parameters, noise_data, ground_levels, chunk_data):
@@ -189,6 +199,9 @@ class WorldGeneration:
 
         tree_positions = [] 
         tree_threshold = 0.04
+
+        grass_positions = []
+        grass_threshold = 0.15
             
         for y_pos in range(self.chunk_size):
             for x_pos in range(self.chunk_size):
@@ -203,7 +216,8 @@ class WorldGeneration:
                     continue
                 elif pos.y == ground_level:
                     self.tree_generation(chunk_origin,ground_level, pos, tree_threshold, tree_positions, chunk_data)
-                    chunk_data.append([(pos.x, pos.y), "grass"])
+                    self.grass_generation(chunk_origin, ground_level, pos, grass_threshold, grass_positions, chunk_data)
+                    chunk_data.append([(pos.x, pos.y), "grass_block"])
                     
                 elif pos.y < ground_level and pos.y > dirt_level:
                     chunk_data.append([(pos.x, pos.y), "dirt"])
@@ -230,8 +244,12 @@ class WorldGeneration:
             actor_name = f"{tile_type}_{pos[0]}_{pos[1]}"
             new_actor = None
             
-            if tile_type == "grass":
+            if tile_type == "grass_block":
+                new_actor = GrassBlock(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "grass":
                 new_actor = Grass(actor_name, Vector(pos[0], pos[1]))
+            elif tile_type == "sand":
+                new_actor = Sand(actor_name, Vector(pos[0], pos[1]))
             elif tile_type == "log":
                 new_actor = Log(actor_name, Vector(pos[0], pos[1]))
             elif tile_type == "leaf":
