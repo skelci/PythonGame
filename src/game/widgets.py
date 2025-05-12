@@ -89,18 +89,21 @@ class Inventory(Widget):
                 "slot_8": InventorySlot("slot_8"),
                 "slot_9": InventorySlot("slot_9"),
                 "slot_10": InventorySlot("slot_10"),
+                "health_bar": HealthBar(),
+
             },
             subwidget_offsets={
-                "slot_1": Vector(-250, -50),
-                "slot_2": Vector(-200, -50),
-                "slot_3": Vector(-150, -50),
-                "slot_4": Vector(-100, -50),
-                "slot_5": Vector(-50, -50),
-                "slot_6": Vector(0, -50),
-                "slot_7": Vector(50, -50),
-                "slot_8": Vector(100, -50),
-                "slot_9": Vector(150, -50),
-                "slot_10": Vector(200, -50),
+                "slot_1": Vector(-250, -25),
+                "slot_2": Vector(-200, -25),
+                "slot_3": Vector(-150, -25),
+                "slot_4": Vector(-100, -25),
+                "slot_5": Vector(-50, -25),
+                "slot_6": Vector(0, -25),
+                "slot_7": Vector(50, -25),
+                "slot_8": Vector(100, -25),
+                "slot_9": Vector(150, -25),
+                "slot_10": Vector(200, -25),
+                "health_bar": Vector(-172, -85),
             },
             subwidget_alignments={
                 "slot_1": Alignment.BOTTOM_CENTER,
@@ -113,8 +116,30 @@ class Inventory(Widget):
                 "slot_8": Alignment.BOTTOM_CENTER,
                 "slot_9": Alignment.BOTTOM_CENTER,
                 "slot_10": Alignment.BOTTOM_CENTER,
+                "health_bar": Alignment.BOTTOM_CENTER,
             }
         )
+
+
+
+class HealthBar(Border):
+    def __init__(self):
+        super().__init__("health_bar", Vector(0, 0), Vector(206, 20), 0, Color(150, 150, 150), Color(0, 0, 0, 100), True, 3,
+            subwidgets={
+                "health_bar": Widget("health_bar", Vector(0, 0), Vector(200, 14), Color(0, 255, 0), 0, True)
+            },
+            subwidget_offsets={
+                "health_bar": Vector(3, 0),
+            },
+            subwidget_alignments={
+                "health_bar": Alignment.CENTER_LEFT,
+            }
+        )
+
+
+    def set_health(self, health):
+        size = 200 * health / 100
+        self.subwidgets["health_bar"].size.x = size
 
 
 

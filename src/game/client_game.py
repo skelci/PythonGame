@@ -22,6 +22,21 @@ class NetworkHandler:
     def connected_from_another_location(data):
         NetworkHandler.engine_ref.stop()
 
+    @staticmethod
+    def fall_damage(data):
+        print(f"fall damage: {data}")
+        player_key = f"__Player_{NetworkHandler.engine_ref.network.id}"
+        player = NetworkHandler.engine_ref.level.actors[player_key]
+        player.health += math.floor(data)*3
+        print(f"Player health: {player.health}")
+        if player.health <= 0:
+            player.health = 0
+            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["health_bar"].set_health(0)
+            print("Player is dead")
+        else:
+            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["health_bar"].set_health(player.health)
+
+
 
     @staticmethod
     def update_inventory(data):
@@ -103,10 +118,13 @@ class ClientGame(ClientGameBase):
         eng.register_widget(ServerPromptMenu())
         eng.register_widget(CredentialsMenu())
         eng.register_widget(Inventory())
+        
 
         eng.regisrer_network_command("connected_from_another_location", NetworkHandler.connected_from_another_location)
         eng.regisrer_network_command("register_outcome", NetworkHandler.register_outcome)
         eng.regisrer_network_command("update_inventory", NetworkHandler.update_inventory)
+        eng.regisrer_network_command("fall_damage", NetworkHandler.fall_damage)
+        
         
         #?ifdef ENGINE
         eng.connect("localhost", 5555)

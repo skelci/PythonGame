@@ -89,7 +89,8 @@ class ServerGame(ServerGameBase):
         
         self.engine.register_level(Overworld())
 
-        seed = random.randint(0, 9999)
+        seed = random.randint(0, 9999) #2523
+        
         self.world_generator = WorldGeneration(self.engine.levels["Overworld"], seed)
         
         self.current_base_chunk = Vector(0, 0)

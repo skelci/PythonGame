@@ -48,9 +48,6 @@ class WorldGeneration:
             },
         }
 
-    def is_in_game_map(self, position):
-        chunk_coords = Vector(int(position.x // self.chunk_size), int(position.y // self.chunk_size))
-        return chunk_coords in self.game_map
 
     def tree_generation(self, chunk_origin, ground_level, pos, tree_threshold, shared_tree_positions, chunk_data):
         start_pos = chunk_origin + Vector(pos.x, pos.y)
@@ -78,20 +75,18 @@ class WorldGeneration:
                 rx = 3.25
                 ry = 4.5
                 top_leaf_pos = top + Vector(0, 4)
-                if self.is_in_game_map(top_leaf_pos):
-                    if (top_leaf_pos.x, top_leaf_pos.y) not in chunk_data:
-                        chunk_data[(top_leaf_pos.x, top_leaf_pos.y)] = []
-                    if "leaf" not in chunk_data[(top_leaf_pos.x, top_leaf_pos.y)]:
-                        chunk_data[(top_leaf_pos.x, top_leaf_pos.y)].append("leaf")
+                if (top_leaf_pos.x, top_leaf_pos.y) not in chunk_data:
+                    chunk_data[(top_leaf_pos.x, top_leaf_pos.y)] = []
+                if "leaf" not in chunk_data[(top_leaf_pos.x, top_leaf_pos.y)]:
+                    chunk_data[(top_leaf_pos.x, top_leaf_pos.y)].append("leaf")
                 for dy in range(0, int(ry) + 1):
                     for dx in range(-int(rx), int(rx) + 1):
                         if (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1:
                             leaf_pos = top + Vector(dx, dy - 1)
-                            if self.is_in_game_map(leaf_pos):
-                                if (leaf_pos.x, leaf_pos.y) not in chunk_data:
-                                    chunk_data[(leaf_pos.x, leaf_pos.y)] = []
-                                if "leaf" not in chunk_data[(leaf_pos.x, leaf_pos.y)]:
-                                    chunk_data[(leaf_pos.x, leaf_pos.y)].append("leaf")
+                            if (leaf_pos.x, leaf_pos.y) not in chunk_data:
+                                chunk_data[(leaf_pos.x, leaf_pos.y)] = []
+                            if "leaf" not in chunk_data[(leaf_pos.x, leaf_pos.y)]:
+                                chunk_data[(leaf_pos.x, leaf_pos.y)].append("leaf")
 
 
     def grass_generation(self, chunk_origin, ground_level, pos, grass_threshold, shared_grass_positions, chunk_data):
