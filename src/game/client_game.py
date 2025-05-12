@@ -24,16 +24,18 @@ class NetworkHandler:
 
     @staticmethod
     def fall_damage(data):
-        print(f"fall damage: {data}")
+        print(f"fall damage_data: {data}")
         player_key = f"__Player_{NetworkHandler.engine_ref.network.id}"
         player = NetworkHandler.engine_ref.level.actors[player_key]
-        player.health += math.floor(data)*3
+        damage = math.floor(abs(data)) * 2
+        player.health -= damage
         print(f"Player health: {player.health}")
         if player.health <= 0:
             player.health = 0
             NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["health_bar"].set_health(0)
             print("Player is dead")
         else:
+            print(f"Updating health bar: {player.health}")
             NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["health_bar"].set_health(player.health)
 
 

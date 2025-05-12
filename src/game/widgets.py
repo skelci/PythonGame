@@ -137,9 +137,9 @@ class HealthBar(Border):
         )
 
 
-    def set_health(self, health):
-        size = 200 * health / 100
-        self.subwidgets["health_bar"].size.x = size
+    def set_health(self, health): 
+        print(f"Size: {health*2}")
+        self.subwidgets["health_bar"].size.x = health*2
 
 
 

@@ -89,7 +89,7 @@ class ServerGame(ServerGameBase):
         
         self.engine.register_level(Overworld())
 
-        seed = random.randint(0, 9999) #2523
+        seed = 2523 #random.randint(0, 9999)
         
         self.world_generator = WorldGeneration(self.engine.levels["Overworld"], seed)
         
