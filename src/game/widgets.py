@@ -90,6 +90,7 @@ class Inventory(Widget):
                 "slot_9": InventorySlot("slot_9"),
                 "slot_10": InventorySlot("slot_10"),
                 "health_bar": HealthBar(),
+                "hunger_bar": HungerBar(),
 
             },
             subwidget_offsets={
@@ -104,6 +105,7 @@ class Inventory(Widget):
                 "slot_9": Vector(150, -25),
                 "slot_10": Vector(200, -25),
                 "health_bar": Vector(-172, -85),
+                "hunger_bar": Vector(123, -85),
             },
             subwidget_alignments={
                 "slot_1": Alignment.BOTTOM_CENTER,
@@ -117,6 +119,7 @@ class Inventory(Widget):
                 "slot_9": Alignment.BOTTOM_CENTER,
                 "slot_10": Alignment.BOTTOM_CENTER,
                 "health_bar": Alignment.BOTTOM_CENTER,
+                "hunger_bar": Alignment.BOTTOM_CENTER,
             }
         )
 
@@ -140,6 +143,27 @@ class HealthBar(Border):
     def set_health(self, health): 
         print(f"Size: {health*2}")
         self.subwidgets["health_bar"].size.x = health*2
+
+
+
+class HungerBar(Border):
+    def __init__(self):
+        super().__init__("hunger_bar", Vector(0, 0), Vector(206, 20), 0, Color(150, 150, 150), Color(0, 0, 0, 100), True, 3,
+            subwidgets={
+                "hunger_bar": Widget("hunger_bar", Vector(0, 0), Vector(200, 14), Color(137,81,41), 0, True)
+            },
+            subwidget_offsets={
+                "hunger_bar": Vector(3, 0),
+            },
+            subwidget_alignments={
+                "hunger_bar": Alignment.CENTER_LEFT,
+            }
+        )
+
+
+    def set_hunger(self, hunger): 
+        print(f"Size: {hunger*2}")
+        self.subwidgets["hunger_bar"].size.x = hunger*2
 
 
 
