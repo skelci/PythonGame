@@ -40,7 +40,27 @@ class KeyHandler:
     def scroll_down(engine_ref, level_ref, id):
         player = level_ref.actors[engine_ref.get_player_actor(id)]
         player.set_inventory_slot((player.current_inventory_slot - 1) % 10)
+    
 
+    @staticmethod
+    def place_block(engine_ref, level_ref, id):
+        mouse_pos = engine_ref.players[id].world_mouse_pos
+        player_actor = level_ref.actors[engine_ref.get_player_actor(id)]
+        if mouse_pos.distance_to(player_actor.position) > 3:
+            return
+        item_to_place = player_actor.inventory_list[player_actor.current_inventory_slot]
+        if not item_to_place:
+            return
+        match item_to_place:
+            case "Furnace":
+                block = Furnace(f"furnace_{mouse_pos}_{time.time()}", mouse_pos.rounded + 0.5)
+                player_actor.remove_from_inventory(item_to_place)
+                
+            case _:
+                return
+        level_ref.register_actor(block)
+    
+        
 
     @staticmethod
     def key_C(engine_ref, level_ref, id):
@@ -112,6 +132,7 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.MOUSE_SCROLL_UP, KeyPressType.TRIGGER, KeyHandler.scroll_up)
         self.engine.register_key(Keys.MOUSE_SCROLL_DOWN, KeyPressType.TRIGGER, KeyHandler.scroll_down)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.HOLD, KeyHandler.destroy_blocks)
+        self.engine.register_key(Keys.MOUSE_RIGHT, KeyPressType.RELEASE, KeyHandler.place_block)
 
         #?ifdef ENGINE
         self.engine.console.handle_cmd("build_server")

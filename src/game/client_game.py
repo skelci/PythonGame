@@ -57,12 +57,15 @@ class NetworkHandler:
         inventory_dict, inventory_list = data
 
         for i, item_name in enumerate(inventory_list):
-
-            if item_name is None:
-                continue
-
             slot_key=f"slot_{i + 1}"
             slot_icon = NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_icon"]
+            
+
+            if item_name is None:
+                slot_icon.material = Material(Color(0, 0, 0, 0))
+                NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_count"].text = ""
+                continue
+
 
             match item_name:
                 case "Stick":           slot_icon.material = Material("res/textures/stick.png")
@@ -80,6 +83,7 @@ class NetworkHandler:
                 case _: raise ValueError(f"Unknown item type: {item_name}")
             
             NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_count"].text = str(inventory_dict[item_name])
+            
 
 
     @staticmethod

@@ -64,6 +64,21 @@ class Player(Character):
                     break
         self.engine_ref.network.send(self.id, "update_inventory", (self.inventory_dict, self.inventory_list))
         return True
+
+
+    def remove_from_inventory(self, item_name, count = 1):
+        if item_name not in self.inventory_dict:
+            return False
+        
+        self.inventory_dict[item_name] -= count
+        if self.inventory_dict[item_name] <= 0:
+            del self.inventory_dict[item_name]
+            for i in range(10):
+                if self.inventory_list[i] == item_name:
+                    self.inventory_list[i] = None
+                    break
+        self.engine_ref.network.send(self.id, "update_inventory", (self.inventory_dict, self.inventory_list))
+        return True
     
 
     def set_inventory_slot(self, slot):
@@ -211,6 +226,7 @@ class DiamondOre(WorldBlock):
 class Furnace(WorldBlock):
     def __init__(self, name, position):
         super().__init__(name, position, 2, "furnace.png", False, render_layer=1)
+        self.half_size = Vector(1, 1)
 
     def on_destroyed(self):
         super().on_destroyed({Rock: (6, 10)}, "stone_destroyed.mp3")
