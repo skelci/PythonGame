@@ -141,8 +141,7 @@ class HealthBar(Border):
 
 
     def set_health(self, health): 
-        print(f"Size: {health*2}")
-        self.subwidgets["health_bar"].size.x = health*2
+        self.subwidgets["health_bar"].size = Vector(health*2, 14)
 
 
 
@@ -162,8 +161,7 @@ class HungerBar(Border):
 
 
     def set_hunger(self, hunger): 
-        print(f"Size: {hunger*2}")
-        self.subwidgets["hunger_bar"].size.x = hunger*2
+        self.subwidgets["hunger_bar"].size = Vector(hunger*2, 14)
 
 
 

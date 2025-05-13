@@ -60,8 +60,7 @@ class Player(Character):
 
     def on_collision(self, collision_data):
         super().on_collision(collision_data)
-        print(self.velocity)
-        if self.velocity[1] < -1:
+        if self.velocity[1] < -5:
             self.engine_ref.network.send(self.id, "fall_damage", (self.velocity[1]))
 
 
