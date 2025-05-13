@@ -55,6 +55,9 @@ class KeyHandler:
             case "Furnace":
                 block = Furnace(f"furnace_{mouse_pos}_{time.time()}", mouse_pos.rounded + 0.5)
                 player_actor.remove_from_inventory(item_to_place)
+            case "Anvil":
+                block = Anvil(f"anvil_{mouse_pos}_{time.time()}", mouse_pos.rounded + 0.5)
+                player_actor.remove_from_inventory(item_to_place)
                 
             case _:
                 return

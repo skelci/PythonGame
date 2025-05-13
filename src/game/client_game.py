@@ -80,6 +80,7 @@ class NetworkHandler:
                 case "Diamond":         slot_icon.material = Material("res/textures/diamond.png")
                 case "Seed":            slot_icon.material = Material("res/textures/seed.png")
                 case "Furnace":         slot_icon.material = Material("res/textures/furnace.png")
+                case "Anvil":           slot_icon.material = Material("res/textures/anvil.png")
                 case _: raise ValueError(f"Unknown item type: {item_name}")
             
             NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_count"].text = str(inventory_dict[item_name])
