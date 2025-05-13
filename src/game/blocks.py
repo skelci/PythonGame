@@ -42,7 +42,7 @@ def register_actor_templates(engine_ref):
 class Player(Character):
     def __init__(self, name, position):
         super().__init__(name, position=Vector(-5, 28), material = Material("res/textures/player.png"), jump_velocity=7, render_layer=5, initial_velocity=Vector())
-        self.inventory = {}
+        self.inventory = {"Furnace": 1}
         self.health = 100
         
 

@@ -58,6 +58,7 @@ class NetworkHandler:
                 case "RawGoldNugget":   slot_icon.material = Material("res/textures/gold_nugget.png")
                 case "Diamond":         slot_icon.material = Material("res/textures/diamond.png")
                 case "Seed":            slot_icon.material = Material("res/textures/seed.png")
+                case "Furnace":         slot_icon.material = Material("res/textures/furnace.png")
                 case _: raise ValueError(f"Unknown item type: {key}")
             
             NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_count"].text = str(value)
