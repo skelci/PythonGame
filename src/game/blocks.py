@@ -136,7 +136,7 @@ class Sand(WorldBlock):
         super().__init__(name, position, 2, "sand.png")
 
     def on_destroyed(self):
-        super().on_destroyed({Sand: (3, 6)}, "sand_destroyed.mp3")
+        super().on_destroyed({SandPile: (3, 6)}, "sand_destroyed.mp3")
 
 
 class Dirt(WorldBlock):
