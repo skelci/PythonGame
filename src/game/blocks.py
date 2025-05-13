@@ -59,9 +59,10 @@ class Player(Character):
 
 
     def on_collision(self, collision_data):
+        if self.velocity.y < -10:
+            self.health -= abs(self.velocity.y)
+            self.engine_ref.network.send(self.id, "health", self.health)
         super().on_collision(collision_data)
-        if self.velocity[1] < -5:
-            self.engine_ref.network.send(self.id, "fall_damage", (self.velocity[1]))
 
 
 

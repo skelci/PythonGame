@@ -23,11 +23,10 @@ class NetworkHandler:
         NetworkHandler.engine_ref.stop()
 
     @staticmethod
-    def fall_damage(data):
+    def set_health(data):
         player_key = f"__Player_{NetworkHandler.engine_ref.network.id}"
         player = NetworkHandler.engine_ref.level.actors[player_key]
-        damage = math.floor(abs(data)) * 2
-        player.health -= damage
+        player.health = data
         if player.health <= 0:
             player.health = 0
             NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["health_bar"].set_health(0)
@@ -122,7 +121,7 @@ class ClientGame(ClientGameBase):
         eng.regisrer_network_command("connected_from_another_location", NetworkHandler.connected_from_another_location)
         eng.regisrer_network_command("register_outcome", NetworkHandler.register_outcome)
         eng.regisrer_network_command("update_inventory", NetworkHandler.update_inventory)
-        eng.regisrer_network_command("fall_damage", NetworkHandler.fall_damage)
+        eng.regisrer_network_command("health", NetworkHandler.set_health)
         
         
         #?ifdef ENGINE
