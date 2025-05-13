@@ -225,7 +225,7 @@ class Actor:
                 case "position":
                     self.position = Vector(*data[key])
                 case "material":
-                    self.material = self.engine_ref.get_material(data[key])
+                    self.material = Material(data[key])
     #?endif
     
 
@@ -242,7 +242,7 @@ class Actor:
         for key in self.__outdated:
             if self.__outdated[key]:
                 if key == "material":
-                    out[key] = self.material.name if self.material else None
+                    out[key] = self.material.texture_str if self.material else None
                 out[key] = getattr(self, key)
                 self.__outdated[key] = False
 

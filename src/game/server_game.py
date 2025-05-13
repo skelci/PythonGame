@@ -100,11 +100,6 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.C, KeyPressType.TRIGGER, KeyHandler.key_C)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.HOLD, KeyHandler.destroy_blocks)
 
-        #?ifdef ENGINE
-        self.engine.console.handle_cmd("build_server")
-        self.engine.console.handle_cmd("build_client")
-        #?endif
-
         for x in range(-2, 3):
             for y in range(-2, 3):
                 self.world_generator.generate_and_load_chunks(Vector(x, y))

@@ -9,9 +9,6 @@ from .renderer import Renderer
 #?ifdef SERVER
 from .console import Console
 #?endif
-#?ifdef ENGINE
-from .builder import *
-#?endif
 from .network import *
 from engine.log import *
 
@@ -45,10 +42,6 @@ class Engine(ABC):
 
     def __init__(self):
         self.__running = True
-
-        #?ifdef ENGINE
-        self.builder = Builder("./build", "./packaged", ["./src"], ["./src", "./res"])
-        #?endif
 
 
     @property
@@ -162,7 +155,6 @@ class ClientEngine(Engine, Renderer):
             "Character": Character,
         }
         
-        pygame.init()
         pygame.mixer.init(channels=16)
 
         self.__clock = pygame.time.Clock()
@@ -277,6 +269,12 @@ class ClientEngine(Engine, Renderer):
     def update_distance(self):
         """ int - Distance in chunks from player to load actors. It is calculated from camera_width. """
         return self.__update_distance
+    
+
+    @property
+    def stats(self):
+        """ dict[str, list[float]] - Dictionary of all stats. Key is stat name, value is list of last 30 values. """
+        return self.__stats
     
 
     def show_all_stats(self):
@@ -453,9 +451,6 @@ class ClientEngine(Engine, Renderer):
         self.__handle_events()
         
         self.__time("events")
-
-        if not self.running:
-            self.network.stop()
         
         if self.network:
             self.network.tick()
@@ -487,10 +482,10 @@ class ClientEngine(Engine, Renderer):
 
         self.__time("render_regs")
 
-        if self.current_background:
-            self.draw_background(self.backgrounds[self.current_background])
-        else:
-            self.screen.fill((0, 0, 0))
+        # if self.current_background:
+        #     self.draw_background(self.backgrounds[self.current_background])
+        # else:
+        #     self.screen.fill((0, 0, 0))
 
         self.__time("bg_render")
 
@@ -546,9 +541,6 @@ class ClientEngine(Engine, Renderer):
             match event.type:
                 case pygame.QUIT:
                     self.stop()
-
-                case pygame.VIDEORESIZE:
-                    self.resolution = Vector(event.w, event.h)
 
                 case pygame.MOUSEBUTTONDOWN:
                     self.__pressed_keys.add(Keys(event.button))

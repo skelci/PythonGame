@@ -7,17 +7,18 @@ Preprocessor for building and packaging server and client files.
 from engine.log import log_engine as log
 from engine.log import LogType
 
-from enum import IntEnum
+from enum import Enum
 import os
 import shutil
 import time
 
 
 
-class BuildType(IntEnum):
+class BuildType(Enum):
     SERVER = 0
     CLIENT = 1
-    COMBINED = 2
+    ENGINE_CLIENT = 2
+    ENGINE_SERVER = 3
 
 
 
@@ -37,11 +38,10 @@ class Builder:
         self.server_folders = server_folders
         self.client_folders = client_folders
 
-        self.__run_script = (
-            "@echo off\n"
-            "python src/main.py\n"
-            "pause\n"
-        )        
+        self.__run_script = ("""
+            @echo off
+            python src/main.py
+        """)
 
 
     @property
@@ -100,73 +100,51 @@ class Builder:
             raise TypeError("Client folders must be a list:", value)
 
 
-    def build_server(self):
-        """ Builds and packages the server files. """
-        log("Building server...", LogType.INFO)
-        build_start = time.time()
-
-        for folder in self.server_folders:
-            for file in self.__get_all_files(folder):
-                if file.endswith(".py"):
-                    self.__parse_file(file, BuildType.SERVER)
-
-        for file in self.__get_all_files(self.build_dir + "/server/src_cache"):
-            copy_dest = self.package_dir + "/server/src/" + "/".join(file.split("\\")[1:])
-            os.makedirs(os.path.dirname(copy_dest), exist_ok=True)
-            shutil.copy(file, copy_dest)
-
-        for folder in self.server_folders:
-            for file in self.__get_all_files(folder):
-                if not file.endswith(".py") and not file.endswith(".pyc"):
-                    dest_dir = self.package_dir + "/server/" + file
-                    os.makedirs(os.path.dirname(dest_dir), exist_ok=True)
-                    shutil.copy(file, dest_dir)
-
-        with open(self.package_dir + "/server/run.bat", "w") as f:
-            f.write(self.__run_script)
-
-        log(f"Server built in {time.time() - build_start:.3f} seconds.", LogType.INFO)
-
-
-    def build_client(self):
-        """ Builds and packages the client files. """
-        log("Building client...", LogType.INFO)
-        build_start = time.time()
-
-        for folder in self.client_folders:
-            for file in self.__get_all_files(folder):
-                if file.endswith(".py"):
-                    self.__parse_file(file, BuildType.CLIENT)
-
-        for file in self.__get_all_files(self.build_dir + "/client/src_cache"):
-            copy_dest = self.package_dir + "/client/src/" + "/".join(file.split("\\")[1:])
-            os.makedirs(os.path.dirname(copy_dest), exist_ok=True)
-            shutil.copy(file, copy_dest)
-
-        for folder in self.client_folders:
-            for file in self.__get_all_files(folder):
-                if not file.endswith(".py") and not file.endswith(".pyc"):
-                    dest_dir = self.package_dir + "/client/" + file
-                    os.makedirs(os.path.dirname(dest_dir), exist_ok=True)
-                    shutil.copy(file, dest_dir)
-
-        with open(self.package_dir + "/client/run.bat", "w") as f:
-            f.write(self.__run_script)
-
-        log(f"Client built in {time.time() - build_start:.3f} seconds.", LogType.INFO)
-
-
-    def clear_build(self, build_type = BuildType.COMBINED):
+    def build(self, build_type):
         """
-        Clears files from package and build directories.
+        Builds and packages the files.
         Args:
-            build_type (BuildType): Type of build to clear.
+            build_type: Type of build to perform.
         """
-        dir_suffix = ("/server", "/client", "")[build_type]
-        if os.path.exists(self.build_dir + dir_suffix):
-            shutil.rmtree(self.build_dir + dir_suffix)
-        if os.path.exists(self.package_dir + dir_suffix):
-            shutil.rmtree(self.package_dir + dir_suffix)
+        log(f"Building {build_type}...", LogType.INFO)
+        build_start = time.time()
+
+        if build_type == BuildType.SERVER or build_type == BuildType.ENGINE_SERVER:
+            folders = self.server_folders
+            build_folder_preffix = "/server"
+        elif build_type == BuildType.CLIENT or build_type == BuildType.ENGINE_CLIENT:
+            folders = self.client_folders
+            build_folder_preffix = "/client"
+
+        for folder in folders:
+            for file in self.__get_all_files(folder):
+                if file.endswith(".py"):
+                    self.__parse_file(file, build_type)
+
+        for file in self.__get_all_files(self.build_dir + build_folder_preffix + "/src_cache"):
+            copy_dest = self.package_dir + build_folder_preffix + "/src/" + "/".join(file.split("\\")[1:])
+            os.makedirs(os.path.dirname(copy_dest), exist_ok=True)
+            shutil.copy(file, copy_dest)
+
+        for folder in folders:
+            for file in self.__get_all_files(folder):
+                if not file.endswith(".py") and not file.endswith(".pyc"):
+                    dest_dir = self.package_dir + build_folder_preffix + "/" + file
+                    os.makedirs(os.path.dirname(dest_dir), exist_ok=True)
+                    shutil.copy(file, dest_dir)
+
+        with open(self.package_dir + build_folder_preffix + "/run.bat", "w") as f:
+            f.write(self.__run_script)
+
+        log(f"{build_type} built in {time.time() - build_start:.3f} seconds.", LogType.INFO)
+
+
+    def clear_build(self):
+        """ Clears files from package and build directories. """
+        if os.path.exists(self.build_dir):
+            shutil.rmtree(self.build_dir)
+        if os.path.exists(self.package_dir):
+            shutil.rmtree(self.package_dir)
 
 
     def __get_all_files(self, folder):
@@ -184,21 +162,26 @@ class Builder:
         if len(lines) == 0:
             return
 
+        defines = []
+        if build_type == BuildType.SERVER:
+            defines = ["SERVER"]
+            file_name_preffix = "/server" 
+        elif build_type == BuildType.CLIENT:
+            defines = ["CLIENT"]
+            file_name_preffix = "/client"
+        elif build_type == BuildType.ENGINE_SERVER:
+            defines = ["ENGINE", "SERVER"]
+            file_name_preffix = "/server"
+        elif build_type == BuildType.ENGINE_CLIENT:
+            defines = ["ENGINE", "CLIENT"]
+            file_name_preffix = "/client"
+
         if lines[0].startswith("#?attr"):
             attr = lines[0][7:].strip()
-            if attr not in ("ENGINE", "SERVER", "CLIENT"):
-                log(f"Invalid attribute in file {f}: {attr}", LogType.ERROR) 
-                return
-
-            if attr == "ENGINE":
-                return
-            elif build_type == BuildType.CLIENT and attr == "SERVER":
-                return
-            elif build_type == BuildType.SERVER and attr == "CLIENT":
+            if attr not in defines:
                 return
             
-
-        file_name = self.build_dir + ("/server/" if build_type == BuildType.SERVER else "/client/") + "src_cache/" + "/".join(file.split("\\")[1:])
+        file_name = self.build_dir + file_name_preffix + "/src_cache/" + "/".join(file.split("\\")[1:])
 
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         f = open(file_name, "w")
@@ -213,31 +196,27 @@ class Builder:
                     log(f"Invalid preprocessor directive in file {f}: {line}", LogType.ERROR)
                     continue
 
-                if build_type == BuildType.SERVER:
-                    match line[2:7]:
-                        case "ifdef":
-                            prev_def.append(line[8:])
-                            if prev_def[-1] == "CLIENT" or prev_def[-1] == "ENGINE":
-                                should_skip += 1
+                match line[2:].split()[0]:
+                    case "ifdef":
+                        prev_def.append(line[8:])
+                        if prev_def[-1] not in defines:
+                            should_skip += 1
 
-                        case "endif":
-                            if prev_def[-1] == "SERVER":
-                                continue
-                            should_skip -= 1
-                            prev_def.pop()
-                        
-                if build_type == BuildType.CLIENT:
-                    match line[2:7]:
-                        case "ifdef":
-                            prev_def.append(line[8:])
-                            if prev_def[-1] == "SERVER" or prev_def[-1] == "ENGINE":
-                                should_skip += 1
+                    case "ifndef":
+                        prev_def.append(line[9:])
+                        if prev_def[-1] in defines:
+                            should_skip += 1
 
-                        case "endif":
-                            if prev_def[-1] == "CLIENT":
-                                continue
+                    case "endif":
+                        tmp = prev_def.pop()
+                        if tmp not in defines:
                             should_skip -= 1
-                            prev_def.pop()
+
+                    case "attr":
+                        pass
+
+                    case _:
+                        log(f"Invalid preprocessor directive in file {f}: {line}", LogType.ERROR)
 
             else:
                 if not should_skip:

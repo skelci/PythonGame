@@ -6,6 +6,7 @@ from engine.datatypes import *
 
 #?ifdef CLIENT
 import pygame
+from OpenGL.GL import *
 #?endif
 
 import os
@@ -17,7 +18,6 @@ class Material:
     
     #?ifdef CLIENT
     __textures = {}
-    __scaled_textures = {}
     #?endif
 
 
@@ -27,9 +27,6 @@ class Material:
             texture_str: Path to the texture file or a Color object.
         """
         self.texture_str = texture_str
-        #?ifdef CLIENT
-        self.__load_texture()
-        #?endif
 
 
     @property
@@ -52,43 +49,45 @@ class Material:
 
     @property
     def texture(self):
-        """ pygame.Surface - The original texture surface. """
+        """ OpenGL texture ID. """
         return Material.__textures[self.texture_str]
 
 
     #?ifdef CLIENT
-    def __load_texture(self):
+    def load_texture(self):
+        """ Called only by the engine. """
         if self.texture_str in Material.__textures:
             return
         
         if isinstance(self.texture_str, Color):
-            self.__textures[self.texture_str] = pygame.Surface((1, 1), pygame.SRCALPHA if self.texture_str.a != 255 else 0)
-            self.__textures[self.texture_str].fill(self.texture_str.tuple)
-            self.__scaled_textures[self.texture_str] = {}
-            return
-        
-        image = pygame.image.load(self.texture_str)
-        if image.get_alpha() is None:
-            image = image.convert()
-        else:
-            image = image.convert_alpha()
-        self.__textures[self.texture_str] = image                
-        self.__scaled_textures[self.texture_str] = {}            
+            image = pygame.Surface((1, 1), pygame.SRCALPHA if self.texture_str.a != 255 else 0)
+            image.fill(self.texture_str.tuple)
+            self.__textures[self.texture_str] = image
 
+        else:        
+            image = pygame.image.load(self.texture_str)
+            if image.get_alpha() is None:
+                image = image.convert()
+            else:
+                image = image.convert_alpha()
 
-    def get_surface(self, size: Vector) -> pygame.Surface:
-        """
-        Gets the scaled pygame surface.
-        Args:
-            size: Width and Height of the surface to scale to.
-        Returns:
-            pygame.Surface - Scaled surface texture.
-        """
-        if size not in self.__scaled_textures[self.texture_str]:
-            self.__scaled_textures[self.texture_str][size] = pygame.transform.scale(self.texture, size.tuple)
+        self.__textures[self.texture_str] = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.__textures[self.texture_str])
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
-        return self.__scaled_textures[self.texture_str][size]
+        width, height = image.get_size()
+        image_data = pygame.image.tostring(image, "RGBA")
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+
     
+    def use(self):
+        """ Called only by the renderer. """
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
     #?endif
 
 

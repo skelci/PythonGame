@@ -42,7 +42,6 @@ class BackgroundLayer:
     def material(self, value):
         if value.__class__.__name__ == "Material":
             self.__material = value
-            self.__texture = value.texture
         else:
             raise TypeError("Texture must be a Material instance.")
         
