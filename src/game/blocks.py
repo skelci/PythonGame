@@ -42,20 +42,26 @@ def register_actor_templates(engine_ref):
 class Player(Character):
     def __init__(self, name, position):
         super().__init__(name, position=Vector(-5, 28), material = Material("res/textures/player.png"), jump_velocity=7, render_layer=5, initial_velocity=Vector())
-        self.inventory = {"Furnace": 1}
+        self.inventory_dict = {"Furnace": 1}
+        self.inventory_list = [None] * 10
+        self.inventory_list[8] = "Furnace"
         self.health = 100
         self.hunger = 100
         
 
     def add_to_inventory(self, item_name, count):
-        if len(self.inventory) >= 10 and item_name not in self.inventory:
+        if len(self.inventory_dict) >= 10 and item_name not in self.inventory_dict:
             return False
         
-        if item_name in self.inventory:
-            self.inventory[item_name] += count
+        if item_name in self.inventory_dict:
+            self.inventory_dict[item_name] += count
         else:
-            self.inventory[item_name] = count
-        self.engine_ref.network.send(self.id, "update_inventory", self.inventory)
+            self.inventory_dict[item_name] = count
+            for i in range(10):
+                if self.inventory_list[i] is None:
+                    self.inventory_list[i] = item_name
+                    break
+        self.engine_ref.network.send(self.id, "update_inventory", (self.inventory_dict, self.inventory_list))
         return True
 
 

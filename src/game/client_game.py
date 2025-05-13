@@ -50,15 +50,17 @@ class NetworkHandler:
 
     @staticmethod
     def update_inventory(data):
-        slot_num=0
+        inventory_dict, inventory_list = data
 
-        for key, value in data.items():
-            slot_num += 1
+        for i, item_name in enumerate(inventory_list):
 
-            slot_key=f"slot_{slot_num}"
+            if item_name is None:
+                continue
+
+            slot_key=f"slot_{i + 1}"
             slot_icon = NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_icon"]
 
-            match key:
+            match item_name:
                 case "Stick":           slot_icon.material = Material("res/textures/stick.png")
                 case "Leaf":            slot_icon.material = Material("res/textures/leaf.png")
                 case "Wood":            slot_icon.material = Material("res/textures/wood.png")
@@ -71,9 +73,9 @@ class NetworkHandler:
                 case "Diamond":         slot_icon.material = Material("res/textures/diamond.png")
                 case "Seed":            slot_icon.material = Material("res/textures/seed.png")
                 case "Furnace":         slot_icon.material = Material("res/textures/furnace.png")
-                case _: raise ValueError(f"Unknown item type: {key}")
+                case _: raise ValueError(f"Unknown item type: {item_name}")
             
-            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_count"].text = str(value)
+            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_count"].text = str(inventory_dict[item_name])
 
 
     @staticmethod
