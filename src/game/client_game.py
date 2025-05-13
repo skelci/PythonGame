@@ -26,7 +26,7 @@ class NetworkHandler:
     def fall_damage(data):
         player_key = f"__Player_{NetworkHandler.engine_ref.network.id}"
         player = NetworkHandler.engine_ref.level.actors[player_key]
-        damage = math.floor(abs(data) *1.5) 
+        damage = math.floor(abs(data)) * 2
         player.health -= damage
         if player.health <= 0:
             player.health = 0
