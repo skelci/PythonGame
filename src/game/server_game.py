@@ -31,6 +31,16 @@ class KeyHandler:
     def key_D(engine_ref, level_ref, id, delta_time):
         level_ref.actors[engine_ref.get_player_actor(id)].move_direction = 1
 
+    @staticmethod
+    def scroll_up(engine_ref, level_ref, id):
+        player = level_ref.actors[engine_ref.get_player_actor(id)]
+        player.set_inventory_slot((player.current_inventory_slot + 1) % 10)
+    
+    @staticmethod
+    def scroll_down(engine_ref, level_ref, id):
+        player = level_ref.actors[engine_ref.get_player_actor(id)]
+        player.set_inventory_slot((player.current_inventory_slot - 1) % 10)
+
 
     @staticmethod
     def key_C(engine_ref, level_ref, id):
@@ -99,6 +109,8 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.A, KeyPressType.HOLD, KeyHandler.key_A)
         self.engine.register_key(Keys.D, KeyPressType.HOLD, KeyHandler.key_D)
         self.engine.register_key(Keys.C, KeyPressType.TRIGGER, KeyHandler.key_C)
+        self.engine.register_key(Keys.MOUSE_SCROLL_UP, KeyPressType.TRIGGER, KeyHandler.scroll_up)
+        self.engine.register_key(Keys.MOUSE_SCROLL_DOWN, KeyPressType.TRIGGER, KeyHandler.scroll_down)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.HOLD, KeyHandler.destroy_blocks)
 
         #?ifdef ENGINE

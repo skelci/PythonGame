@@ -45,6 +45,7 @@ class Player(Character):
         self.inventory_dict = {"Furnace": 1}
         self.inventory_list = [None] * 10
         self.inventory_list[8] = "Furnace"
+        self.current_inventory_slot = 0
         self.health = 100
         self.hunger = 100
         
@@ -63,6 +64,13 @@ class Player(Character):
                     break
         self.engine_ref.network.send(self.id, "update_inventory", (self.inventory_dict, self.inventory_list))
         return True
+    
+
+    def set_inventory_slot(self, slot):
+        if slot < 0 or slot >= len(self.inventory_list):
+            return
+        self.current_inventory_slot = slot
+        self.engine_ref.network.send(self.id, "set_inventory_slot", slot)
 
 
     def on_collision(self, collision_data):

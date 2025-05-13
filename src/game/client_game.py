@@ -45,7 +45,11 @@ class NetworkHandler:
             print("Player is starving")
         else:
             NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["hunger_bar"].set_hunger(player.hunger)
+    
 
+    @staticmethod
+    def set_inventory_slot(data):
+        NetworkHandler.engine_ref.widgets["Inventory"].set_inventory_slot(data + 1)
 
 
     @staticmethod
@@ -138,7 +142,7 @@ class ClientGame(ClientGameBase):
         eng.regisrer_network_command("update_inventory", NetworkHandler.update_inventory)
         eng.regisrer_network_command("health", NetworkHandler.set_health)
         eng.regisrer_network_command("hunger", NetworkHandler.set_hunger)
-        
+        eng.regisrer_network_command("set_inventory_slot", NetworkHandler.set_inventory_slot)
         
         #?ifdef ENGINE
         eng.connect("localhost", 5555)

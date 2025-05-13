@@ -122,7 +122,14 @@ class Inventory(Widget):
                 "hunger_bar": Alignment.BOTTOM_CENTER,
             }
         )
+        self.inventory_slot = 1
+        self.subwidgets[f"slot_{1}"].border_color = Color(0, 0, 0)
 
+
+    def set_inventory_slot(self, slot):
+        self.subwidgets[f"slot_{self.inventory_slot}"].border_color = Color(150, 150, 150)
+        self.subwidgets[f"slot_{slot}"].border_color = Color(0, 0, 0)
+        self.inventory_slot = slot
 
 
 class HealthBar(Border):
