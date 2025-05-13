@@ -116,7 +116,7 @@ class ServerGame(ServerGameBase):
     def tick(self):
         delta_time = super().tick()
 
-        for player in self.engine.players.values():
+        for id, player in self.engine.players.items():
             divider = self.world_generator.chunk_size / CHUNK_SIZE
             ud = player.update_distance // divider + 3
             ud = int(clamp(ud, 1, 8))
@@ -126,6 +126,9 @@ class ServerGame(ServerGameBase):
                 for offset_x in range(-ud, ud):
                     self.world_generator.generate_and_load_chunks(chk + (offset_x, offset_y))
 
-
-
-
+            if not player.level:
+                continue
+            player_actor = self.engine.levels[player.level].actors.get(self.engine.get_player_actor(id))
+            if not player_actor:
+                continue
+            player_actor.set_hunger(-delta_time * 0.1)

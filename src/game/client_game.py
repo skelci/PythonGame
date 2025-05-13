@@ -33,6 +33,18 @@ class NetworkHandler:
             print("Player is dead")
         else:
             NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["health_bar"].set_health(player.health)
+    
+    @staticmethod
+    def set_hunger(data):
+        player_key = f"__Player_{NetworkHandler.engine_ref.network.id}"
+        player = NetworkHandler.engine_ref.level.actors[player_key]
+        player.hunger = data
+        if player.hunger <= 0:
+            player.hunger = 0
+            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["hunger_bar"].set_hunger(0)
+            print("Player is starving")
+        else:
+            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["hunger_bar"].set_hunger(player.hunger)
 
 
 
@@ -123,6 +135,7 @@ class ClientGame(ClientGameBase):
         eng.regisrer_network_command("register_outcome", NetworkHandler.register_outcome)
         eng.regisrer_network_command("update_inventory", NetworkHandler.update_inventory)
         eng.regisrer_network_command("health", NetworkHandler.set_health)
+        eng.regisrer_network_command("hunger", NetworkHandler.set_hunger)
         
         
         #?ifdef ENGINE

@@ -44,6 +44,7 @@ class Player(Character):
         super().__init__(name, position=Vector(-5, 28), material = Material("res/textures/player.png"), jump_velocity=7, render_layer=5, initial_velocity=Vector())
         self.inventory = {"Furnace": 1}
         self.health = 100
+        self.hunger = 100
         
 
     def add_to_inventory(self, item_name, count):
@@ -63,6 +64,11 @@ class Player(Character):
             self.health -= abs(self.velocity.y)
             self.engine_ref.network.send(self.id, "health", self.health)
         super().on_collision(collision_data)
+
+    def set_hunger(self, hunger):
+        self.hunger += hunger
+        self.engine_ref.network.send(self.id, "hunger", self.hunger)
+
 
 
 
