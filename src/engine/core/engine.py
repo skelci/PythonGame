@@ -69,9 +69,6 @@ class Engine(ABC):
         #?ifdef CLIENT
         log_client("Engine stopped", LogType.INFO)
         #?endif
-        #?ifdef ENGINE
-        return
-        #?endif
         #?ifdef SERVER
         log_server("Engine stopped", LogType.INFO)
         #?endif
@@ -135,7 +132,8 @@ class ClientEngine(Engine, Renderer):
         self.__released_keys = set()
         self.__screen_mouse_pos = Vector()
 
-        self.current_background = None
+        self.__requested_background = None
+        self.__current_background = None
 
         self.__network_commands = {
             "register_actor": self.__register_actor,
@@ -195,20 +193,6 @@ class ClientEngine(Engine, Renderer):
             self.__fps = value
         else:
             raise TypeError("FPS must be a positive integer:", value)
-        
-
-    @property
-    def current_background(self):
-        """ str - Current background name. If None, background with Color(0, 0, 0) is drawn. """
-        return self.__current_background
-    
-
-    @current_background.setter
-    def current_background(self, value):
-        if value in self.backgrounds or value is None:
-            self.__current_background = value
-        else:
-            raise Exception(f"Background {value} is not registered")
         
 
     @property
@@ -298,6 +282,19 @@ class ClientEngine(Engine, Renderer):
         if not self.network or self.network.id <= 0:
             return False
         return True
+    
+
+    def set_background(self, background: str):
+        """
+        Sets the background of the engine. It is used to set the background of the level.
+        Args:
+            background: Background name.
+        Raises:
+            ValueError: If background is not registered.
+        """
+        if background not in self.backgrounds:
+            raise ValueError(f"Background {background} is not registered")
+        self.__requested_background = self.backgrounds[background]
 
 
     def register_actor_template(self, actor: Actor):
@@ -487,19 +484,23 @@ class ClientEngine(Engine, Renderer):
         # else:
         #     self.screen.fill((0, 0, 0))
 
-        self.__time("bg_render")
+        # self.__time("bg_render")
 
         for name, stat in self.__stats.items():
             self.widgets[name].set_value(sum(stat) / len(stat) * 1000)
 
-        render_time = self.render()
+        if self.__current_background != self.__requested_background:
+            self.background = self.__requested_background
+            self.__current_background = self.__requested_background
+
+        self.render()
 
         self.__time("render")
 
-        self.__stats["actor_render"].append(render_time[0])
-        self.__stats["widget_render"].append(render_time[1])
-        self.__stats["actor_render"].pop(0)
-        self.__stats["widget_render"].pop(0)
+        # self.__stats["actor_render"].append(render_time[0])
+        # self.__stats["widget_render"].append(render_time[1])
+        # self.__stats["actor_render"].pop(0)
+        # self.__stats["widget_render"].pop(0)
 
         if not self.running:
             self.stop()
@@ -604,7 +605,7 @@ class ClientEngine(Engine, Renderer):
 
 
     def __background(self, data):
-        self.current_background = data
+        self.set_background(data)
 
 
     def __play_sound(self, data):

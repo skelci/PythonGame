@@ -47,14 +47,20 @@ class Material:
             raise TypeError("Texture_str must be a string or Color:", value)
         
 
+    #?ifdef CLIENT
     @property
     def texture(self):
         """ OpenGL texture ID. """
         return Material.__textures[self.texture_str]
 
 
-    #?ifdef CLIENT
-    def load_texture(self):
+    @property
+    def size(self):
+        """ Vector - Size of the texture in pixels. """
+        return self.__size
+
+
+    def load(self):
         """ Called only by the engine. """
         if self.texture_str in Material.__textures:
             return
@@ -79,6 +85,7 @@ class Material:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
         width, height = image.get_size()
+        self.__size = Vector(width, height)
         image_data = pygame.image.tostring(image, "RGBA")
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data)
         glGenerateMipmap(GL_TEXTURE_2D)

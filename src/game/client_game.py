@@ -85,7 +85,7 @@ class ClientGame(ClientGameBase):
 
         eng.register_background(Background("sky", (BackgroundLayer(Material(Color(100, 175, 255)), 20, 0.25), )))
         eng.register_background(Background("main_menu", (BackgroundLayer(Material(Color(19, 3, 31)), eng.camera_width, 0), )))
-        eng.current_background = "main_menu"
+        eng.set_background("main_menu")
 
         invalid_port_warning = WarningWidget("invalid_port_warning", "Invalid port number")
         failed_connection_warning = WarningWidget("failed_connection_warning", "Failed to connect to server")
@@ -135,6 +135,8 @@ class ClientGame(ClientGameBase):
 
     def tick(self):
         delta_time = super().tick()
+
+        # print(f"FPS: {1 / delta_time:.2f}")
 
         if Keys.F11 in self.engine.triggered_keys:
             self.engine.fullscreen = not self.engine.fullscreen
