@@ -41,6 +41,11 @@ class KeyHandler:
         player = level_ref.actors[engine_ref.get_player_actor(id)]
         player.set_inventory_slot((player.current_inventory_slot - 1) % 10)
     
+    @staticmethod
+    def slot_selection(engine_ref, level_ref, id, slot):
+        player = level_ref.actors[engine_ref.get_player_actor(id)]
+        player.set_inventory_slot(slot)
+    
 
     @staticmethod
     def place_block(engine_ref, level_ref, id):
@@ -63,6 +68,19 @@ class KeyHandler:
                 return
         level_ref.register_actor(block)
     
+
+    @staticmethod
+    def use_block(engine_ref, level_ref, id):
+        player_pos = level_ref.actors[engine_ref.get_player_actor(id)].position
+        actors = level_ref.get_actors_in_chunks_3x3(get_chunk_cords(player_pos))
+
+        for actor in actors:
+            if isinstance(actor, Furnace) and player_pos.distance_to(actor.position) < 1:
+                print("open furnace")
+                return
+            elif isinstance(actor, Anvil) and player_pos.distance_to(actor.position) < 1:
+                print("open anvil")
+                return
         
 
     @staticmethod
@@ -136,6 +154,17 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.MOUSE_SCROLL_DOWN, KeyPressType.TRIGGER, KeyHandler.scroll_down)
         self.engine.register_key(Keys.MOUSE_LEFT, KeyPressType.HOLD, KeyHandler.destroy_blocks)
         self.engine.register_key(Keys.MOUSE_RIGHT, KeyPressType.RELEASE, KeyHandler.place_block)
+        self.engine.register_key(Keys.E, KeyPressType.TRIGGER, KeyHandler.use_block)
+        self.engine.register_key(Keys.KEY_1, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 0))
+        self.engine.register_key(Keys.KEY_2, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 1))
+        self.engine.register_key(Keys.KEY_3, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 2))
+        self.engine.register_key(Keys.KEY_4, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 3))
+        self.engine.register_key(Keys.KEY_5, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 4))
+        self.engine.register_key(Keys.KEY_6, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 5))
+        self.engine.register_key(Keys.KEY_7, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 6))
+        self.engine.register_key(Keys.KEY_8, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 7))
+        self.engine.register_key(Keys.KEY_9, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 8))
+        self.engine.register_key(Keys.KEY_0, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 9))
 
         #?ifdef ENGINE
         self.engine.console.handle_cmd("build_server")
