@@ -291,6 +291,18 @@ class Level:
 
         return actors
     
+    def get_actors_in_chunk(self, chunk_pos: Vector):
+        """
+        Returns a list of actors in the given chunk position.
+        Args:
+            chunk_pos: Position of the chunk.
+        Returns:
+            list[Actor] - List of actors in the given chunk position.
+        """
+        if chunk_pos not in self.chunks:
+            return 
+        return self.chunks[chunk_pos]
+    
 
     def add_actor_to_chunk(self, actor):
         """

@@ -72,7 +72,7 @@ class KeyHandler:
     @staticmethod
     def use_block(engine_ref, level_ref, id):
         player_pos = level_ref.actors[engine_ref.get_player_actor(id)].position
-        actors = level_ref.get_actors_in_chunks_3x3(get_chunk_cords(player_pos))
+        actors = level_ref.get_actors_in_chunk(get_chunk_cords(player_pos))
 
         for actor in actors:
             if isinstance(actor, Furnace) and player_pos.distance_to(actor.position) < 1:
