@@ -503,7 +503,7 @@ class ServerNetwork(Network):
             if client_id in self.__id_to_udp_addr:
                 self._send_priority_buffer.add_data((client_id, parsed_data))
             else:
-                log_server(f"Warning: No UDP address for client {client_id}. Cannot send priority message '{cmd}'.", LogType.DEBUG)
+                log_server(f"Warning: No UDP address for client {client_id}. Cannot send priority message '{cmd}'.", LogType.WARNING)
         else:
             if client_id in self.__id_to_tcp_conn:
                 self._send_unpriority_buffer.add_data((client_id, parsed_data))

@@ -2,9 +2,10 @@
 
 import threading
 import subprocess
+import sys
+import time
 
 from engine.core.builder import *
-import sys
 
 
 
@@ -26,6 +27,8 @@ def run_client():
 if __name__ == "__main__":
     server_thread = threading.Thread(target=run_server)
     server_thread.start()
+
+    time.sleep(1)
 
     run_client()
 

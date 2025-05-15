@@ -2,12 +2,17 @@
 
 layout(location = 0) in vec2 vertexPos;
 layout(location = 1) in vec2 vertexTexCoord;
+layout(location = 2) in float renderLayer;
+
+uniform vec2 cameraPos;
+uniform vec2 scale;
 
 out vec2 fragmentTexCoord;
 
 void main()
 {
-    gl_Position = vec4(vertexPos, 0.0, 1.0);
+    vec2 pos = (vertexPos - cameraPos) * scale;
+    gl_Position = vec4(pos, renderLayer, 1.0);
     fragmentTexCoord = vertexTexCoord;
 }
 

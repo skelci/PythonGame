@@ -64,7 +64,7 @@ class Material:
             image.fill(self.texture_str.tuple)
             self.__textures[self.texture_str] = image
 
-        else:        
+        else:     
             image = pygame.image.load(self.texture_str)
             if image.get_alpha() is None:
                 image = image.convert()

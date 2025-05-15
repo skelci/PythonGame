@@ -119,7 +119,7 @@ class ClientEngine(Engine, Renderer):
 
     def __init__(self):
         Engine.__init__(self)
-        Renderer.__init__(self, 1600, 900, 10, "Game", False, True, Vector())
+        Renderer.__init__(self, 1600, 900, 4, "Game", False, True, Vector())
 
         self.fps = 120
 

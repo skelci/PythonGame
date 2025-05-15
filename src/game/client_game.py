@@ -136,7 +136,6 @@ class ClientGame(ClientGameBase):
     def tick(self):
         delta_time = super().tick()
 
-        # print(f"FPS: {sum(self.engine.stats['fps']) / len(self.engine.stats['fps']) * 1000:.2f}")
         if Keys.F11 in self.engine.triggered_keys:
             self.engine.fullscreen = not self.engine.fullscreen
 

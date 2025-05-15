@@ -21,42 +21,73 @@ import ctypes
 
 
 
-class Quad:
-    def __init__(self, position):
-        self.position = np.array(position, dtype=np.float32)      
+class ActorMesh:
+    """ Mesh class for rendering actors. This class handles the OpenGL vertex array and buffer objects for rendering. """
 
-
-
-class QuadMesh:
-    def __init__(self):
-        # x, y, s, t
-        self.vertices = np.array([
-            -1, -1, 0, 1,
-            -1,  1, 0, 0,
-             1, -1, 1, 0,
-
-             1,  1, 1, 0,
-            -1,  1, 0, 0,
-             1, -1, 1, 0
-        ], dtype=np.float32)
-
-        self.vertex_count = 6
+    def __init__(self, actor):
+        self.actor = actor
 
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
         self.vbo = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_STATIC_DRAW)
+
+        self.vbo_data_allocated = False
+        self.create_vertex_array(actor) 
 
         glEnableVertexAttribArray(0)
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(0))
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(0))
         glEnableVertexAttribArray(1)
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, ctypes.c_void_p(8))
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(8))
+        glEnableVertexAttribArray(2)
+        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(16))
+
+        glBindVertexArray(0)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
 
 
-    def destroy(self):
-        glDeleteVertexArrays(1, (self.vao,))
-        glDeleteBuffers(1, (self.vbo,))
+    def create_vertex_array(self, actor):
+        a = actor.half_size
+        p = actor.position
+        r = actor.render_layer
+        self.prev_actor = (p, a, r)
+
+        # x, y, s, t, z
+        self.vertices = np.array([
+            -a.x + p.x, -a.y + p.y, 0.0, 1.0, -r / 255,
+            -a.x + p.x,  a.y + p.y, 0.0, 0.0, -r / 255,
+             a.x + p.x, -a.y + p.y, 1.0, 1.0, -r / 255,
+             a.x + p.x,  a.y + p.y, 1.0, 0.0, -r / 255,
+        ], dtype=np.float32)
+        self.vertex_count = 4
+
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
+        if not self.vbo_data_allocated:
+            glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_DYNAMIC_DRAW)
+            self.vbo_data_allocated = True
+        else:
+            glBufferSubData(GL_ARRAY_BUFFER, 0, self.vertices.nbytes, self.vertices)
+
+
+    def draw(self):
+        if self.prev_actor != (self.actor.position, self.actor.half_size, self.actor.render_layer):
+            self.create_vertex_array(self.actor)
+        
+        self.actor.material.use()
+        glBindVertexArray(self.vao)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, self.vertex_count)
+
+
+    def __del__(self):
+        try:
+            if glDeleteVertexArrays and self.vao:
+                glDeleteVertexArrays(1, [self.vao])
+            if glDeleteBuffers and self.vbo:
+                glDeleteBuffers(1, [self.vbo])
+        except Exception:
+            log("Failed to delete OpenGL buffers", LogType.ERROR)
+            pass
+
 
 
 
@@ -85,7 +116,7 @@ class Renderer:
         self.windowed = windowed
         self.resizeable = False
 
-        self.camera_width = camera_width
+        self.__camera_width = camera_width
         self.camera_position = camera_position
         
         self.__screen = pygame.display.set_mode(self.resolution.tuple, self.window_flags)
@@ -95,15 +126,18 @@ class Renderer:
         self.__screen_needs_update = False
 
         # OpenGL stuff
-        glClearColor(*Color(0, 0, 0).normalized)
+        glClearColor(*Color(0, 0, 100).normalized)
         glEnable(GL_BLEND)
+        glEnable(GL_DEPTH_TEST)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         
         self.__shader = self.__create_shader()
         glUseProgram(self.__shader)
+
+        self.__camera_pos_uniform = glGetUniformLocation(self.__shader, "cameraPos")
         glUniform1i(glGetUniformLocation(self.__shader, "imageTexture"), 0)
-        
-        self.triangle = QuadMesh()
+        glUniform2f(self.__camera_pos_uniform, *self.camera_position)
+        glUniform2f(glGetUniformLocation(self.__shader, "scale"), *(self.resolution.x / self.resolution / self.camera_width * 2))
 
         log("Renderer initialized", LogType.INFO)
 
@@ -193,6 +227,7 @@ class Renderer:
     def camera_width(self, value):
         if isinstance(value, (int, float)) and value > 0:
             self.__camera_width = value
+            glUniform2f(glGetUniformLocation(self.__shader, "scale"), *(self.resolution.x / self.resolution / self.camera_width * 2))
         else:
             raise TypeError("Camera width must be a positive number:", value)
         
@@ -273,9 +308,9 @@ class Renderer:
         if not isinstance(actor, Actor):
             raise TypeError("Actor must be a subclass of Actor:", actor)
         if actor.render_layer not in self.__actors_to_draw:
-            self.__actors_to_draw[actor.render_layer] = set()
+            self.__actors_to_draw[actor.render_layer] = {}
         actor.material.load_texture()
-        self.__actors_to_draw[actor.render_layer].add(actor)
+        self.__actors_to_draw[actor.render_layer][actor.name] = ActorMesh(actor)
 
 
     def remove_actor_from_draw(self, actor: Actor):
@@ -290,8 +325,8 @@ class Renderer:
         """
         if not isinstance(actor, Actor):
             raise TypeError("Actor must be a subclass of Actor:", actor)
-        if actor in self.__actors_to_draw[actor.render_layer]:
-            self.__actors_to_draw[actor.render_layer].remove(actor)
+        if actor.name in self.__actors_to_draw[actor.render_layer]:
+            self.__actors_to_draw[actor.render_layer].pop(actor.name)
         else:
             raise ValueError("Actor not found in actors to draw:", actor)
         
@@ -330,18 +365,17 @@ class Renderer:
         
         time_start = time.time()
 
-        glClear(GL_COLOR_BUFFER_BIT)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        layers = sorted(self.actors_to_draw.keys())
+        glUniform2f(self.__camera_pos_uniform, *self.camera_position)
+
+        glUseProgram(self.__shader)
+        layers = sorted(self.__actors_to_draw.keys())
         for layer in layers:
-            actors = self.actors_to_draw[layer]
-            for a in actors:
-                a.material.use()
-                break
-            break
+            meshes = self.__actors_to_draw[layer].values()
+            for mesh in meshes:
+                mesh.draw()
 
-        glBindVertexArray(self.triangle.vao)
-        glDrawArrays(GL_TRIANGLES, 0, self.triangle.vertex_count)
         # magic_scale = camera_ratio * 2 * 1.0005 ** self.camera_width * 1.003 ** ((1600 / self.resolution.y) ** 1.8 - 1) # Magic number to prevent gaps between tiles
         #         top_left_position = (
         #             camera_ratio * (a.position.x - a.half_size.x - self.camera_position.x) + self.resolution.x / 2,
