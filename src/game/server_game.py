@@ -34,12 +34,12 @@ class KeyHandler:
     @staticmethod
     def scroll_up(engine_ref, level_ref, id):
         player = level_ref.actors[engine_ref.get_player_actor(id)]
-        player.set_inventory_slot((player.current_inventory_slot + 1) % 10)
+        player.set_inventory_slot((player.current_inventory_slot - 1) % 10)
     
     @staticmethod
     def scroll_down(engine_ref, level_ref, id):
         player = level_ref.actors[engine_ref.get_player_actor(id)]
-        player.set_inventory_slot((player.current_inventory_slot - 1) % 10)
+        player.set_inventory_slot((player.current_inventory_slot + 1) % 10)
     
     @staticmethod
     def slot_selection(engine_ref, level_ref, id, slot):
