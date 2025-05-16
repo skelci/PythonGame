@@ -9,9 +9,6 @@ from .renderer import Renderer
 #?ifdef SERVER
 from .console import Console
 #?endif
-#?ifdef ENGINE
-from .builder import *
-#?endif
 from .network import *
 from engine.log import *
 
@@ -46,10 +43,6 @@ class Engine(ABC):
     def __init__(self):
         self.__running = True
 
-        #?ifdef ENGINE
-        self.builder = Builder("./build", "./packaged", ["./src"], ["./src", "./res"])
-        #?endif
-
 
     @property
     def running(self):
@@ -75,9 +68,6 @@ class Engine(ABC):
             self.network.stop()
         #?ifdef CLIENT
         log_client("Engine stopped", LogType.INFO)
-        #?endif
-        #?ifdef ENGINE
-        return
         #?endif
         #?ifdef SERVER
         log_server("Engine stopped", LogType.INFO)
@@ -126,7 +116,7 @@ class ClientEngine(Engine, Renderer):
 
     def __init__(self):
         Engine.__init__(self)
-        Renderer.__init__(self, 1600, 900, 10, "Game", False, True, Vector())
+        Renderer.__init__(self, 1600, 900, 4, "Game", False, True, Vector())
 
         self.fps = 120
 
@@ -142,7 +132,8 @@ class ClientEngine(Engine, Renderer):
         self.__released_keys = set()
         self.__screen_mouse_pos = Vector()
 
-        self.current_background = None
+        self.__requested_background = None
+        self.__current_background = None
 
         self.__network_commands = {
             "register_actor": self.__register_actor,
@@ -162,7 +153,6 @@ class ClientEngine(Engine, Renderer):
             "Character": Character,
         }
         
-        pygame.init()
         pygame.mixer.init(channels=16)
 
         self.__clock = pygame.time.Clock()
@@ -178,6 +168,7 @@ class ClientEngine(Engine, Renderer):
             "widget_render":    [0] * 30,
             "network":          [0] * 30,
         }
+        self.__stat_clock = 0
 
         self.register_widget(InfoText("fps",            0, "fps: "))
         self.register_widget(InfoText("events",         1, "events: "))
@@ -203,20 +194,6 @@ class ClientEngine(Engine, Renderer):
             self.__fps = value
         else:
             raise TypeError("FPS must be a positive integer:", value)
-        
-
-    @property
-    def current_background(self):
-        """ str - Current background name. If None, background with Color(0, 0, 0) is drawn. """
-        return self.__current_background
-    
-
-    @current_background.setter
-    def current_background(self, value):
-        if value in self.backgrounds or value is None:
-            self.__current_background = value
-        else:
-            raise Exception(f"Background {value} is not registered")
         
 
     @property
@@ -279,6 +256,12 @@ class ClientEngine(Engine, Renderer):
         return self.__update_distance
     
 
+    @property
+    def stats(self):
+        """ dict[str, list[float]] - Dictionary of all stats. Key is stat name, value is list of last 30 values. """
+        return self.__stats
+    
+
     def show_all_stats(self):
         """ Show all stats of the engine in the top left corner of the screen. It sets all stat widgets to visible. """
         for name, _ in self.__stats.items():
@@ -300,6 +283,19 @@ class ClientEngine(Engine, Renderer):
         if not self.network or self.network.id <= 0:
             return False
         return True
+    
+
+    def set_background(self, background: str):
+        """
+        Sets the background of the engine. It is used to set the background of the level.
+        Args:
+            background: Background name.
+        Raises:
+            ValueError: If background is not registered.
+        """
+        if background not in self.backgrounds:
+            raise ValueError(f"Background {background} is not registered")
+        self.__requested_background = self.backgrounds[background]
 
 
     def register_actor_template(self, actor: Actor):
@@ -453,9 +449,6 @@ class ClientEngine(Engine, Renderer):
         self.__handle_events()
         
         self.__time("events")
-
-        if not self.running:
-            self.network.stop()
         
         if self.network:
             self.network.tick()
@@ -487,24 +480,19 @@ class ClientEngine(Engine, Renderer):
 
         self.__time("render_regs")
 
-        if self.current_background:
-            self.draw_background(self.backgrounds[self.current_background])
-        else:
-            self.screen.fill((0, 0, 0))
+        self.__stat_clock += 1
+        if self.__stat_clock >= 10:
+            self.__stat_clock = 0
+            for name, stat in self.__stats.items():
+                self.widgets[name].set_value(sum(stat) / len(stat) * 1000)
 
-        self.__time("bg_render")
+        if self.__current_background != self.__requested_background:
+            self.background = self.__requested_background
+            self.__current_background = self.__requested_background
 
-        for name, stat in self.__stats.items():
-            self.widgets[name].set_value(sum(stat) / len(stat) * 1000)
-
-        render_time = self.render()
+        self.render()
 
         self.__time("render")
-
-        self.__stats["actor_render"].append(render_time[0])
-        self.__stats["widget_render"].append(render_time[1])
-        self.__stats["actor_render"].pop(0)
-        self.__stats["widget_render"].pop(0)
 
         if not self.running:
             self.stop()
@@ -546,9 +534,6 @@ class ClientEngine(Engine, Renderer):
             match event.type:
                 case pygame.QUIT:
                     self.stop()
-
-                case pygame.VIDEORESIZE:
-                    self.resolution = Vector(event.w, event.h)
 
                 case pygame.MOUSEBUTTONDOWN:
                     self.__pressed_keys.add(Keys(event.button))
@@ -612,7 +597,7 @@ class ClientEngine(Engine, Renderer):
 
 
     def __background(self, data):
-        self.current_background = data
+        self.set_background(data)
 
 
     def __play_sound(self, data):

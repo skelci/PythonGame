@@ -7,6 +7,7 @@ This module contains the Widget class, which is core to the GUI system.
 from engine.datatypes import *
 
 import pygame
+from OpenGL.GL import *
 
 
 
@@ -40,6 +41,8 @@ class Widget:
         self.subwidgets = subwidgets
         self.subwidget_offsets = subwidget_offsets
         self.subwidget_alignments = subwidget_alignments
+
+        self.__surface_id = None
 
 
     @property
@@ -234,5 +237,37 @@ class Widget:
             subwidget_offset.y += self.size.y - subwidget.size.y
 
         return subwidget_offset
+    
+
+    def create_material(self):
+        """ Creates an OpenGL texture from the widget surface. """
+        surface_id = self.__surface_id
+        if surface_id is not None:
+            glDeleteTextures(1, [surface_id])
+        
+        surface = self.surface
+
+        surface_id = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, surface_id)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+        width, height = surface.get_size()
+        image_data = pygame.image.tostring(surface, "RGBA")
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+
+        self.__surface_id = surface_id
+
+
+    def use_material(self):
+        """ Use the OpenGL texture for rendering. """
+        if not self._subwidget_updated or not self._updated or self.__surface_id is None:
+            self.create_material()
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.__surface_id)
+        
 
 

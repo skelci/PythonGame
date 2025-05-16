@@ -24,12 +24,6 @@ class Console:
             "stop": "self.stop()\nself.console.stop()",
             "tp": "self.levels['{arg1}'].actors['{arg2}'].position = Vector({arg3}, {arg4})",
 
-            #?ifdef ENGINE
-            "build_clear": "self.builder.clear_build()",
-            "build_client": "self.builder.clear_build(BuildType.CLIENT)\nself.builder.build_client()",
-            "build_server": "self.builder.clear_build(BuildType.SERVER)\nself.builder.build_server()",
-            #?endif
-            
             "stat_tps": "print('tps:', self.get_stat('tps'))",
             "stat_console_cmds": "print('console_cmds:', self.get_stat('console_cmds'), 'ms')",
             "stat_level_updates": "print('level_updates:', self.get_stat('level_updates'), 'ms')",

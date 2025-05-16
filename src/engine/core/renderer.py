@@ -9,11 +9,146 @@ from engine.log import LogType
 from engine.datatypes import *
 from engine.components.actors.actor import Actor
 from engine.components.ui.widget import Widget
-from engine.components.background import Background
+from engine.components.background import *
+from engine.components.material import Material
 
 import pygame
+import numpy as np
+from OpenGL.GL import *
+from OpenGL.GL.shaders import compileProgram, compileShader
 
-import time
+import ctypes
+
+
+
+class QuadMesh:
+    """ Mesh class for rendering quads. This class handles the OpenGL vertex array and buffer objects for rendering. """
+
+    def __init__(self, actor):
+        self.actor = actor
+
+        self.vao = glGenVertexArrays(1)
+        glBindVertexArray(self.vao)
+        self.vbo = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
+
+        self.vbo_data_allocated = False
+        self.create_vertex_array(actor) 
+
+        glEnableVertexAttribArray(0)
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(0))
+        glEnableVertexAttribArray(1)
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(8))
+        glEnableVertexAttribArray(2)
+        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(16))
+
+        glBindVertexArray(0)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+
+
+    def create_vertices(self, actor):
+        a = actor.half_size
+        p = actor.position
+        r = actor.render_layer
+        self.prev_actor = (p, a)
+
+        # x, y, s, t, z
+        self.vertices = np.array([
+            -a.x + p.x, -a.y + p.y, 0.0, 1.0, -r / 1024,
+            -a.x + p.x,  a.y + p.y, 0.0, 0.0, -r / 1024,
+             a.x + p.x, -a.y + p.y, 1.0, 1.0, -r / 1024,
+             a.x + p.x,  a.y + p.y, 1.0, 0.0, -r / 1024,
+        ], dtype=np.float32)
+
+
+    def create_vertex_array(self, actor):
+        self.create_vertices(actor)
+        self.vertex_count = 4
+
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
+        if not self.vbo_data_allocated:
+            glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_DYNAMIC_DRAW)
+            self.vbo_data_allocated = True
+        else:
+            glBufferSubData(GL_ARRAY_BUFFER, 0, self.vertices.nbytes, self.vertices)
+
+
+    def draw(self):
+        if self.prev_actor != (self.actor.position, self.actor.half_size):
+            self.create_vertex_array(self.actor)
+        
+        self.actor.material.use()
+        glBindVertexArray(self.vao)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, self.vertex_count)
+
+
+    def __del__(self):
+        try:
+            if glDeleteVertexArrays and self.vao:
+                glDeleteVertexArrays(1, [self.vao])
+            if glDeleteBuffers and self.vbo:
+                glDeleteBuffers(1, [self.vbo])
+        except Exception:
+            log("Failed to delete OpenGL buffers", LogType.ERROR)
+
+
+    
+class WidgetMesh(QuadMesh):
+    """ Mesh class for rendering widgets. """
+    def __init__(self, widget, top_left_pos, size):
+        self.top_left_pos = top_left_pos
+        self.size = size
+        super().__init__(widget)
+
+
+    def create_vertices(self, widget):
+        r = -(widget.layer + 512) / 1024
+        t = self.top_left_pos
+        s = self.size
+        
+        # x, y, s, t, z
+        self.vertices = np.array([
+            -1 + t.x,       1 - t.y - s.y, 0, 1, r,
+            -1 + t.x,       1 - t.y,       0, 0, r,
+            -1 + t.x + s.x, 1 - t.y - s.y, 1, 1, r,
+            -1 + t.x + s.x, 1 - t.y,       1, 0, r,
+        ], dtype=np.float32)
+
+    
+    def draw(self):
+        glBindVertexArray(self.vao)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, self.vertex_count)
+
+
+
+class BackgroundMesh:
+    """ Mesh class for rendering background layers. """
+
+    def __init__(self, layer, screen_res, camera_width):
+        layer.material.load()
+        self.layer = layer
+
+        material_half_size = self.layer.material.size / 2
+        scaled_material_half_size = material_half_size / material_half_size.x * self.layer.width
+        self.scaled_material_size = scaled_material_half_size * 2
+
+        tiles = (camera_width / self.scaled_material_size * (screen_res / screen_res.x)).ceiled + 1
+        half_tiles = tiles // 2
+        
+        self.meshes = []
+
+        for x in range(int(-half_tiles.x), int(-half_tiles.x + tiles.x)):
+            for y in range(int(-half_tiles.y), int(-half_tiles.y + tiles.y)):
+                obj = Actor("actor", Vector(x, y) * scaled_material_half_size * 2, scaled_material_half_size, material=self.layer.material, render_layer=self.layer.render_layer)
+                self.meshes.append(QuadMesh(obj))
+
+        
+    def draw(self, camera_pos, camer_pos_uniform):
+        camera_pos = (camera_pos * self.layer.scroll_speed) % self.scaled_material_size - self.scaled_material_size
+        glUniform2f(camer_pos_uniform, *camera_pos)
+
+        for mesh in self.meshes:
+            mesh.draw()
 
 
 
@@ -33,23 +168,66 @@ class Renderer:
         Raises:
             TypeError: If any of the arguments are of incorrect type.
         """
-        self.__screen = None
-        self.__fullscreen = False
-        self.__windowed = True
-        self.__resizeable = True
+        pygame.init()
 
         self.resolution = Vector(width, height)
-
         self.title = title
-        self.camera_width = camera_width
+
         self.fullscreen = fullscreen
         self.windowed = windowed
+        self.resizeable = False
+
+        self.__camera_width = camera_width
         self.camera_position = camera_position
+        
+        self.__screen = pygame.display.set_mode(self.resolution.tuple, self.window_flags)
 
         self.__actors_to_draw = {}
         self.__widgets_to_draw = []
+        self.__screen_needs_update = False
+
+        # OpenGL stuff
+        glClearColor(*Color())
+        glEnable(GL_BLEND)
+        glEnable(GL_DEPTH_TEST)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        
+        self.__shaders = {}
+
+        self.__shaders["actor"] = self.__create_shader("actor_vertex.txt")
+        glUseProgram(self.__shaders["actor"])
+
+        self.__camera_pos_uniform = glGetUniformLocation(self.__shaders["actor"], "cameraPos")
+
+        glUniform1i(glGetUniformLocation(self.__shaders["actor"], "imageTexture"), 0)
+        glUniform2f(self.__camera_pos_uniform, *self.camera_position)
+        glUniform2f(glGetUniformLocation(self.__shaders["actor"], "scale"), *(self.resolution.x / self.resolution / self.camera_width * 2))
+
+        self.background = Background("default", (BackgroundLayer(Material(Color()), 4, 1), ))
+
+        self.__shaders["widget"] = self.__create_shader("widget_vertex.txt")
 
         log("Renderer initialized", LogType.INFO)
+
+
+    def __del__(self):
+        glDeleteProgram(self.__shaders["actor"])
+        glDeleteProgram(self.__shaders["widget"])
+
+
+    def __create_shader(self, vertex_src, fragment_src = "fragment.txt"):
+        with open(f"src/engine/core/shaders/{vertex_src}", "r") as f:
+            vertex_src = f.readlines()
+
+        with open(f"src/engine/core/shaders/{fragment_src}", "r") as f:
+            fragment_src = f.readlines()
+
+        shader = compileProgram(
+            compileShader(vertex_src, GL_VERTEX_SHADER),
+            compileShader(fragment_src, GL_FRAGMENT_SHADER)
+        )
+
+        return shader
 
 
     @property
@@ -59,7 +237,7 @@ class Renderer:
             pygame.FULLSCREEN if self.fullscreen else 0 |
             pygame.NOFRAME if not self.windowed else 0 |
             pygame.RESIZABLE if self.__resizeable else 0 |
-            pygame.DOUBLEBUF | pygame.HWSURFACE
+            pygame.DOUBLEBUF | pygame.OPENGL
         )
 
 
@@ -74,7 +252,7 @@ class Renderer:
         if isinstance(value, Vector) and value.x > 0 and value.y > 0:
             self.__resolution = value
             self.__previous_ressolution = value
-            self.__screen = pygame.display.set_mode((value.x, value.y), self.window_flags)
+            self.__screen_needs_update = True
         else:
             raise TypeError("Width must be a positive integer:", value)
         
@@ -118,6 +296,8 @@ class Renderer:
     def camera_width(self, value):
         if isinstance(value, (int, float)) and value > 0:
             self.__camera_width = value
+            glUseProgram(self.__shaders["actor"])
+            glUniform2f(glGetUniformLocation(self.__shaders["actor"], "scale"), *(self.resolution.x / self.resolution / self.camera_width * 2))
         else:
             raise TypeError("Camera width must be a positive number:", value)
         
@@ -132,11 +312,8 @@ class Renderer:
     def fullscreen(self, value):
         if isinstance(value, bool):
             self.__fullscreen = value
-            res = (0, 0)
-            if not value:
-                res = self.__previous_ressolution.tuple
-            self.__screen = pygame.display.set_mode(res, self.window_flags)
-            self.__resolution = Vector(pygame.display.Info().current_w, pygame.display.Info().current_h) if value else self.__previous_ressolution
+            self.__screen_needs_update = True
+            self.resolution = Vector(pygame.display.Info().current_w, pygame.display.Info().current_h) if value else self.__previous_ressolution
         else:
             raise TypeError("Fullscreen must be a bool:", value)
         
@@ -151,7 +328,7 @@ class Renderer:
     def windowed(self, value):
         if isinstance(value, bool):
             self.__windowed = value
-            self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y), self.window_flags)
+            self.__screen_needs_update = True
         else:
             raise TypeError("Windowed must be a bool:", value)
         
@@ -166,10 +343,25 @@ class Renderer:
     def resizeable(self, value):
         if isinstance(value, bool):
             self.__resizeable = value
-            self.__screen = pygame.display.set_mode((self.resolution.x, self.resolution.y), self.window_flags)
+            self.__screen_needs_update = True
         else:
             raise TypeError("Resizeable must be a bool:", value)
         
+
+    @property
+    def background(self):
+        """ Background - The background object used for rendering. """
+        return self.__background
+    
+
+    @background.setter
+    def background(self, value):
+        if isinstance(value, Background):
+            self.__background = value
+            self.__background_meshes = [BackgroundMesh(layer, self.resolution, self.camera_width) for layer in self.__background.layers]
+        else:
+            raise TypeError("Background must be a Background instance:", value)
+
 
     @property
     def screen(self):
@@ -201,8 +393,9 @@ class Renderer:
         if not isinstance(actor, Actor):
             raise TypeError("Actor must be a subclass of Actor:", actor)
         if actor.render_layer not in self.__actors_to_draw:
-            self.__actors_to_draw[actor.render_layer] = set()
-        self.__actors_to_draw[actor.render_layer].add(actor)
+            self.__actors_to_draw[actor.render_layer] = {}
+        actor.material.load()
+        self.__actors_to_draw[actor.render_layer][actor.name] = QuadMesh(actor)
 
 
     def remove_actor_from_draw(self, actor: Actor):
@@ -217,8 +410,8 @@ class Renderer:
         """
         if not isinstance(actor, Actor):
             raise TypeError("Actor must be a subclass of Actor:", actor)
-        if actor in self.__actors_to_draw[actor.render_layer]:
-            self.__actors_to_draw[actor.render_layer].remove(actor)
+        if actor.name in self.__actors_to_draw[actor.render_layer]:
+            self.__actors_to_draw[actor.render_layer].pop(actor.name)
         else:
             raise ValueError("Actor not found in actors to draw:", actor)
         
@@ -250,40 +443,30 @@ class Renderer:
         Returns:
             tuple[float, float] - Time taken to draw actors and widgets respectively.
         """
-        camera_ratio = self.resolution.x / self.camera_width
+        if self.__screen_needs_update:
+            self.__screen = pygame.display.set_mode(self.resolution.tuple, self.window_flags)
+            self.__screen_needs_update = False
         
-        time_start = time.time()
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        magic_scale = camera_ratio * 2 * 1.0005 ** self.camera_width * 1.003 ** ((1600 / self.resolution.y) ** 1.8 - 1) # Magic number to prevent gaps between tiles
-        layers = sorted(self.actors_to_draw.keys())
+        glUseProgram(self.__shaders["actor"])
+        for layer_mesh in self.__background_meshes:
+            layer_mesh.draw(self.camera_position, self.__camera_pos_uniform)
+
+        glUniform2f(self.__camera_pos_uniform, *self.camera_position)
+
+        layers = sorted(self.__actors_to_draw.keys())
         for layer in layers:
-            actors = self.actors_to_draw[layer]
-            for a in actors:
-                top_left_position = (
-                    camera_ratio * (a.position.x - a.half_size.x - self.camera_position.x) + self.resolution.x / 2,
-                    camera_ratio * -(a.position.y + a.half_size.y - self.camera_position.y) + self.resolution.y / 2 # Invert the y-axis
-                )
+            meshes = self.__actors_to_draw[layer].values()
+            for mesh in meshes:
+                mesh.draw()
 
-                surface = a.material.get_surface(a.half_size * magic_scale)
-                self.screen.blit(surface, top_left_position)
-
-        time_actors = time.time()
-
+        glUseProgram(self.__shaders["widget"])
         self.__widgets_to_draw.sort(key = lambda w: w.layer)
         for w in self.widgets_to_draw:
             self.__draw_widget(w)
 
-        time_widgets = time.time()
-
         pygame.display.flip()
-
-        return (time_actors - time_start, time_widgets - time_actors)
-
-
-    def draw_background(self, background: Background):
-        """ Called only by engine at the beginning of the frame after buffers are cleared. It draws background. """
-        bg_surface = background.get_bg_surface(self.camera_position, self.resolution, self.camera_width)
-        self.screen.blit(bg_surface, (0, 0))
 
 
     def __update_widget_screen_rect(self, widget, top_left_pos, camera_ratio):
@@ -297,15 +480,17 @@ class Renderer:
 
     def __draw_widget(self, widget):
         camera_ratio = self.resolution / Vector(1600, 900)
-        top_left_position = camera_ratio * widget.position
-        size = widget.size * camera_ratio.x
+        top_left_position = widget.position / Vector(1600, 900) * 2
+        size = widget.size / Vector(1600, 900) * 2
+        size.y *= camera_ratio.y / camera_ratio.x
 
         self.__update_widget_screen_rect(widget, top_left_position, camera_ratio.x)
 
-        surface = widget.surface
-        surface = pygame.transform.scale(surface, size.tuple)
+        widget_mesh = WidgetMesh(widget, top_left_position, size)
+        
+        widget.use_material()
 
-        self.screen.blit(surface, top_left_position.tuple)
+        widget_mesh.draw()
 
 
 

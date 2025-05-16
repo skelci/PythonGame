@@ -2,8 +2,11 @@
 
 ## Dependencies
 
-- pygame
-- noise
+To install the dependencies, run the following command:
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Latest Pics
 
@@ -12,9 +15,19 @@
 
 ## How to run
 
+To run the engine, use the following command:
 ```bash
-python ./src/main.py
+python ./src/run.py
 ```
+
+To build the game, run the engine with the `-b` flag:
+```bash
+python ./src/run.py -b
+```
+Package of the game will be created in the `packaged` folder.
+
+To stop the engine, you need to close the window AND execute `stop` command in the terminal.
+
 
 ## Credits
 

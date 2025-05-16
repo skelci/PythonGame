@@ -51,7 +51,18 @@ class Vector(Vector2):
         
         return NotImplemented
     
-    __rsub__ = __sub__
+    
+    def __rsub__(self, other):
+        if isinstance(other, tuple):
+            other = self.from_tuple(other)
+
+        if isinstance(other, Vector):
+            return other.__sub__(self)
+        
+        elif isinstance(other, (int, float)):
+            return Vector(other - self.x, other - self.y)
+        
+        return NotImplemented
     
 
     def __mul__(self, scalar):
@@ -91,7 +102,23 @@ class Vector(Vector2):
         
         return NotImplemented
     
-    __rmod__ = __mod__
+
+    def __rmod__(self, scalar):
+        if isinstance(scalar, tuple):
+            scalar = self.from_tuple(scalar)
+
+        if isinstance(scalar, Vector):
+            return scalar.__mod__(self)
+        
+        elif isinstance(scalar, (int, float)):
+            if self.x == 0 or self.y == 0:
+                raise ValueError("Cannot divide by zero.")
+            return Vector(
+                x=scalar % self.x,
+                y=scalar % self.y
+            )
+        
+        return NotImplemented
 
 
     def __truediv__(self, scalar):
@@ -108,7 +135,18 @@ class Vector(Vector2):
         
         return NotImplemented
     
-    __rtruediv__ = __truediv__
+
+    def __rtruediv__(self, scalar):
+        if isinstance(scalar, tuple):
+            scalar = self.from_tuple(scalar)
+
+        if isinstance(scalar, Vector):
+            return scalar.__truediv__(self)
+        
+        elif isinstance(scalar, (int, float)):
+            return Vector(scalar / self.x, scalar / self.y)
+        
+        return NotImplemented
 
 
     def __floordiv__(self, scalar):
@@ -125,7 +163,16 @@ class Vector(Vector2):
         
         return NotImplemented
     
-    __rfloordiv__ = __floordiv__
+    
+    def __rfloordiv__(self, scalar):
+        if isinstance(scalar, tuple):
+            scalar = self.from_tuple(scalar)
+
+        if isinstance(scalar, Vector):
+            return scalar.__floordiv__(self)
+
+        elif isinstance(scalar, (int, float)):
+            return Vector(scalar // self.x, scalar // self.y)
 
 
     def __hash__(self):

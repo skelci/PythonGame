@@ -166,11 +166,6 @@ class ServerGame(ServerGameBase):
         self.engine.register_key(Keys.KEY_9, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 8))
         self.engine.register_key(Keys.KEY_0, KeyPressType.TRIGGER, lambda e, l, id: KeyHandler.slot_selection(e, l, id, 9))
 
-        #?ifdef ENGINE
-        self.engine.console.handle_cmd("build_server")
-        self.engine.console.handle_cmd("build_client")
-        #?endif
-
         for x in range(-2, 3):
             for y in range(-2, 3):
                 self.world_generator.generate_and_load_chunks(Vector(x, y))
