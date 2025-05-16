@@ -25,7 +25,9 @@ class NetworkHandler:
     @staticmethod
     def set_health(data):
         player_key = f"__Player_{NetworkHandler.engine_ref.network.id}"
-        player = NetworkHandler.engine_ref.level.actors[player_key]
+        player = NetworkHandler.engine_ref.level.actors.get(player_key)
+        if not player:
+            return
         player.health = data
         if player.health <= 0:
             player.health = 0
@@ -37,7 +39,9 @@ class NetworkHandler:
     @staticmethod
     def set_hunger(data):
         player_key = f"__Player_{NetworkHandler.engine_ref.network.id}"
-        player = NetworkHandler.engine_ref.level.actors[player_key]
+        player = NetworkHandler.engine_ref.level.actors.get(player_key)
+        if not player:
+            return
         player.hunger = data
         if player.hunger <= 0:
             player.hunger = 0
@@ -107,7 +111,7 @@ class ClientGame(ClientGameBase):
         NetworkHandler.init(eng)
         register_actor_templates(eng)
 
-        eng.set_camera_width(16 * 4)
+        eng.set_camera_width(16 * 2)
         eng.resolution = Vector(1600, 900)
 
         self.true_scroll = [0, 0]
