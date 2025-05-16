@@ -58,13 +58,9 @@ class Material:
     def size(self):
         """ Vector - Size of the texture in pixels. """
         return self.__size
-
-
-    def load(self):
-        """ Called only by the engine. """
-        if self.texture_str in Material.__textures:
-            return
         
+
+    def get_surface(self):
         if isinstance(self.texture_str, Color):
             image = pygame.Surface((1, 1), pygame.SRCALPHA if self.texture_str.a != 255 else 0)
             image.fill(self.texture_str.tuple)
@@ -76,6 +72,16 @@ class Material:
                 image = image.convert()
             else:
                 image = image.convert_alpha()
+
+        return image
+
+
+    def load(self):
+        """ Called only by the engine. """
+        if self.texture_str in Material.__textures:
+            return
+        
+        image = self.get_surface()
 
         self.__textures[self.texture_str] = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.__textures[self.texture_str])

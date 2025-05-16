@@ -46,11 +46,11 @@ class QuadMesh:
         glBindBuffer(GL_ARRAY_BUFFER, 0)
 
 
-    def create_vertex_array(self, actor):
+    def create_vertices(self, actor):
         a = actor.half_size
         p = actor.position
         r = actor.render_layer
-        self.prev_actor = (p, a, r)
+        self.prev_actor = (p, a)
 
         # x, y, s, t, z
         self.vertices = np.array([
@@ -59,6 +59,10 @@ class QuadMesh:
              a.x + p.x, -a.y + p.y, 1.0, 1.0, -r / 1024,
              a.x + p.x,  a.y + p.y, 1.0, 0.0, -r / 1024,
         ], dtype=np.float32)
+
+
+    def create_vertex_array(self, actor):
+        self.create_vertices(actor)
         self.vertex_count = 4
 
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
@@ -70,7 +74,7 @@ class QuadMesh:
 
 
     def draw(self):
-        if self.prev_actor != (self.actor.position, self.actor.half_size, self.actor.render_layer):
+        if self.prev_actor != (self.actor.position, self.actor.half_size):
             self.create_vertex_array(self.actor)
         
         self.actor.material.use()
@@ -88,6 +92,34 @@ class QuadMesh:
             log("Failed to delete OpenGL buffers", LogType.ERROR)
 
 
+    
+class WidgetMesh(QuadMesh):
+    """ Mesh class for rendering widgets. """
+    def __init__(self, widget, top_left_pos, size):
+        self.top_left_pos = top_left_pos
+        self.size = size
+        super().__init__(widget)
+
+
+    def create_vertices(self, widget):
+        r = -(widget.layer + 512) / 1024
+        t = self.top_left_pos
+        s = self.size
+        
+        # x, y, s, t, z
+        self.vertices = np.array([
+            -1 + t.x,       1 - t.y - s.y, 0, 1, r,
+            -1 + t.x,       1 - t.y,       0, 0, r,
+            -1 + t.x + s.x, 1 - t.y - s.y, 1, 1, r,
+            -1 + t.x + s.x, 1 - t.y,       1, 0, r,
+        ], dtype=np.float32)
+
+    
+    def draw(self):
+        glBindVertexArray(self.vao)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, self.vertex_count)
+
+
 
 class BackgroundMesh:
     """ Mesh class for rendering background layers. """
@@ -95,38 +127,25 @@ class BackgroundMesh:
     def __init__(self, layer, screen_res, camera_width):
         layer.material.load()
         self.layer = layer
-    # def create_bg_surface(self, screen_res):
-        # scale_ratio = screen_res.x / camera_width * self.width
+
         material_half_size = self.layer.material.size / 2
-        # scaled_material_surface = pygame.transform.scale(self.__texture, (scale_ratio, scale_ratio * material_res.y / material_res.x))
-        # self.__scaled_material_res = Vector(scaled_material_surface.get_width(), scaled_material_surface.get_height())
         scaled_material_half_size = material_half_size / material_half_size.x * self.layer.width
         self.scaled_material_size = scaled_material_half_size * 2
 
-        # x_tiles = math.ceil(screen_res.x / self.__scaled_material_res.x) + 1
-        # y_tiles = math.ceil(screen_res.y / self.__scaled_material_res.y) + 1
         tiles = (camera_width / self.scaled_material_size * (screen_res / screen_res.x)).ceiled + 1
         half_tiles = tiles // 2
         
-        # bg_surface = pygame.Surface((Vector(x_tiles, y_tiles) * self.__scaled_material_res).tuple)
         self.meshes = []
 
         for x in range(int(-half_tiles.x), int(-half_tiles.x + tiles.x)):
             for y in range(int(-half_tiles.y), int(-half_tiles.y + tiles.y)):
                 obj = Actor("actor", Vector(x, y) * scaled_material_half_size * 2, scaled_material_half_size, material=self.layer.material, render_layer=self.layer.render_layer)
                 self.meshes.append(QuadMesh(obj))
-                # bg_surface.blit(scaled_material_surface, (x * self.__scaled_material_res.x, y * self.__scaled_material_res.y))
 
         
     def draw(self, camera_pos, camer_pos_uniform):
         camera_pos = (camera_pos * self.layer.scroll_speed) % self.scaled_material_size - self.scaled_material_size
         glUniform2f(camer_pos_uniform, *camera_pos)
-
-        # top_left = camera_pos % self.__scaled_material_res - self.__scaled_material_res
-        # if top_left.abs.x > self.__scaled_material_res.x:
-        #     top_left.x += self.__scaled_material_res.x
-        # if top_left.abs.y > self.__scaled_material_res.y:
-        #     top_left.y += self.__scaled_material_res.y
 
         for mesh in self.meshes:
             mesh.draw()
@@ -173,29 +192,37 @@ class Renderer:
         glEnable(GL_DEPTH_TEST)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         
-        self.__shader = self.__create_shader()
-        glUseProgram(self.__shader)
+        self.__shaders = {}
 
-        self.__camera_pos_uniform = glGetUniformLocation(self.__shader, "cameraPos")
+        self.__shaders["actor"] = self.__create_shader("actor_vertex.txt")
+        glUseProgram(self.__shaders["actor"])
 
-        glUniform1i(glGetUniformLocation(self.__shader, "imageTexture"), 0)
+        self.__camera_pos_uniform = glGetUniformLocation(self.__shaders["actor"], "cameraPos")
+
+        glUniform1i(glGetUniformLocation(self.__shaders["actor"], "imageTexture"), 0)
         glUniform2f(self.__camera_pos_uniform, *self.camera_position)
-        glUniform2f(glGetUniformLocation(self.__shader, "scale"), *(self.resolution.x / self.resolution / self.camera_width * 2))
+        glUniform2f(glGetUniformLocation(self.__shaders["actor"], "scale"), *(self.resolution.x / self.resolution / self.camera_width * 2))
 
         self.background = Background("default", (BackgroundLayer(Material(Color()), 4, 1), ))
+
+        self.__shaders["widget"] = self.__create_shader("widget_vertex.txt")
+        glUseProgram(self.__shaders["widget"])
+
+        # glUniform1f(glGetUniformLocation(self.__shaders["widget"], "scale_y"), self.resolution.y / self.resolution.x)
 
         log("Renderer initialized", LogType.INFO)
 
 
     def __del__(self):
-        glDeleteProgram(self.__shader)
+        glDeleteProgram(self.__shaders["actor"])
+        glDeleteProgram(self.__shaders["widget"])
 
 
-    def __create_shader(self):
-        with open("src/engine/core/shaders/vertex.txt", "r") as f:
+    def __create_shader(self, vertex_src, fragment_src = "fragment.txt"):
+        with open(f"src/engine/core/shaders/{vertex_src}", "r") as f:
             vertex_src = f.readlines()
 
-        with open("src/engine/core/shaders/fragment.txt", "r") as f:
+        with open(f"src/engine/core/shaders/{fragment_src}", "r") as f:
             fragment_src = f.readlines()
 
         shader = compileProgram(
@@ -272,7 +299,8 @@ class Renderer:
     def camera_width(self, value):
         if isinstance(value, (int, float)) and value > 0:
             self.__camera_width = value
-            glUniform2f(glGetUniformLocation(self.__shader, "scale"), *(self.resolution.x / self.resolution / self.camera_width * 2))
+            glUseProgram(self.__shaders["actor"])
+            glUniform2f(glGetUniformLocation(self.__shaders["actor"], "scale"), *(self.resolution.x / self.resolution / self.camera_width * 2))
         else:
             raise TypeError("Camera width must be a positive number:", value)
         
@@ -424,29 +452,24 @@ class Renderer:
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        glUseProgram(self.__shaders["actor"])
         for layer_mesh in self.__background_meshes:
             layer_mesh.draw(self.camera_position, self.__camera_pos_uniform)
 
         glUniform2f(self.__camera_pos_uniform, *self.camera_position)
 
-        glUseProgram(self.__shader)
         layers = sorted(self.__actors_to_draw.keys())
         for layer in layers:
             meshes = self.__actors_to_draw[layer].values()
             for mesh in meshes:
                 mesh.draw()
 
-        # self.__widgets_to_draw.sort(key = lambda w: w.layer)
-        # for w in self.widgets_to_draw:
-        #     self.__draw_widget(w)
+        glUseProgram(self.__shaders["widget"])
+        self.__widgets_to_draw.sort(key = lambda w: w.layer)
+        for w in self.widgets_to_draw:
+            self.__draw_widget(w)
 
         pygame.display.flip()
-
-
-    # def draw_background(self, background: Background):
-    #     """ Called only by engine at the beginning of the frame after buffers are cleared. It draws background. """
-        # bg_surface = background.get_bg_surface(self.camera_position, self.resolution, self.camera_width)
-        # self.screen.blit(bg_surface, (0, 0))
 
 
     def __update_widget_screen_rect(self, widget, top_left_pos, camera_ratio):
@@ -460,15 +483,39 @@ class Renderer:
 
     def __draw_widget(self, widget):
         camera_ratio = self.resolution / Vector(1600, 900)
-        top_left_position = camera_ratio * widget.position
-        size = widget.size * camera_ratio.x
+        top_left_position = widget.position / Vector(1600, 900) * 2
+        size = widget.size / Vector(1600, 900) * 2
+        size.y *= camera_ratio.y / camera_ratio.x
 
         self.__update_widget_screen_rect(widget, top_left_position, camera_ratio.x)
 
         surface = widget.surface
-        surface = pygame.transform.scale(surface, size.tuple)
 
-        self.screen.blit(surface, top_left_position.tuple)
+        # surface = pygame.transform.scale(surface, size.tuple)
+
+        surface_id = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, surface_id)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+        width, height = surface.get_size()
+        # self.__size = Vector(width, height)
+        image_data = pygame.image.tostring(surface, "RGBA")
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+
+        widget_mesh = WidgetMesh(widget, top_left_position, size)
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, surface_id)
+        
+        widget_mesh.draw()
+
+        glDeleteTextures(1, [surface_id])
+
+        # self.screen.blit(surface, top_left_position.tuple)
 
 
 

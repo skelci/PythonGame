@@ -1,0 +1,17 @@
+#version 330 core
+
+layout(location = 0) in vec2 vertexPos;
+layout(location = 1) in vec2 vertexTexCoord;
+layout(location = 2) in float renderLayer;
+
+// uniform float scale_y;
+
+out vec2 fragmentTexCoord;
+
+void main()
+{
+    // vec2 pos = vertexPos * vec2(1.0, scale_y);
+    gl_Position = vec4(vertexPos, renderLayer, 1.0);
+    fragmentTexCoord = vertexTexCoord;
+}
+

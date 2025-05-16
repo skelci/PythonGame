@@ -479,13 +479,6 @@ class ClientEngine(Engine, Renderer):
 
         self.__time("render_regs")
 
-        # if self.current_background:
-        #     self.draw_background(self.backgrounds[self.current_background])
-        # else:
-        #     self.screen.fill((0, 0, 0))
-
-        # self.__time("bg_render")
-
         for name, stat in self.__stats.items():
             self.widgets[name].set_value(sum(stat) / len(stat) * 1000)
 
@@ -496,11 +489,6 @@ class ClientEngine(Engine, Renderer):
         self.render()
 
         self.__time("render")
-
-        # self.__stats["actor_render"].append(render_time[0])
-        # self.__stats["widget_render"].append(render_time[1])
-        # self.__stats["actor_render"].pop(0)
-        # self.__stats["widget_render"].pop(0)
 
         if not self.running:
             self.stop()

@@ -185,6 +185,7 @@ class Widget:
     def surface(self):
         """ pygame.Surface - Surface of the widget combined with subwidgets. """
         if self._updated and self._subwidget_updated:
+            print("Widget surface is up to date.")
             return self.__combined_surface
 
         if self._updated:

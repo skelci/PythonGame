@@ -183,36 +183,4 @@ class Background:
         return self.__layers
     
 
-    # def add_layer(self, background_layer: BackgroundLayer, index: int):
-    #     """
-    #     Adds a BackgroundLayer instance to the background at the specified index.
-    #     Args:
-    #         background_layer: BackgroundLayer instance to be added.
-    #         index: Index at which to add the layer.
-    #     Raises:
-    #         Exception: If background_layer is not a BackgroundLayer instance or index is not an integer or index is out of range.
-    #     """
-    #     if isinstance(background_layer, BackgroundLayer) and isinstance(index, int) and 0 <= index < len(self.__layers) + 1:
-    #         self.__layers.insert(index, background_layer)
-    #     else:
-    #         raise Exception("Layer must be a BackgroundLayer instance and index must be an integer in range:", background_layer, index)
-
-
-    # def get_bg_surface(self, camera_pos: Vector, screen_res: Vector, camera_width: float):
-    #     """
-    #     Returns the background surface for the entire background.
-    #     Args:
-    #         camera_pos: Position of the camera in world units.
-    #         screen_res: Resolution of the screen in pixels.
-    #         camera_width: Width of the camera in world units.
-    #     Returns:
-    #         pygame.Surface - Background surface for the entire background.
-    #     """
-    #     bg_surface = self.__layers[0].get_bg_surface(camera_pos, screen_res, camera_width)
-
-    #     for layer in self.__layers[1:]:
-    #         bg_surface.blit(layer.get_bg_surface(camera_pos, screen_res, camera_width), (0, 0))
-
-    #     return bg_surface
-
 

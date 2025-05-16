@@ -44,6 +44,6 @@ class Icon(Widget):
 
     @property
     def self_surface(self):
-        return self.material.get_surface(self.size)
+        return self.material.get_surface()
     
 
