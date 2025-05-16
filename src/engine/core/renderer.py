@@ -206,9 +206,6 @@ class Renderer:
         self.background = Background("default", (BackgroundLayer(Material(Color()), 4, 1), ))
 
         self.__shaders["widget"] = self.__create_shader("widget_vertex.txt")
-        glUseProgram(self.__shaders["widget"])
-
-        # glUniform1f(glGetUniformLocation(self.__shaders["widget"], "scale_y"), self.resolution.y / self.resolution.x)
 
         log("Renderer initialized", LogType.INFO)
 
@@ -489,33 +486,11 @@ class Renderer:
 
         self.__update_widget_screen_rect(widget, top_left_position, camera_ratio.x)
 
-        surface = widget.surface
-
-        # surface = pygame.transform.scale(surface, size.tuple)
-
-        surface_id = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, surface_id)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        width, height = surface.get_size()
-        # self.__size = Vector(width, height)
-        image_data = pygame.image.tostring(surface, "RGBA")
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data)
-        glGenerateMipmap(GL_TEXTURE_2D)
-
         widget_mesh = WidgetMesh(widget, top_left_position, size)
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, surface_id)
         
+        widget.use_material()
+
         widget_mesh.draw()
-
-        glDeleteTextures(1, [surface_id])
-
-        # self.screen.blit(surface, top_left_position.tuple)
 
 
 
