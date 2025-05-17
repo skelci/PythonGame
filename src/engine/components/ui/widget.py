@@ -43,6 +43,8 @@ class Widget:
         self.subwidget_alignments = subwidget_alignments
 
         self.__surface_id = None
+        self.__subwidget_update_count = 0
+        self._subwidget_updated = False
 
 
     @property
@@ -134,7 +136,6 @@ class Widget:
     @property
     def subwidgets(self):
         """ dict[str, Widget] - Dictionary of subwidgets. The key is the name of the subwidget and the value is the widget itself. """
-        self._subwidget_updated = False
         return self.__subwidget
     
 
@@ -146,10 +147,31 @@ class Widget:
             raise TypeError("Subwidget must be a dict of Widgets:", value)
         
 
+    def update_subwidget(self, name: str, rapid = False) -> 'Widget':
+        """
+        Get the subwidget by name and marks it as outdated.
+        Args:
+            name: Name of the subwidget.
+            rapid: If True, the subwidget will be marked as updated every 10 calls.
+        Returns:
+            Widget - The subwidget.
+        """
+        if name in self.subwidgets:
+            if not rapid:
+                self._subwidget_updated = False
+            else:
+                self.__subwidget_update_count += 1
+                if self.__subwidget_update_count > 10:
+                    self._subwidget_updated = False
+                    self.__subwidget_update_count = 0
+            return self.subwidgets[name]
+        else:
+            raise KeyError(f"Subwidget {name} not found in {self.name} subwidgets.")
+        
+
     @property
     def subwidget_offsets(self):
         """ dict[str, Vector] - Dictionary of subwidget offsets. The key is the name of the subwidget and the value is offset, which tells where the subwidget is positioned relative to the parent widget and alignment. """
-        self._subwidget_updated = False
         return self.__subwidget_offset
 
 
@@ -164,7 +186,6 @@ class Widget:
     @property
     def subwidget_alignments(self):
         """ dict[str, Alignment] - Dictionary of subwidget alignments. The key is the name of the subwidget and the value is the alignment, which tells how the subwidget is aligned relative to the parent widget and offset (where will Vector(0, 0) be positioned). """
-        self._subwidget_updated = False
         return self.__subwidget_alignment
     
 

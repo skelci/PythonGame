@@ -589,7 +589,7 @@ class ServerNetwork(Network):
                     full_tcp_message = (RECORD_SEPARATOR.join(payloads) + END_OF_MESSAGE_SEPARATOR).encode('ascii')
                     tcp_conn.sendall(full_tcp_message)
                 except (BrokenPipeError, ConnectionResetError, OSError) as e:
-                    log_server(f"TCP send error (connection lost) to client {client_id}: {e}", LogType.WARNING)
+                    log_server(f"TCP send error (connection lost) to client {client_id}: {e}", LogType.INFO)
                     disconnected_clients.append(client_id)
                 except Exception as e:
                     log_server(f"Error encoding/sending TCP data to client {client_id}: {e}", LogType.ERROR)
@@ -813,7 +813,8 @@ class ServerNetwork(Network):
             return
 
         log_server(f"Cleaning up client {client_id}.", LogType.INFO)
-        self.__connected_ids.remove(client_id)
+        if client_id in self.__connected_ids:
+            self.__connected_ids.remove(client_id)
 
         tcp_conn = self.__id_to_tcp_conn.pop(client_id, None)
         if tcp_conn:

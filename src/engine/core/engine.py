@@ -107,7 +107,7 @@ class InfoText(Widget):
         Args:
             value: Value to be displayed.
         """
-        self.subwidgets["stat_text"].text = f"{value:.1f}"
+        self.update_subwidget("stat_text", True).text = f"{value:.1f}"
 
 
 
@@ -168,7 +168,6 @@ class ClientEngine(Engine, Renderer):
             "widget_render":    [0] * 30,
             "network":          [0] * 30,
         }
-        self.__stat_clock = 0
 
         self.register_widget(InfoText("fps",            0, "fps: "))
         self.register_widget(InfoText("events",         1, "events: "))
@@ -480,11 +479,8 @@ class ClientEngine(Engine, Renderer):
 
         self.__time("render_regs")
 
-        self.__stat_clock += 1
-        if self.__stat_clock >= 10:
-            self.__stat_clock = 0
-            for name, stat in self.__stats.items():
-                self.widgets[name].set_value(sum(stat) / len(stat) * 1000)
+        for name, stat in self.__stats.items():
+            self.widgets[name].set_value(sum(stat) / len(stat) * 1000)
 
         if self.__current_background != self.__requested_background:
             self.background = self.__requested_background
