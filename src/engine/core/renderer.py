@@ -132,7 +132,7 @@ class BackgroundMesh:
         scaled_material_half_size = material_half_size / material_half_size.x * self.layer.width
         self.scaled_material_size = scaled_material_half_size * 2
 
-        tiles = (camera_width / self.scaled_material_size * (screen_res / screen_res.x)).ceiled + 1
+        tiles = (camera_width / self.scaled_material_size * (screen_res / screen_res.x)).ceiled + 2
         half_tiles = tiles // 2
         
         self.meshes = []
@@ -144,7 +144,7 @@ class BackgroundMesh:
 
         
     def draw(self, camera_pos, camer_pos_uniform):
-        camera_pos = (camera_pos * self.layer.scroll_speed) % self.scaled_material_size - self.scaled_material_size
+        camera_pos = camera_pos * self.layer.scroll_speed % self.scaled_material_size - self.scaled_material_size / 2
         glUniform2f(camer_pos_uniform, *camera_pos)
 
         for mesh in self.meshes:

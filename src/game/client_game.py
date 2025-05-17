@@ -31,7 +31,7 @@ class NetworkHandler:
         player.health = data
         if player.health <= 0:
             player.health = 0
-            NetworkHandler.engine_ref.widgets["Inventory"].update_subwidget("health_bar", True).set_health(0)
+            NetworkHandler.engine_ref.widgets["Inventory"].update_subwidget("health_bar").set_health(0)
             print("Player is dead")
         else:
             NetworkHandler.engine_ref.widgets["Inventory"].update_subwidget("health_bar", True).set_health(player.health)

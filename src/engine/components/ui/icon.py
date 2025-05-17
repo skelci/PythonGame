@@ -44,6 +44,8 @@ class Icon(Widget):
 
     @property
     def self_surface(self):
-        return self.material.get_surface()
+        surface = self.material.get_surface()
+        surface = pygame.transform.scale(surface, self.size.tuple)
+        return surface
     
 
