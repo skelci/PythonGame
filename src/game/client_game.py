@@ -135,12 +135,12 @@ class ClientGame(ClientGameBase):
         username_already_exists_warning = WarningWidget("username_already_exists_warning", "Username already exists")
         wrong_credentials_warning = WarningWidget("wrong_credentials_warning", "Wrong username or password")
 
-        eng.register_widget(invalid_port_warning.widget)
-        eng.register_widget(failed_connection_warning.widget)
-        eng.register_widget(invalid_credentials_warning.widget)
-        eng.register_widget(user_already_logged_in_warning.widget)
-        eng.register_widget(username_already_exists_warning.widget)
-        eng.register_widget(wrong_credentials_warning.widget)
+        eng.register_widget(invalid_port_warning)
+        eng.register_widget(failed_connection_warning)
+        eng.register_widget(invalid_credentials_warning)
+        eng.register_widget(user_already_logged_in_warning)
+        eng.register_widget(username_already_exists_warning)
+        eng.register_widget(wrong_credentials_warning)
         eng.register_widget(ServerPromptMenu())
         eng.register_widget(CredentialsMenu())
         eng.register_widget(Inventory())
@@ -154,7 +154,7 @@ class ClientGame(ClientGameBase):
         eng.regisrer_network_command("set_inventory_slot", NetworkHandler.set_inventory_slot)
         
         #?ifdef ENGINE
-        eng.connect("localhost", 5555)
+        # eng.connect("localhost", 5555)
         #?endif
 
 

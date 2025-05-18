@@ -12,11 +12,11 @@ from engine.components.material import Material
 
 
 
-class WarningWidget:
+class WarningWidget(Border):
     current_warnings = {}
 
     def __init__(self, name, text):
-        self.widget = Border(name, Vector(1300, 10), Vector(290, 30), 2, Color(255, 0, 0), Color(30, 0, 0, 70), False, 2,
+        super().__init__(name, Vector(1300, 10), Vector(290, 30), 2, Color(255, 0, 0), Color(30, 0, 0, 70), False, 2,
             subwidgets={
                 "text": Text("text", Vector(0, 0), Vector(285, 20), Color(255, 255, 255), "res/fonts/arial.ttf", text=text)
             },
@@ -30,13 +30,13 @@ class WarningWidget:
 
 
     def show(self):
-        if not self.widget.visible:
-            self.widget.position.y = 10 + len(WarningWidget.current_warnings) * 50
-            self.widget.visible = True
-            WarningWidget.current_warnings[self.widget.name] = (self.widget, 15)
+        if not self.visible:
+            self.position.y = 10 + len(WarningWidget.current_warnings) * 50
+            self.visible = True
+            WarningWidget.current_warnings[self.name] = (self, 15)
             return
         
-        WarningWidget.current_warnings[self.widget.name] = (self.widget, 10)
+        WarningWidget.current_warnings[self.name] = (self, 10)
         
 
     @classmethod
