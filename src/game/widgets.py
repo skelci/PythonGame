@@ -148,7 +148,7 @@ class HealthBar(Border):
 
 
     def set_health(self, health): 
-        self.update_subwidget("health_bar").size = Vector(health*2, 14)
+        self.subwidgets["health_bar"].size = Vector(health*2, 14)
 
 
 
@@ -156,7 +156,7 @@ class HungerBar(Border):
     def __init__(self):
         super().__init__("hunger_bar", Vector(0, 0), Vector(206, 20), 0, Color(150, 150, 150), Color(0, 0, 0, 100), True, 3,
             subwidgets={
-                "hunger_bar": Widget("hunger_bar", Vector(0, 0), Vector(200, 14), Color(137,81,41), 0, True)
+                "hunger_bar": Widget("hunger_bar", Vector(0, 0), Vector(200, 14), Color(137,81,41), 0, True, update_interval=10)
             },
             subwidget_offsets={
                 "hunger_bar": Vector(3, 0),
@@ -168,7 +168,7 @@ class HungerBar(Border):
 
 
     def set_hunger(self, hunger): 
-        self.update_subwidget("hunger_bar").size = Vector(hunger*2, 14)
+        self.subwidgets["hunger_bar"].size = Vector(hunger*2, 14)
 
 
 

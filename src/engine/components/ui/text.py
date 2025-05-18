@@ -21,7 +21,7 @@ class Text(Widget):
     __fonts = {}
 
 
-    def __init__(self, name: str, position: Vector, size: Vector, color: Color, font: str, layer = 0, visible = False, text = ""):
+    def __init__(self, name: str, position: Vector, size: Vector, color: Color, font: str, layer = 0, visible = False, text = "", update_interval = 1):
         """
         Args:
             name: Name of the widget.
@@ -33,7 +33,7 @@ class Text(Widget):
             visible: Whether the widget is visible or not.
             text: Text to be displayed.
         """
-        super().__init__(name, position, size, color, layer, visible)
+        super().__init__(name, position, size, color, layer, visible, update_interval = update_interval)
 
         self.__font_size = size.int[1]
         self.text = text
@@ -52,7 +52,7 @@ class Text(Widget):
     def text(self, value):
         if isinstance(value, str):
             self.__text = value
-            self._updated = False
+            self.updated = False
         else:
             raise TypeError("Text must be a string:", value)
         
@@ -68,19 +68,19 @@ class Text(Widget):
         if isinstance(value, str) and os.path.exists(value):
             self.__font = value
             self.__load_font()
-            self._updated = False
+            self.updated = False
         else:
             raise TypeError("Font must be a string:", value)
         
 
     @property
     def surface(self):
-        if self._updated:
+        if self.updated:
             return self._surface
         
         self._surface = Text.__fonts[self.__font_code].render(self.text, True, self.color.tuple)
         self.size.x = self._surface.get_width()
-        self._updated = True
+        self.updated = True
 
         return self._surface
     

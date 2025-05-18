@@ -21,7 +21,7 @@ class InputBox(Text):
     """
 
 
-    def __init__(self, name: str, position: Vector, size: Vector, color: Color, font: str, layer = 0, visible = False, max_length = 20, action: Callable[[str], None] = None):
+    def __init__(self, name: str, position: Vector, size: Vector, color: Color, font: str, layer = 0, visible = False, max_length = 20, action: Callable[[str], None] = None, update_interval = 1):
         """
         Refer to the Text class for more information about the parameters.
         Args:
@@ -29,7 +29,7 @@ class InputBox(Text):
             action: Function to be called when the user presses the enter key. Default is None.
         """
         self.__original_size = size.copy
-        super().__init__(name, position, size, color, font, layer, visible)
+        super().__init__(name, position, size, color, font, layer, visible, update_interval=update_interval)
 
         self.action = action
         self.max_length = max_length
@@ -129,12 +129,15 @@ class InputBox(Text):
         """
         if not self.visible:
             return
+        
+        did_update = False
 
         if Keys.MOUSE_LEFT in triggered_keys:
             self.is_in_focus = is_in_screen_rect(*self.screen_rect, mouse_pos)
         
         if self.is_in_focus:
             for key in triggered_keys:
+                did_update = True
                 match key:
                     case Keys.BACKSPACE:
                         if self.__cursor_position > 0:
@@ -189,10 +192,14 @@ class InputBox(Text):
         if self.is_in_focus:
             self.__cursor_blink_timer += delta_time
             if self.__cursor_blink_timer >= self.__cursor_blink_time:
+                did_update = True
                 self.__cursor_blink_timer = 0
                 self.__is_cursor_visible = not self.is_cursor_visible
         else:
             self.__is_cursor_visible = False
             self.__cursor_blink_timer = 0
+
+        if did_update:
+            self.updated = False
 
 

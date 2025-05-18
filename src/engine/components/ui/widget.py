@@ -19,7 +19,7 @@ class Widget:
     This widget is a colored rectangle.
     """
     
-    def __init__(self, name: str, position: Vector, size: Vector, color: Color, layer = 0, visible = True, subwidgets: dict[str, 'Widget'] = {}, subwidget_offsets: dict[str, Vector] = {}, subwidget_alignments: dict[str, Alignment] = {}):
+    def __init__(self, name: str, position: Vector, size: Vector, color: Color, layer = 0, visible = True, subwidgets: dict[str, 'Widget'] = {}, subwidget_offsets: dict[str, Vector] = {}, subwidget_alignments: dict[str, Alignment] = {}, update_interval = 1):
         """
         Args:
             name: Name of the widget.
@@ -31,7 +31,12 @@ class Widget:
             subwidgets: Dictionary of subwidgets. The key is the name of the subwidget and the value is the widget itself.
             subwidget_offsets: Dictionary of subwidget offsets. The key is the name of the subwidget and the value is offset, which tells where the subwidget is positioned relative to the parent widget and alignment.
             subwidget_alignments: Dictionary of subwidget alignments. The key is the name of the subwidget and the value is the alignment, which tells how the subwidget is aligned relative to the parent widget and offset (where will Vector(0, 0) be positioned).
+            update_interval: Update interval for the widget. If the widget is updated, it will be updated after update_interval update calls. If widget is updated every frame, it can cause performance issues.
         """
+        self._parent = None
+        self.update_interval = update_interval
+        self.__update_clock = 0
+
         self.name = name
         self.position = position
         self.size = size
@@ -43,8 +48,22 @@ class Widget:
         self.subwidget_alignments = subwidget_alignments
 
         self.__surface_id = None
-        self.__subwidget_update_count = 0
-        self._subwidget_updated = False
+        self.subwidget_updated = False
+        self.__updated = False
+
+
+    @property
+    def update_interval(self):
+        """ int - Update interval for the widget. """
+        return self.__update_interval
+    
+
+    @update_interval.setter
+    def update_interval(self, value):
+        if isinstance(value, int) and value > 0:
+            self.__update_interval = value
+        else:
+            raise TypeError("Update interval must be a positive int:", value)
 
 
     @property
@@ -85,7 +104,7 @@ class Widget:
     def size(self, value):
         if isinstance(value, Vector):
             self.__size = value
-            self._updated = False
+            self.updated = False
         else:
             raise TypeError("Size must be a Vector:", value)
         
@@ -114,7 +133,7 @@ class Widget:
     def color(self, value):
         if isinstance(value, Color):
             self.__color = value
-            self._updated = False
+            self.updated = False
         else:
             raise TypeError("Color must be a Color:", value)
         
@@ -143,30 +162,47 @@ class Widget:
     def subwidgets(self, value):
         if isinstance(value, dict):
             self.__subwidget = value
+            for widget in value.values():
+                if not isinstance(widget, Widget):
+                    raise TypeError("Subwidget must be a Widget:", widget)
+                widget._parent = self
         else:
             raise TypeError("Subwidget must be a dict of Widgets:", value)
+
+
+    @property
+    def updated(self):
+        """ bool - Whether the widget is updated or not. """
+        return self.__updated
+    
+
+    @updated.setter
+    def updated(self, value):
+        if isinstance(value, bool):
+            self.__update_clock += 1
+            if self.__update_clock >= self.__update_interval:
+                self.__update_clock = 0
+                self.__updated = value
+                if not value and self._parent:
+                    self._parent.subwidget_updated = False
+        else:
+            raise TypeError("Updated must be a bool:", value)
         
 
-    def update_subwidget(self, name: str, rapid = False) -> 'Widget':
-        """
-        Get the subwidget by name and marks it as outdated.
-        Args:
-            name: Name of the subwidget.
-            rapid: If True, the subwidget will be marked as updated every 10 calls.
-        Returns:
-            Widget - The subwidget.
-        """
-        if name in self.subwidgets:
-            if not rapid:
-                self._subwidget_updated = False
-            else:
-                self.__subwidget_update_count += 1
-                if self.__subwidget_update_count > 10:
-                    self._subwidget_updated = False
-                    self.__subwidget_update_count = 0
-            return self.subwidgets[name]
+    @property
+    def subwidget_updated(self):
+        """ bool - Whether the subwidget is updated or not. """
+        return self.__subwidget_updated
+    
+
+    @subwidget_updated.setter
+    def subwidget_updated(self, value):
+        if isinstance(value, bool):
+            self.__subwidget_updated = value
+            if not value and self._parent:
+                self._parent.subwidget_updated = False
         else:
-            raise KeyError(f"Subwidget {name} not found in {self.name} subwidgets.")
+            raise TypeError("Subwidget updated must be a bool:", value)
         
 
     @property
@@ -208,27 +244,28 @@ class Widget:
     @property
     def surface(self):
         """ pygame.Surface - Surface of the widget combined with subwidgets. """
-        if self._updated and self._subwidget_updated:
+        if self.updated and self.subwidget_updated:
             return self.__combined_surface
 
-        if self._updated:
+        if self.updated:
             surface = self._surface
         else:
             surface = self.self_surface
             self._surface = surface
-            self._updated = True
 
         self.__combined_surface = surface.copy()
         if not self.subwidgets:
-            self._subwidget_updated = True
+            self.subwidget_updated = True
+            self.updated = True
             return self.__combined_surface
 
-        if not self._subwidget_updated:
+        if not self.subwidget_updated or not self.updated:
             sorted_widgets = sorted(list(self.subwidgets.keys()), key=lambda x: self.subwidgets[x].layer)
             for widget in sorted_widgets:
                 self.__combined_surface.blit(self.subwidgets[widget].surface, self.subwidget_pos(widget).tuple)
 
-        self._subwidget_updated = True
+        self.subwidget_updated = True
+        self.updated = True
 
         return self.__combined_surface
     
@@ -285,7 +322,7 @@ class Widget:
 
     def use_material(self):
         """ Use the OpenGL texture for rendering. """
-        if not self._subwidget_updated or not self._updated or self.__surface_id is None:
+        if not self.subwidget_updated or not self.updated or self.__surface_id is None:
             self.create_material()
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.__surface_id)

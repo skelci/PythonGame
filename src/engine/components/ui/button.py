@@ -20,7 +20,7 @@ class Button(Border):
     The button can trigger an action when clicked, and it can change its color based on hover and click states.
     """
 
-    def __init__(self, name: str, position: Vector, size: Vector, layer = 0, border_color: Color = Color(255, 255, 255), bg_color: Color = Color(0, 0, 0, 0), visible = False, thickness = 10, subwidgets: dict[str, Widget] = {}, subwidget_offsets: dict[str, Vector] = {}, subwidget_alignments: dict[str, Alignment] = {}, hover_color: Color = Color(0, 0, 0), click_color: Color = Color(0, 0, 0), action: Callable[[], None] = None):
+    def __init__(self, name: str, position: Vector, size: Vector, layer = 0, border_color: Color = Color(255, 255, 255), bg_color: Color = Color(0, 0, 0, 0), visible = False, thickness = 10, subwidgets: dict[str, Widget] = {}, subwidget_offsets: dict[str, Vector] = {}, subwidget_alignments: dict[str, Alignment] = {}, hover_color: Color = Color(0, 0, 0), click_color: Color = Color(0, 0, 0), action: Callable[[], None] = None, update_interval = 1):
         """
         Refer to the Border class for more information about the parameters.
         Args:
@@ -29,7 +29,7 @@ class Button(Border):
             action: Function to be called when the button is clicked. Default is None.
         """
         self.__main_color = bg_color
-        super().__init__(name, position, size, layer, border_color, bg_color, visible, thickness, subwidgets, subwidget_offsets, subwidget_alignments)
+        super().__init__(name, position, size, layer, border_color, bg_color, visible, thickness, subwidgets, subwidget_offsets, subwidget_alignments, update_interval)
 
         self.hover_color = hover_color
         self.click_color = click_color

@@ -16,7 +16,7 @@ class Border(Widget):
     Represents a border widget. It is a colored rectangle with a specified border color and thickness.
     """
 
-    def __init__(self, name: str, position: Vector, size: Vector, layer = 0, border_color: Color = Color(255, 255, 255), bg_color: Color = Color(0, 0, 0, 0), visible = False, thickness = 10, subwidgets: dict[str, Widget] = {}, subwidget_offsets: dict[str, Vector] = {}, subwidget_alignments: dict[str, Alignment] = {}):
+    def __init__(self, name: str, position: Vector, size: Vector, layer = 0, border_color: Color = Color(255, 255, 255), bg_color: Color = Color(0, 0, 0, 0), visible = False, thickness = 10, subwidgets: dict[str, Widget] = {}, subwidget_offsets: dict[str, Vector] = {}, subwidget_alignments: dict[str, Alignment] = {}, update_interval = 1):
         """
         Refer to the Widget class for more information about the parameters.
         Args:
@@ -24,7 +24,7 @@ class Border(Widget):
             border_color: Color of the border. Default is Color(255, 255, 255).
             thickness: Thickness of the border. Default is 10.
         """
-        super().__init__(name, position, size, bg_color, layer, visible, subwidgets, subwidget_offsets, subwidget_alignments)
+        super().__init__(name, position, size, bg_color, layer, visible, subwidgets, subwidget_offsets, subwidget_alignments, update_interval)
 
         self.border_color = border_color
         self.thickness = thickness
@@ -40,7 +40,7 @@ class Border(Widget):
     def border_color(self, value):
         if isinstance(value, Color):
             self.__border_color = value
-            self._updated = False
+            self.updated = False
         else:
             raise TypeError("Border color must be a Color:", value)
 
@@ -55,7 +55,7 @@ class Border(Widget):
     def thickness(self, value):
         if isinstance(value, int) and 0 <= value <= min(*self.size):
             self.__thickness = value
-            self._updated = False
+            self.updated = False
         else:
             raise TypeError("Thickness must be an integer between 0 and the half of the smallest dimension of the widget:", value)
         

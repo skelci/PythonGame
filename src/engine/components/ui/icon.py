@@ -16,13 +16,13 @@ import pygame
 class Icon(Widget):
     """ Represents an icon widget. It renders an icon on the screen using a specified image. """
     
-    def __init__(self, name, position, size, material, layer=0, visible=True, subwidgets = {}, subwidget_offsets = {}, subwidget_alignments = {}):
+    def __init__(self, name, position, size, material, layer=0, visible=True, subwidgets = {}, subwidget_offsets = {}, subwidget_alignments = {}, update_interval = 1):
         """
         For more information about the parameters, refer to the Widget class.
         Args:
             material: Material object representing the icon image.
         """
-        super().__init__(name, position, size, Color(0, 0, 0, 0), layer, visible, subwidgets, subwidget_offsets, subwidget_alignments)
+        super().__init__(name, position, size, Color(0, 0, 0, 0), layer, visible, subwidgets, subwidget_offsets, subwidget_alignments, update_interval)
 
         self.material = material
 
@@ -37,7 +37,7 @@ class Icon(Widget):
     def material(self, value):
         if isinstance(value, Material):
             self.__material = value
-            self._updated = False
+            self.updated = False
         else:
             raise TypeError("Material must be a Material object:", value)
 

@@ -87,7 +87,7 @@ class InfoText(Widget):
             pre_text_str: Text that will be displayed before the value.
         """
         pre_text = Text("pre_text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf", text=pre_text_str)
-        stat_text = Text("after_text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf")
+        stat_text = Text("stat_text", Vector(), Vector(215, 20), Color(0, 255, 0), "res/fonts/arial.ttf", update_interval=10)
         super().__init__(
             name,
             Vector(10, pos_y * 24 + 10),
@@ -107,7 +107,7 @@ class InfoText(Widget):
         Args:
             value: Value to be displayed.
         """
-        self.update_subwidget("stat_text", True).text = f"{value:.1f}"
+        self.subwidgets["stat_text"].text = f"{value:.1f}"
 
 
 

@@ -31,10 +31,10 @@ class NetworkHandler:
         player.health = data
         if player.health <= 0:
             player.health = 0
-            NetworkHandler.engine_ref.widgets["Inventory"].update_subwidget("health_bar").set_health(0)
+            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["health_bar"].set_health(0)
             print("Player is dead")
         else:
-            NetworkHandler.engine_ref.widgets["Inventory"].update_subwidget("health_bar", True).set_health(player.health)
+            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["health_bar"].set_health(player.health)
     
     @staticmethod
     def set_hunger(data):
@@ -45,10 +45,10 @@ class NetworkHandler:
         player.hunger = data
         if player.hunger <= 0:
             player.hunger = 0
-            NetworkHandler.engine_ref.widgets["Inventory"].update_subwidget("hunger_bar", True).set_hunger(0)
+            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["hunger_bar"].set_hunger(0)
             print("Player is starving")
         else:
-            NetworkHandler.engine_ref.widgets["Inventory"].update_subwidget("hunger_bar", True).set_hunger(player.hunger)
+            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets["hunger_bar"].set_hunger(player.hunger)
     
 
     @staticmethod
@@ -62,12 +62,12 @@ class NetworkHandler:
 
         for i, item_name in enumerate(inventory_list):
             slot_key=f"slot_{i + 1}"
-            slot_icon = NetworkHandler.engine_ref.widgets["Inventory"].update_subwidget(slot_key).update_subwidget("item_icon")
+            slot_icon = NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_icon"]
             
 
             if item_name is None:
                 slot_icon.material = Material(Color(0, 0, 0, 0))
-                NetworkHandler.engine_ref.widgets["Inventory"].update_subwidget(slot_key).update_subwidget("item_count").text = ""
+                NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_count"].text = ""
                 continue
 
 
@@ -87,8 +87,7 @@ class NetworkHandler:
                 case "Anvil":           slot_icon.material = Material("res/textures/anvil.png")
                 case _: raise ValueError(f"Unknown item type: {item_name}")
             
-            NetworkHandler.engine_ref.widgets["Inventory"].update_subwidget(slot_key).update_subwidget("item_count").text = str(inventory_dict[item_name])
-            
+            NetworkHandler.engine_ref.widgets["Inventory"].subwidgets[slot_key].subwidgets["item_count"].text = str(inventory_dict[item_name])            
 
 
     @staticmethod
@@ -155,7 +154,7 @@ class ClientGame(ClientGameBase):
         eng.regisrer_network_command("set_inventory_slot", NetworkHandler.set_inventory_slot)
         
         #?ifdef ENGINE
-        # eng.connect("localhost", 5555)
+        eng.connect("localhost", 5555)
         #?endif
 
 
