@@ -100,7 +100,8 @@ class NetworkHandler:
         elif data == -2:
             NetworkHandler.engine_ref.widgets["failed_connection_warning"].show()
         elif data == -3:
-            NetworkHandler.engine_ref.widgets["invalid_credentials_warning"].show()
+            #NetworkHandler.engine_ref.widgets["invalid_credentials_warning"].show()
+            print("Invalid username or password")
 
 
 
